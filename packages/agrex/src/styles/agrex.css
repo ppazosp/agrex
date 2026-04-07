@@ -1,0 +1,69 @@
+/* Kill React Flow default node styling */
+.agrex .react-flow__node {
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.agrex .react-flow__node {
+  animation: agrex-node-fade 0.5s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+@keyframes agrex-node-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.agrex .react-flow__node > div {
+  animation: agrex-node-pop 0.5s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+@keyframes agrex-node-pop {
+  from  { transform: scale(0.5); }
+  60%   { transform: scale(1.06); }
+  to    { transform: scale(1); }
+}
+
+@keyframes agrex-running-ring {
+  0%, 100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--agrex-status-running) 40%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 14px 4px color-mix(in srgb, var(--agrex-status-running) 60%, transparent);
+  }
+}
+
+@keyframes agrex-running-drop {
+  0%, 100% {
+    filter: drop-shadow(0 0 0 color-mix(in srgb, var(--agrex-status-running) 40%, transparent));
+  }
+  50% {
+    filter: drop-shadow(0 0 10px color-mix(in srgb, var(--agrex-status-running) 60%, transparent));
+  }
+}
+
+@keyframes agrex-slide-in {
+  from { transform: translateX(-100%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+.agrex-collapse {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.agrex-collapse[data-collapsed="true"] {
+  grid-template-rows: 0fr;
+}
+
+.agrex-collapse > div {
+  overflow: hidden;
+}
+
+/* Tooltip hover visibility */
+.agrex-tooltip-wrapper:hover .agrex-tooltip {
+  opacity: 1 !important;
+}

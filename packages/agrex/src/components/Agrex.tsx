@@ -38,7 +38,7 @@ export default function Agrex({
     <div style={{ width: '100%', height: '100%', position: 'relative', fontFamily: theme.fontFamily, ...cssVars } as React.CSSProperties} className="agrex">
       <Graph nodes={nodes} edges={edges} theme={theme} layout={layout}
         nodeRenderers={nodeRenderers} nodeIcons={nodeIcons} edgeColors={edgeColors}
-        fitOnUpdate={fitOnUpdate} onNodeClick={handleNodeClick} onNewestNode={handleNewestNode} />
+        fitOnUpdate={fitOnUpdate} showControls={showControls} onNodeClick={handleNodeClick} onNewestNode={handleNewestNode} />
       {showLegend && <Legend />}
       {showDetailPanel && <DetailPanel node={selectedNode} onClose={() => setSelectedNode(null)} />}
       {showToasts && <Toast node={toastNode} />}

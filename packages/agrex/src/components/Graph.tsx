@@ -13,6 +13,7 @@ import {
   AgentNode, SubAgentNode, ToolNode, FileNode, OutputNode, SearchNode, DefaultNode,
 } from '../nodes'
 import { radialLayout } from '../layout/radial'
+import Controls from './Controls'
 import type { AgrexNode, AgrexEdge, ResolvedTheme, LayoutFn } from '../types'
 import { themeToCSS } from '../theme/tokens'
 
@@ -30,6 +31,7 @@ interface GraphInternalProps {
   nodeIcons?: Record<string, React.ComponentType<{ size: number }>>
   edgeColors?: Record<string, string>
   fitOnUpdate: boolean
+  showControls: boolean
   onNodeClick?: (node: AgrexNode) => void
   onNewestNode?: (node: AgrexNode) => void
 }
@@ -42,7 +44,7 @@ const DEFAULT_EDGE_COLORS: Record<string, string> = {
 
 export default function Graph({
   nodes, edges, theme, layout, nodeRenderers, nodeIcons, edgeColors: userEdgeColors,
-  fitOnUpdate, onNodeClick, onNewestNode,
+  fitOnUpdate, showControls, onNodeClick, onNewestNode,
 }: GraphInternalProps) {
   const [flowNodes, setFlowNodes, onNodesChange] = useNodesState<Node>([])
   const [flowEdges, setFlowEdges, onEdgesChange] = useEdgesState<Edge>([])
@@ -149,6 +151,31 @@ export default function Graph({
         proOptions={{ hideAttribution: true }}
         style={{ background: 'transparent' }}
       />
+      {showControls && (
+        <Controls
+          onZoomIn={() => rfRef.current?.zoomIn({ duration: 200 })}
+          onZoomOut={() => rfRef.current?.zoomOut({ duration: 200 })}
+          autoFit={autoFit}
+          onToggleAutoFit={() => {
+            setAutoFit(v => {
+              if (!v) {
+                const rf = rfRef.current
+                if (rf) {
+                  const el = containerRef.current
+                  const vw = el?.clientWidth || 800
+                  const vh = el?.clientHeight || 600
+                  let maxDist = 100
+                  for (const [, pos] of posRef.current) maxDist = Math.max(maxDist, Math.hypot(pos.x, pos.y))
+                  const halfSize = Math.min(vw, vh) / 2
+                  const zoom = Math.min(1, halfSize / (maxDist + 40))
+                  rf.setCenter(40, 40, { zoom: Math.max(0.15, zoom), duration: 300 })
+                }
+              }
+              return !v
+            })
+          }}
+        />
+      )}
     </div>
   )
 }

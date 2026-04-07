@@ -12,9 +12,7 @@ import '@xyflow/react/dist/style.css'
 import {
   AgentNode, SubAgentNode, ToolNode, FileNode, OutputNode, SearchNode, DefaultNode,
 } from '../nodes'
-import { radialLayout } from '../layout/radial'
-import { forceLayout } from '../layout/force'
-import { dagreLayout } from '../layout/dagre'
+import { elkStressLayout, elkFullRelayout } from '../layout/elk'
 import Controls from './Controls'
 import type { AgrexNode, AgrexEdge, ResolvedTheme, LayoutFn } from '../types'
 import { themeToCSS } from '../theme/tokens'
@@ -53,51 +51,31 @@ export default function Graph({
   const rfRef = useRef<ReactFlowInstance | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const posRef = useRef(new Map<string, { x: number; y: number }>())
-  const animatedRef = useRef(new Set<string>()) // track nodes that have played entrance animation
+  const animatedRef = useRef(new Set<string>())
   const agrexNodesRef = useRef<AgrexNode[]>(nodes)
   const [autoFit, setAutoFit] = useState(fitOnUpdate)
+  const layoutVersionRef = useRef(0) // to discard stale async results
   const relayoutRequestedRef = useRef(false)
-  const [relayoutTick, setRelayoutTick] = useState(0) // only used to trigger useEffect
+  const [relayoutTick, setRelayoutTick] = useState(0)
 
   const edgeColors = { ...DEFAULT_EDGE_COLORS, ...userEdgeColors }
-
   const nodeTypes: NodeTypes = { ...BUILT_IN_NODE_TYPES, ...(nodeRenderers ?? {}), default_agrex: DefaultNode }
 
   useEffect(() => { agrexNodesRef.current = nodes }, [nodes])
 
-  useEffect(() => {
-    if (nodes.length === 0) {
-      posRef.current.clear()
-      animatedRef.current.clear()
-      setAutoFit(fitOnUpdate)
-      setFlowNodes([])
-      setFlowEdges([])
-      return
-    }
-
-    // Prune positions for nodes that no longer exist (handles clear+addNode batching)
-    const currentIds = new Set(nodes.map(n => n.id))
-    for (const id of posRef.current.keys()) {
-      if (!currentIds.has(id)) posRef.current.delete(id)
-    }
-
-    // If relayout was requested, clear all positions so force runs on everything unpinned
-    if (relayoutRequestedRef.current && nodes.length > 0) {
-      relayoutRequestedRef.current = false
-      posRef.current.clear()
-    }
-
-    const layoutFn = typeof layout === 'function' ? layout : layout === 'force' ? forceLayout : radialLayout
-    const newPositions = layoutFn(nodes, edges, posRef.current)
-
+  // Apply positions to React Flow once layout resolves
+  const applyPositions = useCallback((
+    newPositions: Map<string, { x: number; y: number }>,
+    currentNodes: AgrexNode[],
+    currentEdges: AgrexEdge[],
+  ) => {
     let newest: AgrexNode | null = null
-    for (const nd of nodes) {
+    for (const nd of currentNodes) {
       if (!posRef.current.has(nd.id) && newPositions.has(nd.id)) newest = nd
     }
     posRef.current = newPositions
 
-    // Build flow nodes, marking new ones for entrance animation
-    const flowNodeList = nodes.filter((n) => posRef.current.has(n.id)).map((n) => {
+    const flowNodeList = currentNodes.filter((n) => posRef.current.has(n.id)).map((n) => {
       const isCustomType = !(n.type in BUILT_IN_NODE_TYPES) && !(n.type in (nodeRenderers ?? {}))
       const isNew = !animatedRef.current.has(n.id)
       if (isNew) animatedRef.current.add(n.id)
@@ -112,7 +90,7 @@ export default function Graph({
     setFlowNodes(flowNodeList as Node[])
 
     setFlowEdges(
-      edges.filter((e) => posRef.current.has(e.source) && posRef.current.has(e.target)).map((e) => {
+      currentEdges.filter((e) => posRef.current.has(e.source) && posRef.current.has(e.target)).map((e) => {
         const kind = e.type ?? 'spawn'
         return {
           id: e.id, source: e.source, target: e.target,
@@ -125,7 +103,7 @@ export default function Graph({
 
     if (newest) onNewestNode?.(newest)
 
-    if (autoFit && newest) {
+    if (autoFit) {
       const rf = rfRef.current
       if (rf) {
         setTimeout(() => {
@@ -140,7 +118,43 @@ export default function Graph({
         }, 60)
       }
     }
-  }, [nodes, edges, layout, autoFit, fitOnUpdate, nodeIcons, nodeRenderers, setFlowNodes, setFlowEdges, onNewestNode, relayoutTick])
+  }, [autoFit, edgeColors, nodeIcons, nodeRenderers, onNewestNode, setFlowEdges, setFlowNodes])
+
+  useEffect(() => {
+    if (nodes.length === 0) {
+      posRef.current.clear()
+      animatedRef.current.clear()
+      setAutoFit(fitOnUpdate)
+      setFlowNodes([])
+      setFlowEdges([])
+      return
+    }
+
+    // Prune positions for nodes that no longer exist
+    const currentIds = new Set(nodes.map(n => n.id))
+    for (const id of posRef.current.keys()) {
+      if (!currentIds.has(id)) posRef.current.delete(id)
+    }
+
+    // Track this layout call version to discard stale results
+    const version = ++layoutVersionRef.current
+    const isRelayout = relayoutRequestedRef.current
+    if (isRelayout) relayoutRequestedRef.current = false
+
+    // Snapshot current state for the async callback
+    const snapNodes = [...nodes]
+    const snapEdges = [...edges]
+
+    const layoutPromise = isRelayout
+      ? elkFullRelayout(snapNodes, snapEdges)
+      : elkStressLayout(snapNodes, snapEdges, posRef.current)
+
+    layoutPromise.then(newPositions => {
+      // Discard if a newer layout has been triggered
+      if (version !== layoutVersionRef.current) return
+      applyPositions(newPositions, snapNodes, snapEdges)
+    })
+  }, [nodes, edges, layout, fitOnUpdate, applyPositions, setFlowNodes, setFlowEdges, relayoutTick])
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {

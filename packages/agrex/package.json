@@ -33,6 +33,7 @@
   "dependencies": {
     "@dagrejs/dagre": "^3.0.0",
     "d3-force": "^3.0.0",
+    "elkjs": "^0.11.1",
     "lucide-react": "^0.475.0"
   },
   "devDependencies": {

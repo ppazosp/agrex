@@ -1,0 +1,13 @@
+{
+  "name": "agrex-monorepo",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter playground dev",
+    "build": "pnpm --filter agrex build",
+    "test": "pnpm --filter agrex test",
+    "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

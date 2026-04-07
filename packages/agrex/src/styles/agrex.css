@@ -7,17 +7,18 @@
   box-shadow: none !important;
 }
 
-.agrex .react-flow__node {
+/* Entrance animation — only for newly added nodes */
+.agrex .react-flow__node.agrex-new {
   animation: agrex-node-fade 0.5s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+.agrex .react-flow__node.agrex-new > div {
+  animation: agrex-node-pop 0.5s cubic-bezier(0.23, 1, 0.32, 1) both;
 }
 
 @keyframes agrex-node-fade {
   from { opacity: 0; }
   to   { opacity: 1; }
-}
-
-.agrex .react-flow__node > div {
-  animation: agrex-node-pop 0.5s cubic-bezier(0.23, 1, 0.32, 1) both;
 }
 
 @keyframes agrex-node-pop {

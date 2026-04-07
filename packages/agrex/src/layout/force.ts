@@ -152,16 +152,16 @@ export const forceLayout: LayoutFn = (nodes, edges, existingPositions) => {
   const sim = forceSimulation<SimNode>(simNodes)
     .force('link', forceLink<SimNode, SimLink>(simLinks)
       .id(d => d.id)
-      .distance(160)
-      .strength(0.3))
-    .force('charge', forceManyBody<SimNode>().strength(-200).distanceMax(500))
-    .force('centerX', forceX<SimNode>(0).strength(0.02))
-    .force('centerY', forceY<SimNode>(0).strength(0.02))
+      .distance(200)
+      .strength(0.4))
+    .force('charge', forceManyBody<SimNode>().strength(-400).distanceMax(800))
+    .force('centerX', forceX<SimNode>(0).strength(0.01))
+    .force('centerY', forceY<SimNode>(0).strength(0.01))
     .force('collide', forceRectCollide(PADDING))
     .stop()
 
-  // Run ticks synchronously
-  const ticks = newNodeIds.size <= 3 ? 80 : 120
+  // Run ticks synchronously — more ticks for larger batches
+  const ticks = newNodeIds.size <= 3 ? 100 : 150
   for (let i = 0; i < ticks; i++) {
     sim.tick()
   }

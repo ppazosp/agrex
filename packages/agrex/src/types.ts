@@ -1,3 +1,5 @@
+import type React from 'react'
+
 /** A node in the agent execution graph. */
 export interface AgrexNode {
   id: string

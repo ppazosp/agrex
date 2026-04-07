@@ -1,4 +1,4 @@
-import type { AgrexNode, AgrexEdge, LayoutFn } from '../types'
+import type { LayoutFn } from '../types'
 
 const GOLDEN_ANGLE = 2.399963229728653
 const BASE_R = 140

@@ -16,7 +16,9 @@
     },
     "./styles.css": "./dist/styles.css"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -24,22 +26,24 @@
     "test:watch": "vitest"
   },
   "peerDependencies": {
+    "@xyflow/react": ">=12",
     "react": ">=18",
-    "react-dom": ">=18",
-    "@xyflow/react": ">=12"
+    "react-dom": ">=18"
   },
   "dependencies": {
     "lucide-react": "^0.475.0"
   },
   "devDependencies": {
-    "@xyflow/react": "^12.6.0",
-    "@testing-library/react": "^16.0.0",
     "@testing-library/jest-dom": "^6.0.0",
+    "@testing-library/react": "^16.0.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@xyflow/react": "^12.6.0",
     "jsdom": "^25.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tsup": "^8.0.0",
-    "vitest": "^2.0.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^2.0.0"
   }
 }

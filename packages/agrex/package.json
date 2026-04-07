@@ -14,7 +14,7 @@
       "import": "./dist/mocks/index.js",
       "types": "./dist/mocks/index.d.ts"
     },
-    "./styles.css": "./dist/styles.css"
+    "./styles.css": "./dist/index.css"
   },
   "files": [
     "dist"

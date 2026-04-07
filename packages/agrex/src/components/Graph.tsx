@@ -81,16 +81,14 @@ export default function Graph({
       if (!currentIds.has(id)) posRef.current.delete(id)
     }
 
-    // If relayout was requested, do a full dagre layout from scratch (one-shot)
-    let newPositions: Map<string, { x: number; y: number }>
+    // If relayout was requested, clear all positions so force runs on everything unpinned
     if (relayoutRequestedRef.current && nodes.length > 0) {
       relayoutRequestedRef.current = false
       posRef.current.clear()
-      newPositions = dagreLayout(nodes, edges)
-    } else {
-      const layoutFn = typeof layout === 'function' ? layout : layout === 'force' ? forceLayout : radialLayout
-      newPositions = layoutFn(nodes, edges, posRef.current)
     }
+
+    const layoutFn = typeof layout === 'function' ? layout : layout === 'force' ? forceLayout : radialLayout
+    const newPositions = layoutFn(nodes, edges, posRef.current)
 
     let newest: AgrexNode | null = null
     for (const nd of nodes) {

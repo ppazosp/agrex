@@ -26,6 +26,7 @@ export { resolveTheme } from './theme/tokens'
 
 // Layout
 export { radialLayout } from './layout/radial'
+export { forceLayout } from './layout/force'
 
 // Node components (for advanced customization)
 export { default as AgentNode } from './nodes/AgentNode'

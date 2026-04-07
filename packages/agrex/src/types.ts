@@ -46,7 +46,7 @@ export type LayoutFn = (
   positions: Map<string, { x: number; y: number }>,
 ) => Map<string, { x: number; y: number }>
 
-export type Layout = 'radial' | LayoutFn
+export type Layout = 'radial' | 'force' | LayoutFn
 
 export interface AgrexProps {
   nodes?: AgrexNode[]

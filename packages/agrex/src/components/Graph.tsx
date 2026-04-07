@@ -13,6 +13,7 @@ import {
   AgentNode, SubAgentNode, ToolNode, FileNode, OutputNode, SearchNode, DefaultNode,
 } from '../nodes'
 import { radialLayout } from '../layout/radial'
+import { forceLayout } from '../layout/force'
 import Controls from './Controls'
 import type { AgrexNode, AgrexEdge, ResolvedTheme, LayoutFn } from '../types'
 import { themeToCSS } from '../theme/tokens'
@@ -26,7 +27,7 @@ interface GraphInternalProps {
   nodes: AgrexNode[]
   edges: AgrexEdge[]
   theme: ResolvedTheme
-  layout: 'radial' | LayoutFn
+  layout: 'radial' | 'force' | LayoutFn
   nodeRenderers?: Record<string, React.ComponentType<any>>
   nodeIcons?: Record<string, React.ComponentType<{ size: number }>>
   edgeColors?: Record<string, string>
@@ -75,7 +76,7 @@ export default function Graph({
       if (!currentIds.has(id)) posRef.current.delete(id)
     }
 
-    const layoutFn = typeof layout === 'function' ? layout : radialLayout
+    const layoutFn = typeof layout === 'function' ? layout : layout === 'force' ? forceLayout : radialLayout
     const newPositions = layoutFn(nodes, edges, posRef.current)
 
     let newest: AgrexNode | null = null

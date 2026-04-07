@@ -9,7 +9,7 @@ import '../styles/agrex.css'
 
 export default function Agrex({
   nodes: staticNodes, edges: staticEdges, instance, onNodeClick, theme: themeProp,
-  layout = 'radial', nodeRenderers, nodeIcons, edgeColors,
+  layout = 'force', nodeRenderers, nodeIcons, edgeColors,
   showControls = true, showLegend = true, showToasts = true, showDetailPanel = true, fitOnUpdate = true,
 }: AgrexProps) {
   const theme = resolveTheme(themeProp)

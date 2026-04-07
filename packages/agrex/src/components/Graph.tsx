@@ -67,6 +67,12 @@ export default function Graph({
       return
     }
 
+    // Prune positions for nodes that no longer exist (handles clear+addNode batching)
+    const currentIds = new Set(nodes.map(n => n.id))
+    for (const id of posRef.current.keys()) {
+      if (!currentIds.has(id)) posRef.current.delete(id)
+    }
+
     const layoutFn = typeof layout === 'function' ? layout : radialLayout
     const newPositions = layoutFn(nodes, edges, posRef.current)
 

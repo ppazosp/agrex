@@ -14,6 +14,7 @@ import {
 } from '../nodes'
 import { radialLayout } from '../layout/radial'
 import { forceLayout } from '../layout/force'
+import { dagreLayout } from '../layout/dagre'
 import Controls from './Controls'
 import type { AgrexNode, AgrexEdge, ResolvedTheme, LayoutFn } from '../types'
 import { themeToCSS } from '../theme/tokens'
@@ -55,6 +56,7 @@ export default function Graph({
   const animatedRef = useRef(new Set<string>()) // track nodes that have played entrance animation
   const agrexNodesRef = useRef<AgrexNode[]>(nodes)
   const [autoFit, setAutoFit] = useState(fitOnUpdate)
+  const [relayoutTrigger, setRelayoutTrigger] = useState(0)
 
   const edgeColors = { ...DEFAULT_EDGE_COLORS, ...userEdgeColors }
 
@@ -78,8 +80,14 @@ export default function Graph({
       if (!currentIds.has(id)) posRef.current.delete(id)
     }
 
-    const layoutFn = typeof layout === 'function' ? layout : layout === 'force' ? forceLayout : radialLayout
-    const newPositions = layoutFn(nodes, edges, posRef.current)
+    // If relayout was triggered, do a full dagre layout from scratch
+    let newPositions: Map<string, { x: number; y: number }>
+    if (relayoutTrigger > 0 && posRef.current.size > 0) {
+      newPositions = dagreLayout(nodes, edges)
+    } else {
+      const layoutFn = typeof layout === 'function' ? layout : layout === 'force' ? forceLayout : radialLayout
+      newPositions = layoutFn(nodes, edges, posRef.current)
+    }
 
     let newest: AgrexNode | null = null
     for (const nd of nodes) {
@@ -131,7 +139,7 @@ export default function Graph({
         }, 60)
       }
     }
-  }, [nodes, edges, layout, autoFit, fitOnUpdate, nodeIcons, nodeRenderers, setFlowNodes, setFlowEdges, onNewestNode])
+  }, [nodes, edges, layout, autoFit, fitOnUpdate, nodeIcons, nodeRenderers, setFlowNodes, setFlowEdges, onNewestNode, relayoutTrigger])
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
@@ -162,6 +170,7 @@ export default function Graph({
           onZoomIn={() => rfRef.current?.zoomIn({ duration: 200 })}
           onZoomOut={() => rfRef.current?.zoomOut({ duration: 200 })}
           autoFit={autoFit}
+          onRelayout={() => setRelayoutTrigger(v => v + 1)}
           onToggleAutoFit={() => {
             setAutoFit(v => {
               if (!v) {

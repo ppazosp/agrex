@@ -5,9 +5,10 @@ interface ControlsProps {
   onZoomOut: () => void
   autoFit: boolean
   onToggleAutoFit: () => void
+  onRelayout: () => void
 }
 
-export default function Controls({ onZoomIn, onZoomOut, autoFit, onToggleAutoFit }: ControlsProps) {
+export default function Controls({ onZoomIn, onZoomOut, autoFit, onToggleAutoFit, onRelayout }: ControlsProps) {
   const [collapsed, setCollapsed] = useState(false)
 
   const btnStyle: React.CSSProperties = {
@@ -38,6 +39,15 @@ export default function Controls({ onZoomIn, onZoomOut, autoFit, onToggleAutoFit
             <circle cx="12" cy="12" r="3" /><path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
           </svg>
         </button>
+        {/* Separator */}
+        <div style={{ width: 1, height: 16, background: 'var(--agrex-node-border)', margin: '0 2px' }} />
+        <button onClick={onRelayout} title="Clean layout" style={btnStyle}
+          onMouseEnter={e => (e.currentTarget.style.opacity = '1')} onMouseLeave={e => (e.currentTarget.style.opacity = '0.4')}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
+          </svg>
+        </button>
+        <div style={{ width: 1, height: 16, background: 'var(--agrex-node-border)', margin: '0 2px' }} />
         <button onClick={onZoomOut} title="Zoom out" style={btnStyle}
           onMouseEnter={e => (e.currentTarget.style.opacity = '1')} onMouseLeave={e => (e.currentTarget.style.opacity = '0.4')}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">

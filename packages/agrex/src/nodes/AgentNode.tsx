@@ -26,7 +26,7 @@ export default function AgentNode({ data }: NodeProps<AgentNodeType>) {
           overflow: 'hidden', animation: isRunning ? 'agrex-running-ring 1.5s ease-in-out infinite' : undefined,
         }}>
           <NodeHandles />
-          {Icon ? <Icon size={40} /> : <span style={{ fontSize: 28, fontWeight: 700, color: 'var(--agrex-fg)', opacity: 0.6 }}>{label.charAt(0).toUpperCase()}</span>}
+          {Icon ? <Icon size={40} /> : <span style={{ fontSize: 28, fontWeight: 700, color: 'var(--agrex-node-icon)' }}>{label.charAt(0).toUpperCase()}</span>}
         </div>
         {childCount != null && (() => {
           const badgeColor = collapsed

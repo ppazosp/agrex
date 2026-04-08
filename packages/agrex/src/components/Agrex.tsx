@@ -2,7 +2,7 @@ import { forwardRef, useCallback, useImperativeHandle, useRef, useState } from '
 import Graph, { type GraphRef } from './Graph'
 import Legend from './Legend'
 import DetailPanel from './DetailPanel'
-import Toast from './Toast'
+import ToastStack from './Toast'
 import StatsBar from './StatsBar'
 import { resolveTheme, themeToCSS } from '../theme/tokens'
 import type { AgrexNode, AgrexProps, AgrexHandle } from '../types'
@@ -11,7 +11,7 @@ import '../styles/agrex.css'
 const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex({
   nodes: staticNodes, edges: staticEdges, instance, onNodeClick, onEdgeClick, theme: themeProp,
   layout = 'force', nodeRenderers, toolIcons, fileIcons, edgeColors, className,
-  showControls = true, showLegend = true, showToasts = false, showDetailPanel = true,
+  showControls = true, showLegend = true, showToasts = true, showDetailPanel = true,
   showMinimap = false, showStats = false, fitOnUpdate = true, keyboardShortcuts = true,
   animateEdges = true,
 }, ref) {
@@ -21,7 +21,6 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex({
 
   const [selectedNode, setSelectedNode] = useState<AgrexNode | null>(null)
   const [toastNode, setToastNode] = useState<AgrexNode | null>(null)
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const graphRef = useRef<GraphRef>(null)
 
   useImperativeHandle(ref, () => ({
@@ -38,9 +37,8 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex({
 
   const handleNewestNode = useCallback((node: AgrexNode) => {
     if (!showToasts) return
-    if (toastTimer.current) clearTimeout(toastTimer.current)
-    setToastNode(node)
-    toastTimer.current = setTimeout(() => setToastNode(null), 2500)
+    // Each new reference triggers a toast in the stack
+    setToastNode({ ...node })
   }, [showToasts])
 
   const cssVars = themeToCSS(theme) as Record<string, string>
@@ -55,7 +53,7 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex({
       {showLegend && <Legend />}
       {showStats && <StatsBar nodes={nodes} />}
       {showDetailPanel && <DetailPanel node={selectedNode} onClose={() => setSelectedNode(null)} />}
-      {showToasts && <Toast node={toastNode} />}
+      {showToasts && <ToastStack node={toastNode} />}
     </div>
   )
 })

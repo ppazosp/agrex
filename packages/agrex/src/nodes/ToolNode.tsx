@@ -23,8 +23,9 @@ export default function ToolNode({ data }: NodeProps<ToolNodeType>) {
   return (
     <NodeTooltip label={label}>
       <div style={{
-        width: 36, height: 36, borderRadius: '50%', border: `1px solid ${border}`,
+        width: 36, height: 36, borderRadius: '50%', border: `2px solid ${border}`,
         background: 'var(--agrex-node-fill)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: 'var(--agrex-node-icon)',
         animation: isRunning ? 'agrex-running-ring 1.5s ease-in-out infinite' : undefined,
       }}>
         <NodeHandles />

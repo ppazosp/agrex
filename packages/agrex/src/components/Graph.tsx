@@ -386,7 +386,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
     if (newest) onNewestNodeRef.current?.(newest)
 
     if (autoFitRef.current && newest) {
-      scheduleTimer(fitView, 60)
+      scheduleTimer(() => centerView(true), 60)
     }
 
   }, [visibleNodes, visibleEdges, fitOnUpdate, collapsedNodes, childCounts, childrenAllDoneMap, scheduleTimer])
@@ -427,7 +427,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
     [onEdgeClick],
   )
 
-  const fitView = useCallback(() => {
+  const centerView = useCallback((onlyZoomOut: boolean) => {
     const rf = rfRef.current
     if (!rf) return
     const el = containerRef.current
@@ -437,10 +437,10 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
     for (const [, pos] of posRef.current) maxDist = Math.max(maxDist, Math.hypot(pos.x + 40, pos.y + 40))
     const halfSize = Math.min(vw, vh) / 2
     const needed = Math.min(1, halfSize / (maxDist + 40))
-    const currentZoom = rf.getZoom()
-    const zoom = Math.min(currentZoom, needed)
+    const zoom = onlyZoomOut ? Math.min(rf.getZoom(), needed) : needed
     rf.setCenter(40, 40, { zoom: Math.max(0.15, zoom), duration: 300 })
   }, [])
+  const fitView = useCallback(() => centerView(false), [centerView])
 
   useImperativeHandle(ref, () => ({
     fitView,

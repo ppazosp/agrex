@@ -69,21 +69,11 @@ function getFileIcon(
   return fileIcons[label.slice(dot + 1)]
 }
 
-/** Compute elapsed time string from metadata startedAt/endedAt */
+import { formatElapsed } from '../utils/formatElapsed'
+
 function getElapsed(metadata?: Record<string, unknown>): string | undefined {
   if (!metadata) return undefined
-  const start = metadata.startedAt as number | string | undefined
-  const end = metadata.endedAt as number | string | undefined
-  if (!start) return undefined
-  const startMs = typeof start === 'number' ? start : new Date(start).getTime()
-  if (Number.isNaN(startMs)) return undefined
-  const endMs = end ? (typeof end === 'number' ? end : new Date(end).getTime()) : Date.now()
-  if (Number.isNaN(endMs)) return undefined
-  const diff = endMs - startMs
-  if (diff < 0) return undefined
-  if (diff < 1000) return `${diff}ms`
-  if (diff < 60000) return `${(diff / 1000).toFixed(1)}s`
-  return `${(diff / 60000).toFixed(1)}m`
+  return formatElapsed(metadata.startedAt, metadata.endedAt)
 }
 
 function toFlowNode(

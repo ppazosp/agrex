@@ -1,14 +1,19 @@
 {
   "name": "agrex-monorepo",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "pnpm --filter playground dev",
     "build": "pnpm --filter agrex build",
     "test": "pnpm --filter agrex test",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "lint:eslint": "eslint packages/agrex/src/"
   },
   "devDependencies": {
-    "typescript": "^5.7.0"
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.2.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.58.1"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

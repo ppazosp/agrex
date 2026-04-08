@@ -24,6 +24,15 @@ const NODE_SIZES: Record<string, { w: number; h: number }> = {
 const DEFAULT_SIZE = { w: 48, h: 48 }
 const PADDING = 24
 
+/** Simple string hash → deterministic angle in [0, 2π). Same ID always produces same angle. */
+function hashAngle(id: string): number {
+  let h = 0
+  for (let i = 0; i < id.length; i++) {
+    h = Math.imul(31, h) + id.charCodeAt(i) | 0
+  }
+  return ((h >>> 0) / 0xFFFFFFFF) * Math.PI * 2
+}
+
 interface SimNode extends SimulationNodeDatum {
   id: string
   type: string
@@ -184,7 +193,7 @@ export const forceLayout: LayoutFn = (nodes, edges, existingPositions) => {
     } else {
       const parentPos = node.parentId ? positions.get(node.parentId) : undefined
       if (parentPos) {
-        const angle = Math.random() * Math.PI * 2
+        const angle = hashAngle(node.id)
         x = parentPos.x + Math.cos(angle) * 160
         y = parentPos.y + Math.sin(angle) * 160
       } else {

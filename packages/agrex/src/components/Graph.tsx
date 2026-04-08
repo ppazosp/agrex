@@ -205,6 +205,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
   animateEdgesRef.current = animateEdges
 
   const initRef = useRef(false)
+  const suppressMoveRef = useRef(false)
 
   // Clean up pending timers on unmount
   useEffect(() => {
@@ -386,7 +387,11 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
     if (newest) onNewestNodeRef.current?.(newest)
 
     if (autoFitRef.current && newest) {
-      scheduleTimer(fitView, 60)
+      scheduleTimer(() => {
+        suppressMoveRef.current = true
+        fitView()
+        setTimeout(() => { suppressMoveRef.current = false }, 400)
+      }, 60)
     }
 
   }, [visibleNodes, visibleEdges, fitOnUpdate, collapsedNodes, childCounts, childrenAllDoneMap, scheduleTimer])
@@ -492,7 +497,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
         onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
         onNodeClick={handleNodeClick}
         onEdgeClick={handleEdgeClick}
-        onMoveStart={() => { if (initRef.current) setAutoFit(false) }}
+        onMoveStart={() => { if (initRef.current && !suppressMoveRef.current) setAutoFit(false) }}
         onInit={(inst) => { rfRef.current = inst; inst.setCenter(40, 40, { zoom: 1 }); scheduleTimer(() => { initRef.current = true }, 200) }}
         minZoom={0.1} maxZoom={2}
         proOptions={{ hideAttribution: true }}
@@ -507,7 +512,11 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
           autoFit={autoFit}
           onToggleAutoFit={() => {
             setAutoFit(v => {
-              if (!v) fitView()
+              if (!v) {
+                suppressMoveRef.current = true
+                fitView()
+                setTimeout(() => { suppressMoveRef.current = false }, 400)
+              }
               return !v
             })
           }}

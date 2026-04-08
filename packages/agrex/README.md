@@ -372,7 +372,6 @@ agrex.loadJSON(data)
 | `+` / `=` | Zoom in |
 | `-` | Zoom out |
 | `0` | Fit to view |
-| `r` | Relayout |
 
 ## Layout engines
 

@@ -14,9 +14,7 @@ import {
   AgentNode, SubAgentNode, ToolNode, FileNode, DefaultNode,
 } from '../nodes'
 import { radialLayout } from '../layout/radial'
-import { forceLayout } from '../layout/force'
 import Controls from './Controls'
-import { dagreLayout } from '../layout/dagre'
 import type { AgrexNode, AgrexEdge, ResolvedTheme, LayoutFn } from '../types'
 import { themeToCSS } from '../theme/tokens'
 
@@ -157,7 +155,7 @@ export type GraphRef = {
 }
 
 const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
-  nodes, edges, theme, layout, nodeRenderers, toolIcons, fileIcons, edgeColors: userEdgeColors,
+  nodes, edges, theme, nodeRenderers, toolIcons, fileIcons, edgeColors: userEdgeColors,
   fitOnUpdate, showControls, keyboardShortcuts, animateEdges, onNodeClick, onEdgeClick, onNewestNode,
 }, ref) {
   const [flowNodes, setFlowNodes, onNodesChange] = useNodesState<Node>([])
@@ -387,24 +385,8 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
 
     if (newest) onNewestNodeRef.current?.(newest)
 
-    if (autoFitRef.current && newest) {
-      const rf = rfRef.current
-      if (rf) {
-        scheduleTimer(() => {
-          const el = containerRef.current
-          const vw = el?.clientWidth || 800
-          const vh = el?.clientHeight || 600
-          // Compute centroid and max distance from centroid
-          let cx = 0, cy = 0, count = 0
-          for (const [, pos] of posRef.current) { cx += pos.x; cy += pos.y; count++ }
-          if (count > 0) { cx /= count; cy /= count }
-          let maxDist = 100
-          for (const [, pos] of posRef.current) maxDist = Math.max(maxDist, Math.hypot(pos.x - cx, pos.y - cy))
-          const halfSize = Math.min(vw, vh) / 2
-          const zoom = Math.min(1, halfSize / (maxDist + 40))
-          rf.setCenter(cx, cy, { zoom: Math.max(0.15, zoom), duration: 300 })
-        }, 60)
-      }
+    if (autoFitRef.current && posRef.current.size > 0) {
+      scheduleTimer(fitView, 60)
     }
 
   }, [visibleNodes, visibleEdges, fitOnUpdate, collapsedNodes, childCounts, childrenAllDoneMap, scheduleTimer])
@@ -475,44 +457,6 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
     expandAll: () => setCollapsedNodes(new Set()),
   }), [fitView])
 
-  const handleRelayout = useCallback(() => {
-    posRef.current.clear()
-    childCountRef.current.clear()
-    prevNodeIdsRef.current = new Set()
-    prevEdgeIdsRef.current = new Set()
-    const vn = agrexNodesRef.current.filter(n => !hiddenIds.has(n.id))
-    const ve = agrexEdgesRef.current.filter(e => !hiddenIds.has(e.source) && !hiddenIds.has(e.target))
-
-    const layoutFn = typeof layout === 'function'
-      ? layout
-      : layout === 'force' ? forceLayout
-      : layout === 'dagre' ? dagreLayout
-      : null
-
-    if (layoutFn) {
-      const positions = layoutFn(vn, ve, new Map())
-      for (const [id, pos] of positions) {
-        posRef.current.set(id, pos)
-      }
-    } else {
-      for (const nd of vn) {
-        const pid = nd.parentId
-        const ci = pid ? (childCountRef.current.get(pid) ?? 0) : 0
-        if (pid) childCountRef.current.set(pid, ci + 1)
-        posRef.current.set(nd.id, radialLayout([nd], ve, posRef.current).get(nd.id) ?? { x: 0, y: 0 })
-      }
-    }
-
-    const nr = nodeRenderersRef.current
-    const ti = toolIconsRef.current
-    const fi = fileIconsRef.current
-    const ec = edgeColorsRef.current
-    const ae = animateEdgesRef.current
-    setFlowNodes(vn.filter(n => posRef.current.has(n.id)).map(n => toFlowNode(n, posRef.current.get(n.id)!, nr, ti, fi, collapsedNodes, childCounts, childrenAllDoneMap)))
-    setFlowEdges(ve.filter(e => posRef.current.has(e.source) && posRef.current.has(e.target)).map(e => toFlowEdge(e, ec, ae)))
-    scheduleTimer(fitView, 60)
-  }, [fitView, layout, collapsedNodes, hiddenIds, childCounts, childrenAllDoneMap, scheduleTimer])
-
   // Keyboard shortcuts
   useEffect(() => {
     if (!keyboardShortcuts) return
@@ -532,14 +476,11 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
         case '0':
           fitView()
           break
-        case 'r':
-          handleRelayout()
-          break
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [keyboardShortcuts, fitView, handleRelayout])
+  }, [keyboardShortcuts, fitView])
 
   const cssVars = themeToCSS(theme)
 
@@ -564,7 +505,6 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
           onZoomIn={() => rfRef.current?.zoomIn({ duration: 200 })}
           onZoomOut={() => rfRef.current?.zoomOut({ duration: 200 })}
           autoFit={autoFit}
-          onRelayout={handleRelayout}
           onToggleAutoFit={() => {
             setAutoFit(v => {
               if (!v) fitView()

@@ -42,6 +42,35 @@ const DEFAULT_EDGE_COLORS: Record<string, string> = {
   read: 'var(--agrex-edge-read)',
 }
 
+function toFlowNode(
+  n: AgrexNode,
+  pos: { x: number; y: number },
+  nodeRenderers: Record<string, React.ComponentType<any>> | undefined,
+  nodeIcons: Record<string, React.ComponentType<{ size: number }>> | undefined,
+): Node {
+  const isCustomType = !(n.type in BUILT_IN_NODE_TYPES) && !(n.type in (nodeRenderers ?? {}))
+  return {
+    id: n.id,
+    type: isCustomType ? 'default_agrex' : n.type,
+    data: { label: n.label, status: n.status ?? 'idle', icon: nodeIcons?.[n.type], ...n.metadata },
+    position: pos,
+  } as Node
+}
+
+function toFlowEdge(e: AgrexEdge, edgeColors: Record<string, string>): Edge {
+  const kind = e.type ?? 'spawn'
+  return {
+    id: e.id,
+    source: e.source,
+    target: e.target,
+    sourceHandle: 'center-out',
+    targetHandle: 'center-in',
+    type: 'straight',
+    animated: true,
+    style: { stroke: edgeColors[kind] ?? 'var(--agrex-edge-default)', strokeWidth: 1.5 },
+  } as Edge
+}
+
 export default function Graph({
   nodes, edges, theme, nodeRenderers, nodeIcons, edgeColors: userEdgeColors,
   fitOnUpdate, showControls, onNodeClick, onNewestNode,
@@ -53,9 +82,13 @@ export default function Graph({
   const posRef = useRef(new Map<string, { x: number; y: number }>())
   const childCountRef = useRef(new Map<string, number>())
   const agrexNodesRef = useRef<AgrexNode[]>(nodes)
+  const prevNodeIdsRef = useRef(new Set<string>())
+  const prevEdgeIdsRef = useRef(new Set<string>())
   const [autoFit, setAutoFit] = useState(fitOnUpdate)
 
-  const edgeColors = { ...DEFAULT_EDGE_COLORS, ...userEdgeColors }
+  const edgeColorsRef = useRef(DEFAULT_EDGE_COLORS)
+  edgeColorsRef.current = { ...DEFAULT_EDGE_COLORS, ...userEdgeColors }
+
   const nodeTypes: NodeTypes = { ...BUILT_IN_NODE_TYPES, ...(nodeRenderers ?? {}), default_agrex: DefaultNode }
 
   useEffect(() => { agrexNodesRef.current = nodes }, [nodes])
@@ -64,13 +97,15 @@ export default function Graph({
     if (nodes.length === 0) {
       posRef.current.clear()
       childCountRef.current.clear()
+      prevNodeIdsRef.current.clear()
+      prevEdgeIdsRef.current.clear()
       setAutoFit(fitOnUpdate)
       setFlowNodes([])
       setFlowEdges([])
       return
     }
 
-    // Prune positions for nodes that no longer exist (handles clear+addNode batching)
+    // Prune positions for nodes that no longer exist
     const currentIds = new Set(nodes.map(n => n.id))
     for (const id of posRef.current.keys()) {
       if (!currentIds.has(id)) posRef.current.delete(id)
@@ -79,52 +114,86 @@ export default function Graph({
       if (!currentIds.has(id)) childCountRef.current.delete(id)
     }
 
-    // Build parent lookup from parentId
-    const parentOf = new Map<string, string>()
-    for (const node of nodes) {
-      if (node.parentId) parentOf.set(node.id, node.parentId)
-    }
-
     // Place new nodes using radial layout
     let newest: AgrexNode | null = null
+    const newNodes: AgrexNode[] = []
+
     for (const nd of nodes) {
       if (posRef.current.has(nd.id)) continue
 
-      const pid = parentOf.get(nd.id)
+      const pid = nd.parentId
       if (pid && !posRef.current.has(pid) && posRef.current.size > 0) continue
       if (!pid && posRef.current.size > 0) continue
 
-      const parentPos = pid ? posRef.current.get(pid) : undefined
       const ci = pid ? (childCountRef.current.get(pid) ?? 0) : 0
       if (pid) childCountRef.current.set(pid, ci + 1)
 
       posRef.current.set(nd.id, radialLayout([nd], edges, posRef.current).get(nd.id) ?? { x: 0, y: 0 })
       newest = nd
+      newNodes.push(nd)
     }
 
-    // Build flow nodes
-    const flowNodeList = nodes.filter((n) => posRef.current.has(n.id)).map((n) => {
-      const isCustomType = !(n.type in BUILT_IN_NODE_TYPES) && !(n.type in (nodeRenderers ?? {}))
-      return {
-        id: n.id,
-        type: isCustomType ? 'default_agrex' : n.type,
-        data: { label: n.label, status: n.status ?? 'idle', icon: nodeIcons?.[n.type], ...n.metadata },
-        position: posRef.current.get(n.id)!,
+    // Check which nodes need status updates
+    const updatedNodes: AgrexNode[] = []
+    for (const nd of nodes) {
+      if (!newNodes.includes(nd) && prevNodeIdsRef.current.has(nd.id)) {
+        updatedNodes.push(nd)
       }
-    })
-    setFlowNodes(flowNodeList as Node[])
+    }
 
-    setFlowEdges(
-      edges.filter((e) => posRef.current.has(e.source) && posRef.current.has(e.target)).map((e) => {
-        const kind = e.type ?? 'spawn'
-        return {
-          id: e.id, source: e.source, target: e.target,
-          sourceHandle: 'center-out', targetHandle: 'center-in',
-          type: 'straight' as const, animated: true,
-          style: { stroke: edgeColors[kind] ?? 'var(--agrex-edge-default)', strokeWidth: 1.5 },
-        }
-      }),
-    )
+    // Determine new edges
+    const currentEdgeIds = new Set(edges.filter(e => posRef.current.has(e.source) && posRef.current.has(e.target)).map(e => e.id))
+    const newEdges = edges.filter(e => !prevEdgeIdsRef.current.has(e.id) && posRef.current.has(e.source) && posRef.current.has(e.target))
+    const removedEdgeIds = [...prevEdgeIdsRef.current].filter(id => !currentEdgeIds.has(id))
+
+    // Incremental updates — only touch what changed
+    const ec = edgeColorsRef.current
+
+    if (prevNodeIdsRef.current.size === 0) {
+      // First render — set everything
+      setFlowNodes(nodes.filter(n => posRef.current.has(n.id)).map(n => toFlowNode(n, posRef.current.get(n.id)!, nodeRenderers, nodeIcons)))
+      setFlowEdges(edges.filter(e => posRef.current.has(e.source) && posRef.current.has(e.target)).map(e => toFlowEdge(e, ec)))
+    } else {
+      // Incremental — add new nodes, update changed nodes, add/remove edges
+      if (newNodes.length > 0 || updatedNodes.length > 0 || [...prevNodeIdsRef.current].some(id => !currentIds.has(id))) {
+        setFlowNodes(prev => {
+          // Remove nodes no longer present
+          let result = prev.filter(fn => currentIds.has(fn.id))
+          // Update existing nodes (status changes etc)
+          result = result.map(fn => {
+            const agrexNode = nodes.find(n => n.id === fn.id)
+            if (!agrexNode) return fn
+            const newStatus = agrexNode.status ?? 'idle'
+            const oldStatus = (fn.data as any)?.status
+            if (newStatus === oldStatus) return fn // no change, keep same reference
+            return toFlowNode(agrexNode, posRef.current.get(agrexNode.id)!, nodeRenderers, nodeIcons)
+          })
+          // Add new nodes
+          for (const nd of newNodes) {
+            result.push(toFlowNode(nd, posRef.current.get(nd.id)!, nodeRenderers, nodeIcons))
+          }
+          return result
+        })
+      }
+
+      if (newEdges.length > 0 || removedEdgeIds.length > 0) {
+        setFlowEdges(prev => {
+          let result = prev
+          if (removedEdgeIds.length > 0) {
+            const removeSet = new Set(removedEdgeIds)
+            result = result.filter(fe => !removeSet.has(fe.id))
+          }
+          for (const e of newEdges) {
+            result = [...result, toFlowEdge(e, ec)]
+          }
+          return result
+        })
+      }
+    }
+
+    // Track state for next render
+    prevNodeIdsRef.current = currentIds
+    prevEdgeIdsRef.current = currentEdgeIds
 
     if (newest) onNewestNode?.(newest)
 
@@ -143,7 +212,8 @@ export default function Graph({
         }, 60)
       }
     }
-  }, [nodes, edges, autoFit, fitOnUpdate, nodeIcons, nodeRenderers, setFlowNodes, setFlowEdges, onNewestNode])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodes, edges, fitOnUpdate])
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {

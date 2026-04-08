@@ -35,9 +35,21 @@ export default function DetailPanel({ node, onClose }: DetailPanelProps) {
             <span style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--agrex-fg)', opacity: 0.5 }}>{node.status}</span>
           </div>
         )}
+        {node.status === 'error' && !!node.metadata?.error && (
+          <div style={{
+            marginBottom: 8, padding: '6px 8px', borderRadius: 6,
+            background: 'color-mix(in srgb, var(--agrex-status-error) 10%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--agrex-status-error) 30%, transparent)',
+          }}>
+            <div style={{ fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--agrex-status-error)', opacity: 0.8, marginBottom: 2 }}>Error</div>
+            <div style={{ fontSize: 12, fontFamily: 'var(--agrex-font-mono)', color: 'var(--agrex-fg)', opacity: 0.8, wordBreak: 'break-all' }}>
+              {String(typeof node.metadata.error === 'string' ? node.metadata.error : JSON.stringify(node.metadata.error))}
+            </div>
+          </div>
+        )}
         {node.metadata && Object.keys(node.metadata).length > 0 && (
           <div style={{ fontSize: 12, fontFamily: 'var(--agrex-font-mono)', lineHeight: 1.6 }}>
-            {Object.entries(node.metadata).map(([key, value]) => (
+            {Object.entries(node.metadata).filter(([key]) => key !== 'error' || node.status !== 'error').map(([key, value]) => (
               <div key={key} style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
                 <span style={{ color: 'var(--agrex-fg)', opacity: 0.4, flexShrink: 0 }}>{key}:</span>
                 <span style={{ color: 'var(--agrex-fg)', opacity: 0.7, wordBreak: 'break-all' }}>

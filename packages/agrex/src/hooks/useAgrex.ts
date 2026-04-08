@@ -55,6 +55,10 @@ function createStore() {
       state = { nodes: [], edges: [] }
       emit()
     },
+    loadJSON: (data: { nodes: AgrexNode[]; edges: AgrexEdge[] }) => {
+      state = { nodes: [...data.nodes], edges: [...data.edges] }
+      emit()
+    },
   }
 }
 
@@ -82,5 +86,6 @@ export function useAgrex(): UseAgrexReturn {
     addEdges: useCallback((edges: AgrexEdge[]) => store.addEdges(edges), [store]),
     removeEdge: useCallback((id: string) => store.removeEdge(id), [store]),
     clear: useCallback(() => store.clear(), [store]),
+    loadJSON: useCallback((data: { nodes: AgrexNode[]; edges: AgrexEdge[] }) => store.loadJSON(data), [store]),
   }
 }

@@ -1,18 +1,20 @@
-import { useCallback, useRef, useState } from 'react'
-import Graph from './Graph'
+import { forwardRef, useCallback, useImperativeHandle, useRef, useState } from 'react'
+import Graph, { type GraphRef } from './Graph'
 import Legend from './Legend'
 import DetailPanel from './DetailPanel'
 import Toast from './Toast'
+import StatsBar from './StatsBar'
 import { resolveTheme, themeToCSS } from '../theme/tokens'
-import type { AgrexNode, AgrexProps } from '../types'
+import type { AgrexNode, AgrexProps, AgrexHandle } from '../types'
 import '../styles/agrex.css'
 
-export default function Agrex({
+const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex({
   nodes: staticNodes, edges: staticEdges, instance, onNodeClick, onEdgeClick, theme: themeProp,
-  layout = 'force', nodeRenderers, toolIcons, fileIcons, edgeColors,
+  layout = 'force', nodeRenderers, toolIcons, fileIcons, edgeColors, className,
   showControls = true, showLegend = true, showToasts = true, showDetailPanel = true,
-  showMinimap = false, fitOnUpdate = true, keyboardShortcuts = true,
-}: AgrexProps) {
+  showMinimap = false, showStats = false, fitOnUpdate = true, keyboardShortcuts = true,
+  animateEdges = true,
+}, ref) {
   const theme = resolveTheme(themeProp)
   const nodes = instance?.nodes ?? staticNodes ?? []
   const edges = instance?.edges ?? staticEdges ?? []
@@ -20,6 +22,14 @@ export default function Agrex({
   const [selectedNode, setSelectedNode] = useState<AgrexNode | null>(null)
   const [toastNode, setToastNode] = useState<AgrexNode | null>(null)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const graphRef = useRef<GraphRef>(null)
+
+  useImperativeHandle(ref, () => ({
+    fitView: () => graphRef.current?.fitView(),
+    collapseAll: () => graphRef.current?.collapseAll(),
+    expandAll: () => graphRef.current?.expandAll(),
+    toJSON: () => ({ nodes, edges }),
+  }), [nodes, edges])
 
   const handleNodeClick = useCallback((node: AgrexNode) => {
     if (showDetailPanel) setSelectedNode(node)
@@ -36,15 +46,18 @@ export default function Agrex({
   const cssVars = themeToCSS(theme) as Record<string, string>
 
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative', fontFamily: theme.fontFamily, ...cssVars } as React.CSSProperties} className="agrex">
-      <Graph nodes={nodes} edges={edges} theme={theme} layout={layout}
+    <div style={{ width: '100%', height: '100%', position: 'relative', fontFamily: theme.fontFamily, ...cssVars } as React.CSSProperties} className={className ? `agrex ${className}` : 'agrex'}>
+      <Graph ref={graphRef} nodes={nodes} edges={edges} theme={theme} layout={layout}
         nodeRenderers={nodeRenderers} toolIcons={toolIcons} fileIcons={fileIcons} edgeColors={edgeColors}
         fitOnUpdate={fitOnUpdate} showControls={showControls} showMinimap={showMinimap}
-        keyboardShortcuts={keyboardShortcuts}
+        keyboardShortcuts={keyboardShortcuts} animateEdges={animateEdges}
         onNodeClick={handleNodeClick} onEdgeClick={onEdgeClick} onNewestNode={handleNewestNode} />
       {showLegend && <Legend />}
+      {showStats && <StatsBar nodes={nodes} />}
       {showDetailPanel && <DetailPanel node={selectedNode} onClose={() => setSelectedNode(null)} />}
       {showToasts && <Toast node={toastNode} />}
     </div>
   )
-}
+})
+
+export default Agrex

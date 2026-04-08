@@ -38,13 +38,16 @@ export default function AgentNode({ data }: NodeProps<AgentNodeType>) {
         {elapsed && <NodeBadge text={elapsed} />}
         {tokens != null && <NodeBadge text={`${formatTokens(tokens)} tok`} />}
         {cost != null && !tokens && <NodeBadge text={`$${cost.toFixed(4)}`} />}
-        {collapsed && (
+        {childCount != null && (
           <div style={{
             position: 'absolute', bottom: -8, left: '50%', transform: 'translateX(-50%)', zIndex: 10,
-            background: 'var(--agrex-accent)', borderRadius: 8, padding: '0 6px',
-            fontSize: 9, lineHeight: '16px', color: '#fff', whiteSpace: 'nowrap',
+            background: collapsed ? 'var(--agrex-accent)' : 'var(--agrex-node-fill)',
+            border: collapsed ? 'none' : '1px solid var(--agrex-node-border)',
+            borderRadius: 8, padding: '0 6px',
+            fontSize: 9, lineHeight: '16px', color: collapsed ? '#fff' : 'var(--agrex-fg)',
+            opacity: collapsed ? 1 : 0.6, whiteSpace: 'nowrap',
           }}>
-            {childCount ?? '+'} collapsed
+            {collapsed ? `${childCount} collapsed` : childCount}
           </div>
         )}
       </div>

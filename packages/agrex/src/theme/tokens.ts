@@ -2,9 +2,15 @@ import type { ResolvedTheme, Theme } from '../types'
 import { darkTheme } from './dark'
 import { lightTheme } from './light'
 
+function prefersDark(): boolean {
+  if (typeof window === 'undefined') return true
+  return window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? true
+}
+
 export function resolveTheme(theme: Theme | undefined): ResolvedTheme {
   if (!theme || theme === 'dark') return darkTheme
   if (theme === 'light') return lightTheme
+  if (theme === 'auto') return prefersDark() ? darkTheme : lightTheme
   return { ...darkTheme, ...theme }
 }
 

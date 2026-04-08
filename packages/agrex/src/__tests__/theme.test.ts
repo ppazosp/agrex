@@ -16,6 +16,12 @@ describe('resolveTheme', () => {
     expect(resolveTheme('light')).toEqual(lightTheme)
   })
 
+  it('resolves "auto" to dark when prefers-color-scheme is dark', () => {
+    // jsdom defaults to no matchMedia, so prefersDark() returns true
+    const result = resolveTheme('auto')
+    expect(result).toEqual(darkTheme)
+  })
+
   it('merges custom theme over dark defaults', () => {
     const custom = resolveTheme({ background: '#111', accent: '#ff0' })
     expect(custom.background).toBe('#111')

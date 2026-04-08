@@ -1,3 +1,5 @@
+'use client'
+
 // Main component
 export { default as Agrex } from './components/Agrex'
 
@@ -10,6 +12,7 @@ export type {
   AgrexEdge,
   AgrexProps,
   AgrexNodeProps,
+  AgrexHandle,
   NodeStatus,
   ThemeObject,
   Theme,
@@ -36,3 +39,4 @@ export { default as SubAgentNode } from './nodes/SubAgentNode'
 export { default as ToolNode } from './nodes/ToolNode'
 export { default as FileNode } from './nodes/FileNode'
 export { default as DefaultNode } from './nodes/DefaultNode'
+export { default as NodeBadge } from './nodes/NodeBadge'

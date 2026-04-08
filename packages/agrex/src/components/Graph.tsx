@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import {
   ReactFlow,
   MiniMap,
@@ -36,6 +36,7 @@ interface GraphInternalProps {
   showControls: boolean
   showMinimap: boolean
   keyboardShortcuts: boolean
+  animateEdges: boolean
   onNodeClick?: (node: AgrexNode) => void
   onEdgeClick?: (edge: AgrexEdge) => void
   onNewestNode?: (node: AgrexNode) => void
@@ -95,7 +96,7 @@ function toFlowNode(
   } as Node
 }
 
-function toFlowEdge(e: AgrexEdge, edgeColors: Record<string, string>): Edge {
+function toFlowEdge(e: AgrexEdge, edgeColors: Record<string, string>, animated: boolean): Edge {
   const kind = e.type ?? 'spawn'
   return {
     id: e.id,
@@ -104,7 +105,7 @@ function toFlowEdge(e: AgrexEdge, edgeColors: Record<string, string>): Edge {
     sourceHandle: 'center-out',
     targetHandle: 'center-in',
     type: 'straight',
-    animated: true,
+    animated,
     label: e.label,
     labelStyle: { fill: 'var(--agrex-fg)', fontSize: 10, opacity: 0.5 },
     labelBgStyle: { fill: 'var(--agrex-bg)', fillOpacity: 0.8 },
@@ -130,10 +131,16 @@ function getDescendants(nodeId: string, nodes: AgrexNode[]): Set<string> {
   return result
 }
 
-export default function Graph({
+export type GraphRef = {
+  fitView: () => void
+  collapseAll: () => void
+  expandAll: () => void
+}
+
+const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
   nodes, edges, theme, nodeRenderers, toolIcons, fileIcons, edgeColors: userEdgeColors,
-  fitOnUpdate, showControls, showMinimap, keyboardShortcuts, onNodeClick, onEdgeClick, onNewestNode,
-}: GraphInternalProps) {
+  fitOnUpdate, showControls, showMinimap, keyboardShortcuts, animateEdges, onNodeClick, onEdgeClick, onNewestNode,
+}, ref) {
   const [flowNodes, setFlowNodes, onNodesChange] = useNodesState<Node>([])
   const [flowEdges, setFlowEdges, onEdgesChange] = useEdgesState<Edge>([])
   const rfRef = useRef<ReactFlowInstance | null>(null)
@@ -165,10 +172,13 @@ export default function Graph({
   const visibleNodes = nodes.filter(n => !hiddenIds.has(n.id))
   const visibleEdges = edges.filter(e => !hiddenIds.has(e.source) && !hiddenIds.has(e.target))
 
-  // Count children per collapsed node for badge
+  // Count direct children for all agent/sub_agent nodes (for badge display)
   const childCounts = new Map<string, number>()
-  for (const cid of collapsedNodes) {
-    childCounts.set(cid, getDescendants(cid, nodes).size)
+  for (const n of nodes) {
+    if (n.type === 'agent' || n.type === 'sub_agent') {
+      const directChildren = nodes.filter(c => c.parentId === n.id).length
+      if (directChildren > 0) childCounts.set(n.id, directChildren)
+    }
   }
 
   useEffect(() => {
@@ -230,7 +240,7 @@ export default function Graph({
     if (prevNodeIdsRef.current.size === 0) {
       // First render — set everything
       setFlowNodes(visibleNodes.filter(n => posRef.current.has(n.id)).map(n => toFlowNode(n, posRef.current.get(n.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts)))
-      setFlowEdges(visibleEdges.filter(e => posRef.current.has(e.source) && posRef.current.has(e.target)).map(e => toFlowEdge(e, ec)))
+      setFlowEdges(visibleEdges.filter(e => posRef.current.has(e.source) && posRef.current.has(e.target)).map(e => toFlowEdge(e, ec, animateEdges)))
     } else {
       // Incremental — add new nodes, update changed nodes, add/remove edges
       if (newNodes.length > 0 || updatedNodes.length > 0 || [...prevNodeIdsRef.current].some(id => !currentIds.has(id))) {
@@ -264,7 +274,7 @@ export default function Graph({
             result = result.filter(fe => !removeSet.has(fe.id))
           }
           for (const e of newEdges) {
-            result = [...result, toFlowEdge(e, ec)]
+            result = [...result, toFlowEdge(e, ec, animateEdges)]
           }
           return result
         })
@@ -338,6 +348,20 @@ export default function Graph({
     rf.setCenter(40, 40, { zoom: Math.max(0.15, zoom), duration: 300 })
   }, [])
 
+  useImperativeHandle(ref, () => ({
+    fitView,
+    collapseAll: () => {
+      const ids = new Set<string>()
+      for (const n of agrexNodesRef.current) {
+        if ((n.type === 'agent' || n.type === 'sub_agent') && agrexNodesRef.current.some(c => c.parentId === n.id)) {
+          ids.add(n.id)
+        }
+      }
+      setCollapsedNodes(ids)
+    },
+    expandAll: () => setCollapsedNodes(new Set()),
+  }), [fitView])
+
   const handleRelayout = useCallback(() => {
     // Reset all positions and recompute layout
     posRef.current.clear()
@@ -353,7 +377,7 @@ export default function Graph({
     const vn = agrexNodesRef.current.filter(n => !hiddenIds.has(n.id))
     const ve = agrexEdgesRef.current.filter(e => !hiddenIds.has(e.source) && !hiddenIds.has(e.target))
     setFlowNodes(vn.filter(n => posRef.current.has(n.id)).map(n => toFlowNode(n, posRef.current.get(n.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts)))
-    setFlowEdges(ve.filter(e => posRef.current.has(e.source) && posRef.current.has(e.target)).map(e => toFlowEdge(e, ec)))
+    setFlowEdges(ve.filter(e => posRef.current.has(e.source) && posRef.current.has(e.target)).map(e => toFlowEdge(e, ec, animateEdges)))
     setTimeout(fitView, 60)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fitView, nodeRenderers, toolIcons, fileIcons, collapsedNodes])
@@ -430,4 +454,6 @@ export default function Graph({
       )}
     </div>
   )
-}
+})
+
+export default Graph

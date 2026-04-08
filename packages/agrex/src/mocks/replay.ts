@@ -10,14 +10,27 @@ interface Scenario {
   edges: AgrexEdge[]
 }
 
+export interface ReplayController {
+  cancel: () => void
+  pause: () => void
+  resume: () => void
+  setSpeed: (speed: number) => void
+  readonly isPaused: boolean
+  readonly isComplete: boolean
+}
+
 export function replay(
   instance: Pick<UseAgrexReturn, 'addNode' | 'addEdge' | 'updateNode' | 'clear'>,
   scenario: Scenario,
   options: ReplayOptions = {},
-): () => void {
-  const { speed = 1, delay = 150 } = options
-  const ms = delay / speed
+): ReplayController {
+  const { delay = 150 } = options
+  let speed = options.speed ?? 1
   let cancelled = false
+  let paused = false
+  let complete = false
+  let timer: ReturnType<typeof setTimeout> | null = null
+  let resumeFn: (() => void) | null = null
 
   const edgesByTarget = new Map<string, AgrexEdge[]>()
   for (const edge of scenario.edges) {
@@ -31,8 +44,17 @@ export function replay(
   const items = [...scenario.nodes]
   let i = 0
 
+  function scheduleNext(fn: () => void) {
+    timer = setTimeout(fn, delay / speed)
+  }
+
   function next() {
     if (cancelled || i >= items.length) return
+
+    if (paused) {
+      resumeFn = next
+      return
+    }
 
     const node = items[i]
     instance.addNode({ ...node, status: 'running' })
@@ -55,15 +77,36 @@ export function replay(
     i++
 
     if (i >= items.length) {
-      setTimeout(() => {
-        if (!cancelled) instance.updateNode(node.id, { status: 'done' })
-      }, ms)
+      scheduleNext(() => {
+        if (!cancelled) {
+          instance.updateNode(node.id, { status: 'done' })
+          complete = true
+        }
+      })
     } else {
-      setTimeout(next, ms)
+      scheduleNext(next)
     }
   }
 
   next()
 
-  return () => { cancelled = true }
+  return {
+    cancel: () => {
+      cancelled = true
+      if (timer) clearTimeout(timer)
+    },
+    pause: () => {
+      paused = true
+      if (timer) clearTimeout(timer)
+    },
+    resume: () => {
+      if (!paused) return
+      paused = false
+      resumeFn?.()
+      resumeFn = null
+    },
+    setSpeed: (s: number) => { speed = s },
+    get isPaused() { return paused },
+    get isComplete() { return complete },
+  }
 }

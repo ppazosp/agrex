@@ -87,8 +87,9 @@ interface AgrexProps {
   onEdgeClick?: (edge: AgrexEdge) => void
 
   // Appearance
-  theme?: 'dark' | 'light' | ThemeObject
+  theme?: 'dark' | 'light' | 'auto' | ThemeObject
   layout?: 'radial' | 'force' | LayoutFn
+  className?: string
 
   // Custom rendering
   nodeRenderers?: Record<string, React.ComponentType<AgrexNodeProps>>
@@ -102,9 +103,42 @@ interface AgrexProps {
   showToasts?: boolean             // default: true
   showDetailPanel?: boolean        // default: true
   showMinimap?: boolean            // default: false
+  showStats?: boolean              // default: false
   fitOnUpdate?: boolean            // default: true
   keyboardShortcuts?: boolean      // default: true
+  animateEdges?: boolean           // default: true
 }
+```
+
+## Imperative API
+
+Access graph methods via ref:
+
+```tsx
+import { useRef } from 'react'
+import { Agrex, type AgrexHandle } from 'agrex'
+
+function App() {
+  const ref = useRef<AgrexHandle>(null)
+
+  return (
+    <>
+      <button onClick={() => ref.current?.fitView()}>Fit</button>
+      <button onClick={() => ref.current?.collapseAll()}>Collapse All</button>
+      <button onClick={() => ref.current?.expandAll()}>Expand All</button>
+      <button onClick={() => console.log(ref.current?.toJSON())}>Export</button>
+      <Agrex ref={ref} nodes={nodes} edges={edges} />
+    </>
+  )
+}
+```
+
+## Auto theme
+
+`theme="auto"` follows the system's `prefers-color-scheme`:
+
+```tsx
+<Agrex nodes={nodes} edges={edges} theme="auto" />
 ```
 
 ## Custom icons
@@ -142,9 +176,37 @@ agrex.updateNode('t1', {
 - `cost` shows as a badge (e.g., "$0.0030")
 - Elapsed time auto-computes from `startedAt`/`endedAt`
 
+## Stats bar
+
+Enable `showStats` to see an aggregate dashboard:
+
+```tsx
+<Agrex nodes={nodes} edges={edges} showStats />
+```
+
+Shows total nodes, running/done/error counts, total tokens, and total cost.
+
 ## Node collapsing
 
-Click any `agent` or `sub_agent` node to collapse/expand its children. A badge shows the number of hidden descendants.
+Click any `agent` or `sub_agent` node to collapse/expand its children. Agent nodes always show their direct child count as a badge. When collapsed, the badge turns blue and shows "N collapsed".
+
+Use the imperative API for bulk operations: `collapseAll()` / `expandAll()`.
+
+## Error display
+
+When a node has `status: 'error'` and `metadata.error`, the detail panel shows the error prominently in a red highlight box.
+
+## JSON import/export
+
+```tsx
+// Export
+const data = ref.current?.toJSON()
+localStorage.setItem('graph', JSON.stringify(data))
+
+// Import
+const saved = JSON.parse(localStorage.getItem('graph')!)
+agrex.loadJSON(saved)
+```
 
 ## Keyboard shortcuts
 
@@ -155,6 +217,8 @@ Click any `agent` or `sub_agent` node to collapse/expand its children. A badge s
 | `0` | Fit to view |
 | `r` | Relayout |
 
+Disable with `keyboardShortcuts={false}`.
+
 ## Mocks
 
 For development and testing:
@@ -163,10 +227,25 @@ For development and testing:
 import { createMockPipeline, replay } from 'agrex/mocks'
 
 const scenario = createMockPipeline('multi-agent')
-const cancel = replay(agrex, scenario, { speed: 2 })
+const controller = replay(agrex, scenario, { speed: 2 })
+
+// Replay controls
+controller.pause()
+controller.resume()
+controller.setSpeed(4)
+controller.cancel()
 ```
 
 Available scenarios: `research-agent`, `multi-agent`, `deep-chain`.
+
+## Next.js
+
+The package includes `"use client"` directive. For dynamic import:
+
+```tsx
+import dynamic from 'next/dynamic'
+const Agrex = dynamic(() => import('agrex').then(m => m.Agrex), { ssr: false })
+```
 
 ## License
 

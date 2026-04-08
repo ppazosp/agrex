@@ -39,7 +39,7 @@ export interface ThemeObject {
   animationDuration?: string
 }
 
-export type Theme = 'dark' | 'light' | ThemeObject
+export type Theme = 'dark' | 'light' | 'auto' | ThemeObject
 
 export type LayoutFn = (
   nodes: AgrexNode[],
@@ -61,13 +61,16 @@ export interface AgrexProps {
   toolIcons?: Record<string, React.ComponentType<{ size: number }>>
   fileIcons?: Record<string, React.ComponentType<{ size: number }>>
   edgeColors?: Record<string, string>
+  className?: string
   showControls?: boolean
   showLegend?: boolean
   showToasts?: boolean
   showDetailPanel?: boolean
   showMinimap?: boolean
+  showStats?: boolean
   fitOnUpdate?: boolean
   keyboardShortcuts?: boolean
+  animateEdges?: boolean
 }
 
 export interface AgrexNodeProps {
@@ -106,4 +109,12 @@ export interface UseAgrexReturn {
   addEdges: (edges: AgrexEdge[]) => void
   removeEdge: (id: string) => void
   clear: () => void
+  loadJSON: (data: { nodes: AgrexNode[]; edges: AgrexEdge[] }) => void
+}
+
+export interface AgrexHandle {
+  fitView: () => void
+  collapseAll: () => void
+  expandAll: () => void
+  toJSON: () => { nodes: AgrexNode[]; edges: AgrexEdge[] }
 }

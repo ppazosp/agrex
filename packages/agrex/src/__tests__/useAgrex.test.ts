@@ -111,6 +111,22 @@ describe('useAgrex', () => {
     expect(result.current.edges).toEqual([])
   })
 
+  it('loadJSON replaces all state', () => {
+    const { result } = renderHook(() => useAgrex())
+    act(() => {
+      result.current.addNode({ id: 'old', type: 'agent', label: 'Old' })
+    })
+    act(() => {
+      result.current.loadJSON({
+        nodes: [{ id: 'new1', type: 'tool', label: 'T1' }, { id: 'new2', type: 'file', label: 'F1' }],
+        edges: [{ id: 'e1', source: 'new1', target: 'new2' }],
+      })
+    })
+    expect(result.current.nodes).toHaveLength(2)
+    expect(result.current.nodes[0].id).toBe('new1')
+    expect(result.current.edges).toHaveLength(1)
+  })
+
   it('preserves store identity across renders', () => {
     const { result, rerender } = renderHook(() => useAgrex())
     act(() => {

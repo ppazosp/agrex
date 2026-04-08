@@ -21,7 +21,12 @@ export default function SubAgentNode({ data }: NodeProps<SubAgentNodeType>) {
   const isRunning = status === 'running'
   return (
     <NodeTooltip label={label}>
-      <div style={{ position: 'relative' }}>
+      <div
+        role="treeitem"
+        aria-label={`${label} sub-agent — ${status}`}
+        aria-expanded={childCount != null ? !collapsed : undefined}
+        style={{ position: 'relative' }}
+      >
         <div
           style={{
             width: 56,

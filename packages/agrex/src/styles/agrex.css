@@ -51,3 +51,14 @@
 .agrex-tooltip-wrapper:hover .agrex-tooltip {
   opacity: 1 !important;
 }
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .agrex *,
+  .agrex *::before,
+  .agrex *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

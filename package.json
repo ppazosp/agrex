@@ -7,7 +7,9 @@
     "build": "pnpm --filter agrex build",
     "test": "pnpm --filter agrex test",
     "lint": "tsc --noEmit",
-    "lint:eslint": "eslint packages/agrex/src/"
+    "lint:eslint": "eslint packages/agrex/src/",
+    "format": "prettier --write \"packages/*/src/**/*.{ts,tsx}\" \"packages/*/*.{json,ts,md}\" \"*.{js,json,md}\"",
+    "format:check": "prettier --check \"packages/*/src/**/*.{ts,tsx}\" \"packages/*/*.{json,ts,md}\" \"*.{js,json,md}\""
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

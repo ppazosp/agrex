@@ -25,29 +25,59 @@
     "node": ">=18"
   },
   "type": "module",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
     "./mocks": {
-      "import": "./dist/mocks/index.js",
-      "types": "./dist/mocks/index.d.ts"
+      "import": {
+        "types": "./dist/mocks/index.d.ts",
+        "default": "./dist/mocks/index.js"
+      },
+      "require": {
+        "types": "./dist/mocks/index.d.cts",
+        "default": "./dist/mocks/index.cjs"
+      }
     },
     "./layout/force": {
-      "import": "./dist/layout/force.js",
-      "types": "./dist/layout/force.d.ts"
+      "import": {
+        "types": "./dist/layout/force.d.ts",
+        "default": "./dist/layout/force.js"
+      },
+      "require": {
+        "types": "./dist/layout/force.d.cts",
+        "default": "./dist/layout/force.cjs"
+      }
     },
     "./layout/dagre": {
-      "import": "./dist/layout/dagre.js",
-      "types": "./dist/layout/dagre.d.ts"
+      "import": {
+        "types": "./dist/layout/dagre.d.ts",
+        "default": "./dist/layout/dagre.js"
+      },
+      "require": {
+        "types": "./dist/layout/dagre.d.cts",
+        "default": "./dist/layout/dagre.cjs"
+      }
     },
     "./layout/elk": {
-      "import": "./dist/layout/elk.js",
-      "types": "./dist/layout/elk.d.ts"
+      "import": {
+        "types": "./dist/layout/elk.d.ts",
+        "default": "./dist/layout/elk.js"
+      },
+      "require": {
+        "types": "./dist/layout/elk.d.cts",
+        "default": "./dist/layout/elk.cjs"
+      }
     },
     "./styles.css": "./dist/index.css"
   },

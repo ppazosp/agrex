@@ -8,7 +8,7 @@ export default defineConfig({
     'layout/dagre': 'src/layout/dagre.ts',
     'layout/elk': 'src/layout/elk.ts',
   },
-  format: ['esm'],
+  format: ['esm', 'cjs'],
   dts: true,
   sourcemap: true,
   clean: true,

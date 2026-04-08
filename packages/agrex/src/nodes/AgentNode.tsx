@@ -21,7 +21,12 @@ export default function AgentNode({ data }: NodeProps<AgentNodeType>) {
   const isRunning = status === 'running'
   return (
     <NodeTooltip label={label}>
-      <div style={{ position: 'relative' }}>
+      <div
+        role="treeitem"
+        aria-label={`${label} agent — ${status}`}
+        aria-expanded={childCount != null ? !collapsed : undefined}
+        style={{ position: 'relative' }}
+      >
         <div
           style={{
             width: 80,

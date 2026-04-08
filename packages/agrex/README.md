@@ -4,8 +4,6 @@ Real-time graph visualizer for AI agent execution flows. Built on React Flow.
 
 ## Install
 
-> **Note:** This package is ESM-only and requires Node.js 18+.
-
 ```bash
 npm install agrex @xyflow/react react react-dom
 ```
@@ -342,7 +340,6 @@ ref.current?.toJSON() // { nodes, edges }
 
 ```tsx
 import { Search, FileCode, FileJson } from 'lucide-react'
-
 ;<Agrex
   toolIcons={{ web_search: Search, run_tests: TestTube }}
   fileIcons={{ py: FileCode, json: FileJson, md: FileText }}

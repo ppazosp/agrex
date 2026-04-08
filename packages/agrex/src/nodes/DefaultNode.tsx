@@ -19,6 +19,8 @@ export default function DefaultNode({ data }: NodeProps<DefaultNodeType>) {
   return (
     <NodeTooltip label={label}>
       <div
+        role="treeitem"
+        aria-label={`${label} — ${status}`}
         style={{
           width: 48,
           height: 48,

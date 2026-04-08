@@ -15,6 +15,10 @@ import Controls from './Controls'
 import type { AgrexNode, AgrexEdge, ResolvedTheme, LayoutFn } from '../types'
 import { themeToCSS } from '../theme/tokens'
 
+// React Flow's NodeTypes requires ComponentType<NodeProps<any>> — unavoidable any at the boundary
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type NodeRendererMap = Record<string, React.ComponentType<any>>
+
 interface FlowNodeData {
   label: string
   status: string
@@ -36,7 +40,7 @@ interface GraphInternalProps {
   edges: AgrexEdge[]
   theme: ResolvedTheme
   layout: 'radial' | 'force' | 'dagre' | LayoutFn
-  nodeRenderers?: Record<string, React.ComponentType<any>>
+  nodeRenderers?: NodeRendererMap
   toolIcons?: Record<string, React.ComponentType<{ size: number }>>
   fileIcons?: Record<string, React.ComponentType<{ size: number }>>
   edgeColors?: Record<string, string>
@@ -76,7 +80,7 @@ function getElapsed(metadata?: Record<string, unknown>): string | undefined {
 function toFlowNode(
   n: AgrexNode,
   pos: { x: number; y: number },
-  nodeRenderers: Record<string, React.ComponentType<any>> | undefined,
+  nodeRenderers: NodeRendererMap | undefined,
   toolIcons: Record<string, React.ComponentType<{ size: number }>> | undefined,
   fileIcons: Record<string, React.ComponentType<{ size: number }>> | undefined,
   collapsedNodes: Set<string>,
@@ -573,6 +577,8 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph(
   return (
     <div
       ref={containerRef}
+      role="tree"
+      aria-label="Agent execution graph"
       className="agrex"
       style={
         {

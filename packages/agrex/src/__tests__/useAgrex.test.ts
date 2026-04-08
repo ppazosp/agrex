@@ -257,14 +257,17 @@ describe('useAgrex', () => {
     })
     const nodesBefore = result.current.nodes
     act(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       result.current.loadJSON(null as any)
     })
     expect(result.current.nodes).toBe(nodesBefore)
     act(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       result.current.loadJSON({ nodes: 'not-an-array' } as any)
     })
     expect(result.current.nodes).toBe(nodesBefore)
     act(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       result.current.loadJSON(undefined as any)
     })
     expect(result.current.nodes).toBe(nodesBefore)

@@ -29,6 +29,8 @@ export default function DetailPanel({ node, onClose }: DetailPanelProps) {
 
   return (
     <div
+      role="complementary"
+      aria-label={`Details for ${node.label}`}
       style={{
         position: 'absolute',
         bottom: 16,

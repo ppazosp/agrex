@@ -38,6 +38,8 @@ export default function ToolNode({ data }: NodeProps<ToolNodeType>) {
   return (
     <NodeTooltip label={label}>
       <div
+        role="treeitem"
+        aria-label={`${label} tool — ${status}`}
         style={{
           width: 36,
           height: 36,

@@ -10,20 +10,20 @@ import type { AgrexNode, AgrexProps, AgrexHandle } from '../types'
 import { deriveEdges } from '../deriveEdges'
 import '../styles/agrex.css'
 
-function usePrefersDark(): boolean {
-  const [dark, setDark] = useState(() => {
-    if (typeof window === 'undefined') return true
-    return window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? true
+function useMediaQuery(query: string, fallback: boolean): boolean {
+  const [matches, setMatches] = useState(() => {
+    if (typeof window === 'undefined') return fallback
+    return window.matchMedia?.(query)?.matches ?? fallback
   })
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const mq = window.matchMedia?.('(prefers-color-scheme: dark)')
+    const mq = window.matchMedia?.(query)
     if (!mq?.addEventListener) return
-    const handler = (e: MediaQueryListEvent) => setDark(e.matches)
+    const handler = (e: MediaQueryListEvent) => setMatches(e.matches)
     mq.addEventListener('change', handler)
     return () => mq.removeEventListener('change', handler)
-  }, [])
-  return dark
+  }, [query])
+  return matches
 }
 
 const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex(
@@ -51,7 +51,8 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex(
   },
   ref,
 ) {
-  const prefersDark = usePrefersDark()
+  const prefersDark = useMediaQuery('(prefers-color-scheme: dark)', true)
+  const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)', false)
   const theme = themeProp === 'auto' ? resolveTheme(prefersDark ? 'dark' : 'light') : resolveTheme(themeProp)
   const rawNodes = instance?.nodes ?? staticNodes ?? []
   const rawEdges = instance?.edges ?? staticEdges ?? []
@@ -119,7 +120,7 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex(
           fitOnUpdate={fitOnUpdate}
           showControls={showControls}
           keyboardShortcuts={keyboardShortcuts}
-          animateEdges={animateEdges}
+          animateEdges={prefersReducedMotion ? false : animateEdges}
           onNodeClick={handleNodeClick}
           onEdgeClick={onEdgeClick}
           onNewestNode={handleNewestNode}

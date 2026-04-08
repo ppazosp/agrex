@@ -21,7 +21,11 @@ export default function FileNode({ data }: NodeProps<FileNodeType>) {
   const H = Math.round((S * 2) / Math.sqrt(3))
   return (
     <NodeTooltip label={label}>
-      <div style={{ position: 'relative', width: S, height: H }}>
+      <div
+        role="treeitem"
+        aria-label={`${label} file — ${status}`}
+        style={{ position: 'relative', width: S, height: H }}
+      >
         <NodeHandles />
         <svg
           width={S}

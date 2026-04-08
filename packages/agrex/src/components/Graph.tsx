@@ -52,7 +52,6 @@ export default function Graph({
   const containerRef = useRef<HTMLDivElement>(null)
   const posRef = useRef(new Map<string, { x: number; y: number }>())
   const childCountRef = useRef(new Map<string, number>())
-  const animatedRef = useRef(new Set<string>())
   const agrexNodesRef = useRef<AgrexNode[]>(nodes)
   const [autoFit, setAutoFit] = useState(fitOnUpdate)
 
@@ -65,7 +64,6 @@ export default function Graph({
     if (nodes.length === 0) {
       posRef.current.clear()
       childCountRef.current.clear()
-      animatedRef.current.clear()
       setAutoFit(fitOnUpdate)
       setFlowNodes([])
       setFlowEdges([])
@@ -107,12 +105,9 @@ export default function Graph({
     // Build flow nodes
     const flowNodeList = nodes.filter((n) => posRef.current.has(n.id)).map((n) => {
       const isCustomType = !(n.type in BUILT_IN_NODE_TYPES) && !(n.type in (nodeRenderers ?? {}))
-      const isNew = !animatedRef.current.has(n.id)
-      if (isNew) animatedRef.current.add(n.id)
       return {
         id: n.id,
         type: isCustomType ? 'default_agrex' : n.type,
-        className: isNew ? 'agrex-new' : undefined,
         data: { label: n.label, status: n.status ?? 'idle', icon: nodeIcons?.[n.type], ...n.metadata },
         position: posRef.current.get(n.id)!,
       }

@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react'
-import { Agrex, useAgrex, type AgrexHandle, type Theme } from 'agrex'
-import { createMockPipeline, replay, createMockNode, type ReplayController } from 'agrex/mocks'
-import 'agrex/styles.css'
+import { Agrex, useAgrex, type AgrexHandle, type Theme } from '@ppazosp/agrex'
+import { createMockPipeline, replay, createMockNode, type ReplayController } from '@ppazosp/agrex/mocks'
+import '@ppazosp/agrex/styles.css'
 
 type ScenarioName = 'research-agent' | 'multi-agent' | 'deep-chain'
 

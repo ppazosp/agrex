@@ -7,7 +7,7 @@
     "build": "vite build"
   },
   "dependencies": {
-    "agrex": "workspace:*",
+    "@ppazosp/agrex": "workspace:*",
     "@xyflow/react": "^12.6.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

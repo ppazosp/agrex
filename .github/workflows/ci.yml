@@ -45,5 +45,5 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter agrex build
-      - run: pnpm --filter agrex publish --no-git-checks --provenance
+      - run: pnpm --filter @ppazosp/agrex build
+      - run: pnpm --filter @ppazosp/agrex publish --no-git-checks --provenance

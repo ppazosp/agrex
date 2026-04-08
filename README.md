@@ -5,14 +5,14 @@ React component for visualizing AI agent execution as interactive graphs.
 ## Install
 
 ```bash
-npm install agrex @xyflow/react
+npm install @ppazosp/agrex @xyflow/react
 ```
 
 ## Quick Start
 
 ```tsx
-import { Agrex, useAgrex } from 'agrex'
-import 'agrex/styles.css'
+import { Agrex, useAgrex } from '@ppazosp/agrex'
+import '@ppazosp/agrex/styles.css'
 
 function App() {
   const agrex = useAgrex()

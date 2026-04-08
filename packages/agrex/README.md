@@ -5,13 +5,13 @@ Real-time graph visualizer for AI agent execution flows. Built on React Flow.
 ## Install
 
 ```bash
-npm install agrex @xyflow/react react react-dom
+npm install @ppazosp/agrex @xyflow/react react react-dom
 ```
 
 ## Quick start
 
 ```tsx
-import { Agrex } from 'agrex'
+import { Agrex } from '@ppazosp/agrex'
 import 'agrex/styles.css'
 
 const nodes = [
@@ -33,7 +33,7 @@ No manual edges needed. Edges are auto-generated from `parentId`, `reads`, and `
 For real-time updates from a running agent:
 
 ```tsx
-import { Agrex, useAgrex } from 'agrex'
+import { Agrex, useAgrex } from '@ppazosp/agrex'
 import 'agrex/styles.css'
 
 function App() {
@@ -100,7 +100,7 @@ You can still use `addEdge` for custom edge types not covered by auto-derivation
 
 ```tsx
 import { useChat } from 'ai/react'
-import { Agrex, useAgrex } from 'agrex'
+import { Agrex, useAgrex } from '@ppazosp/agrex'
 import 'agrex/styles.css'
 
 function Chat() {
@@ -389,8 +389,8 @@ Agrex uses a built-in radial layout optimized for streaming — nodes are positi
 Alternative layout engines are available as standalone imports for static or batch scenarios (e.g., JSON import, post-hoc repositioning):
 
 ```tsx
-import { forceLayout } from 'agrex/layout/force' // requires d3-force
-import { dagreLayout } from 'agrex/layout/dagre' // requires @dagrejs/dagre
+import { forceLayout } from '@ppazosp/agrex/layout/force' // requires d3-force
+import { dagreLayout } from '@ppazosp/agrex/layout/dagre' // requires @dagrejs/dagre
 ```
 
 Install only the layout deps you need:
@@ -403,7 +403,7 @@ npm install @dagrejs/dagre    # for dagreLayout
 ## Mocks
 
 ```tsx
-import { createMockPipeline, replay } from 'agrex/mocks'
+import { createMockPipeline, replay } from '@ppazosp/agrex/mocks'
 
 const scenario = createMockPipeline('multi-agent')
 const controller = replay(agrex, scenario, { speed: 2 })

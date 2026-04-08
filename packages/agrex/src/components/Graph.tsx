@@ -439,7 +439,10 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
     let maxDist = 100
     for (const [, pos] of posRef.current) maxDist = Math.max(maxDist, Math.hypot(pos.x - cx, pos.y - cy))
     const halfSize = Math.min(vw, vh) / 2
-    const zoom = Math.min(1, halfSize / (maxDist + 40))
+    const needed = Math.min(1, halfSize / (maxDist + 40))
+    const currentZoom = rf.getZoom()
+    // Only zoom out, never zoom in past current level
+    const zoom = Math.min(currentZoom, needed)
     rf.setCenter(cx, cy, { zoom: Math.max(0.15, zoom), duration: 300 })
   }, [])
 
@@ -507,22 +510,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
           autoFit={autoFit}
           onToggleAutoFit={() => {
             setAutoFit(v => {
-              if (!v) {
-                const rf = rfRef.current
-                if (rf) {
-                  const el = containerRef.current
-                  const vw = el?.clientWidth || 800
-                  const vh = el?.clientHeight || 600
-                  let cx = 0, cy = 0, count = 0
-                  for (const [, pos] of posRef.current) { cx += pos.x; cy += pos.y; count++ }
-                  if (count > 0) { cx /= count; cy /= count }
-                  let maxDist = 100
-                  for (const [, pos] of posRef.current) maxDist = Math.max(maxDist, Math.hypot(pos.x - cx, pos.y - cy))
-                  const halfSize = Math.min(vw, vh) / 2
-                  const zoom = Math.min(1, halfSize / (maxDist + 40))
-                  rf.setCenter(cx, cy, { zoom: Math.max(0.15, zoom), duration: 300 })
-                }
-              }
+              if (!v) fitView()
               return !v
             })
           }}

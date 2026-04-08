@@ -32,9 +32,9 @@ export default function Controls({ onZoomIn, onZoomOut, autoFit, onToggleAutoFit
           </svg>
         </button>
         <button onClick={onToggleAutoFit} title={autoFit ? 'Auto-fit ON' : 'Auto-fit OFF'}
-          style={{ ...btnStyle, background: autoFit ? 'color-mix(in srgb, var(--agrex-status-done) 12%, transparent)' : 'transparent', opacity: autoFit ? 1 : 0.4 }}
+          style={{ ...btnStyle, background: autoFit ? 'color-mix(in srgb, var(--agrex-status-done) 12%, transparent)' : 'transparent', opacity: autoFit ? 1 : 0.4, transition: 'opacity 150ms, background 150ms' }}
           onMouseEnter={e => (e.currentTarget.style.opacity = '1')} onMouseLeave={e => { if (!autoFit) e.currentTarget.style.opacity = '0.4' }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={autoFit ? 'var(--agrex-status-done)' : 'currentColor'} strokeWidth="2" strokeLinecap="round">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={autoFit ? 'var(--agrex-status-done)' : 'currentColor'} strokeWidth="2" strokeLinecap="round" style={{ transition: 'stroke 150ms' }}>
             <circle cx="12" cy="12" r="3" /><path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
           </svg>
         </button>

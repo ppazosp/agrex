@@ -55,7 +55,7 @@ describe('createMockPipeline', () => {
 
   it('creates deep-chain scenario', () => {
     const { nodes } = createMockPipeline('deep-chain')
-    const subAgents = nodes.filter(n => n.type === 'sub_agent')
+    const subAgents = nodes.filter((n) => n.type === 'sub_agent')
     expect(subAgents.length).toBeGreaterThan(0)
   })
 
@@ -71,7 +71,7 @@ describe('createMockPipeline', () => {
   it('all scenario edges reference existing nodes', () => {
     for (const name of ['research-agent', 'multi-agent', 'deep-chain'] as const) {
       const { nodes, edges } = createMockPipeline(name)
-      const ids = new Set(nodes.map(n => n.id))
+      const ids = new Set(nodes.map((n) => n.id))
       for (const e of edges) {
         expect(ids.has(e.source)).toBe(true)
         expect(ids.has(e.target)).toBe(true)
@@ -82,7 +82,7 @@ describe('createMockPipeline', () => {
   it('reads/writes reference existing node ids', () => {
     for (const name of ['research-agent', 'multi-agent', 'deep-chain'] as const) {
       const { nodes } = createMockPipeline(name)
-      const ids = new Set(nodes.map(n => n.id))
+      const ids = new Set(nodes.map((n) => n.id))
       for (const n of nodes) {
         for (const rid of n.reads ?? []) expect(ids.has(rid)).toBe(true)
         for (const wid of n.writes ?? []) expect(ids.has(wid)).toBe(true)

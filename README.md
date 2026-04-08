@@ -18,12 +18,18 @@ function App() {
   const agrex = useAgrex()
 
   useEffect(() => {
-    agent.on('tool:call', (e) => {
+    const onCall = (e) => {
       agrex.addNode({ id: e.id, type: 'tool', label: e.name, parentId: e.agentId, status: 'running' })
-    })
-    agent.on('tool:done', (e) => {
+    }
+    const onDone = (e) => {
       agrex.updateNode(e.id, { status: 'done' })
-    })
+    }
+    agent.on('tool:call', onCall)
+    agent.on('tool:done', onDone)
+    return () => {
+      agent.off('tool:call', onCall)
+      agent.off('tool:done', onDone)
+    }
   }, [])
 
   return <Agrex instance={agrex} />

@@ -8,29 +8,16 @@ import {
   type SimulationLinkDatum,
 } from 'd3-force'
 import type { LayoutFn } from '../types'
-
-/**
- * Node sizes per type — used for rectangular collision.
- * Width and height in pixels (matching the actual node components).
- */
-const NODE_SIZES: Record<string, { w: number; h: number }> = {
-  agent: { w: 80, h: 80 },
-  sub_agent: { w: 56, h: 56 },
-  tool: { w: 36, h: 36 },
-  file: { w: 46, h: 46 },
-  output: { w: 48, h: 56 },
-  search: { w: 32, h: 32 },
-}
-const DEFAULT_SIZE = { w: 48, h: 48 }
+import { NODE_SIZES, DEFAULT_SIZE } from './sizes'
 const PADDING = 24
 
 /** Simple string hash → deterministic angle in [0, 2π). Same ID always produces same angle. */
 function hashAngle(id: string): number {
   let h = 0
   for (let i = 0; i < id.length; i++) {
-    h = Math.imul(31, h) + id.charCodeAt(i) | 0
+    h = (Math.imul(31, h) + id.charCodeAt(i)) | 0
   }
-  return ((h >>> 0) / 0xFFFFFFFF) * Math.PI * 2
+  return ((h >>> 0) / 0xffffffff) * Math.PI * 2
 }
 
 interface SimNode extends SimulationNodeDatum {
@@ -58,7 +45,10 @@ function buildSpatialGrid(nodes: SimNode[], cellSize: number) {
     const cy = Math.floor((node.y ?? 0) / cellSize)
     const key = `${cx},${cy}`
     let cell = grid.get(key)
-    if (!cell) { cell = []; grid.set(key, cell) }
+    if (!cell) {
+      cell = []
+      grid.set(key, cell)
+    }
     cell.push(node)
   }
   return grid
@@ -66,12 +56,19 @@ function buildSpatialGrid(nodes: SimNode[], cellSize: number) {
 
 // Half-neighbor offsets: self (intra-cell) + 4 unique neighbor directions.
 // This avoids double-counting pairs across cells without needing a seen-set.
-const HALF_NEIGHBORS: [number, number][] = [[0, 0], [1, 0], [1, 1], [0, 1], [-1, 1]]
+const HALF_NEIGHBORS: [number, number][] = [
+  [0, 0],
+  [1, 0],
+  [1, 1],
+  [0, 1],
+  [-1, 1],
+]
 
 function* getCandidatePairs(grid: Map<string, SimNode[]>): Generator<[SimNode, SimNode]> {
   for (const [key, cell] of grid) {
     const [cxStr, cyStr] = key.split(',')
-    const cx = +cxStr, cy = +cyStr
+    const cx = +cxStr,
+      cy = +cyStr
 
     // Intra-cell pairs
     for (let i = 0; i < cell.length; i++) {
@@ -181,7 +178,7 @@ export const forceLayout: LayoutFn = (nodes, edges, existingPositions) => {
   }
 
   // Create simulation nodes
-  const simNodes: SimNode[] = nodes.map(node => {
+  const simNodes: SimNode[] = nodes.map((node) => {
     const size = NODE_SIZES[node.type] ?? DEFAULT_SIZE
     const existing = positions.get(node.id)
     const isNew = newNodeIds.has(node.id)
@@ -215,18 +212,21 @@ export const forceLayout: LayoutFn = (nodes, edges, existingPositions) => {
     }
   })
 
-  const nodeById = new Map(simNodes.map(n => [n.id, n]))
+  const nodeById = new Map(simNodes.map((n) => [n.id, n]))
 
   const simLinks: SimLink[] = edges
-    .filter(e => nodeById.has(e.source) && nodeById.has(e.target))
-    .map(e => ({ source: e.source, target: e.target }))
+    .filter((e) => nodeById.has(e.source) && nodeById.has(e.target))
+    .map((e) => ({ source: e.source, target: e.target }))
 
   // Phase 1: d3-force simulation for organic placement
   const sim = forceSimulation<SimNode>(simNodes)
-    .force('link', forceLink<SimNode, SimLink>(simLinks)
-      .id(d => d.id)
-      .distance(200)
-      .strength(0.5))
+    .force(
+      'link',
+      forceLink<SimNode, SimLink>(simLinks)
+        .id((d) => d.id)
+        .distance(200)
+        .strength(0.5),
+    )
     .force('charge', forceManyBody<SimNode>().strength(-500).distanceMax(800))
     .force('centerX', forceX<SimNode>(0).strength(0.01))
     .force('centerY', forceY<SimNode>(0).strength(0.01))

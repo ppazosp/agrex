@@ -5,15 +5,42 @@ interface Scenario {
   edges: AgrexEdge[]
 }
 
-
 function researchAgent(): Scenario {
   const nodes: AgrexNode[] = [
     { id: 'root', type: 'agent', label: 'Researcher', status: 'done' },
-    { id: 'ws1', type: 'tool', label: 'web_search', parentId: 'root', status: 'done', metadata: { query: 'prospect theory' } },
-    { id: 'ws2', type: 'tool', label: 'web_search', parentId: 'root', status: 'done', metadata: { query: 'game theory' } },
-    { id: 'ws3', type: 'tool', label: 'web_search', parentId: 'root', status: 'done', metadata: { query: 'bounded rationality' } },
+    {
+      id: 'ws1',
+      type: 'tool',
+      label: 'web_search',
+      parentId: 'root',
+      status: 'done',
+      metadata: { query: 'prospect theory' },
+    },
+    {
+      id: 'ws2',
+      type: 'tool',
+      label: 'web_search',
+      parentId: 'root',
+      status: 'done',
+      metadata: { query: 'game theory' },
+    },
+    {
+      id: 'ws3',
+      type: 'tool',
+      label: 'web_search',
+      parentId: 'root',
+      status: 'done',
+      metadata: { query: 'bounded rationality' },
+    },
     { id: 'wf1', type: 'tool', label: 'write_file', parentId: 'root', status: 'done', writes: ['f1'] },
-    { id: 'f1', type: 'file', label: 'research.md', parentId: 'wf1', status: 'done', metadata: { path: 'research.md' } },
+    {
+      id: 'f1',
+      type: 'file',
+      label: 'research.md',
+      parentId: 'wf1',
+      status: 'done',
+      metadata: { path: 'research.md' },
+    },
     { id: 'o1', type: 'file', label: 'research_output.md', parentId: 'root', status: 'done' },
   ]
   return { nodes, edges: [] }
@@ -49,7 +76,14 @@ function deepChain(): Scenario {
     { id: 't2', type: 'tool', label: 'run_tests', parentId: 'a2', status: 'done' },
     { id: 't3', type: 'tool', label: 'write_file', parentId: 'a2', status: 'done', writes: ['f1'] },
     { id: 'f1', type: 'file', label: 'output.py', parentId: 't3', status: 'done' },
-    { id: 's1', type: 'tool', label: 'search', parentId: 'a3', status: 'done', metadata: { query: 'validation rules' } },
+    {
+      id: 's1',
+      type: 'tool',
+      label: 'search',
+      parentId: 'a3',
+      status: 'done',
+      metadata: { query: 'validation rules' },
+    },
     { id: 'o1', type: 'file', label: 'result.json', parentId: 'a3', status: 'done' },
   ]
   return { nodes, edges: [] }

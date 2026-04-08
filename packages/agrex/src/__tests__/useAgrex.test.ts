@@ -118,7 +118,10 @@ describe('useAgrex', () => {
     })
     act(() => {
       result.current.loadJSON({
-        nodes: [{ id: 'new1', type: 'tool', label: 'T1' }, { id: 'new2', type: 'file', label: 'F1' }],
+        nodes: [
+          { id: 'new1', type: 'tool', label: 'T1' },
+          { id: 'new2', type: 'file', label: 'F1' },
+        ],
         edges: [{ id: 'e1', source: 'new1', target: 'new2' }],
       })
     })

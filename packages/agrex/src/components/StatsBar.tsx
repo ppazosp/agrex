@@ -6,9 +6,9 @@ interface StatsBarProps {
 
 export default function StatsBar({ nodes }: StatsBarProps) {
   const total = nodes.length
-  const running = nodes.filter(n => n.status === 'running').length
-  const done = nodes.filter(n => n.status === 'done').length
-  const errors = nodes.filter(n => n.status === 'error').length
+  const running = nodes.filter((n) => n.status === 'running').length
+  const done = nodes.filter((n) => n.status === 'done').length
+  const errors = nodes.filter((n) => n.status === 'error').length
 
   let totalTokens = 0
   let totalCost = 0
@@ -18,13 +18,26 @@ export default function StatsBar({ nodes }: StatsBarProps) {
   }
 
   return (
-    <div style={{
-      position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 30,
-      background: 'color-mix(in srgb, var(--agrex-bg) 85%, transparent)', backdropFilter: 'blur(16px)',
-      border: '1px solid var(--agrex-node-border)', borderRadius: 10, padding: '5px 14px',
-      display: 'flex', alignItems: 'center', gap: 14,
-      fontSize: 11, fontFamily: 'var(--agrex-font-mono)', color: 'var(--agrex-fg)',
-    }}>
+    <div
+      style={{
+        position: 'absolute',
+        bottom: 16,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 30,
+        background: 'color-mix(in srgb, var(--agrex-bg) 85%, transparent)',
+        backdropFilter: 'blur(16px)',
+        border: '1px solid var(--agrex-node-border)',
+        borderRadius: 10,
+        padding: '5px 14px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 14,
+        fontSize: 11,
+        fontFamily: 'var(--agrex-font-mono)',
+        color: 'var(--agrex-fg)',
+      }}
+    >
       <Stat label="nodes" value={total} />
       {running > 0 && <Stat label="running" value={running} color="var(--agrex-status-running)" />}
       {done > 0 && <Stat label="done" value={done} color="var(--agrex-status-done)" />}

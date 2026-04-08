@@ -22,10 +22,16 @@ describe('deriveEdges', () => {
     const result = deriveEdges(nodes, [])
     expect(result).toHaveLength(2)
     expect(result[0]).toEqual({
-      id: '_spawn_root_t1', source: 'root', target: 't1', type: 'spawn',
+      id: '_spawn_root_t1',
+      source: 'root',
+      target: 't1',
+      type: 'spawn',
     })
     expect(result[1]).toEqual({
-      id: '_spawn_root_t2', source: 'root', target: 't2', type: 'spawn',
+      id: '_spawn_root_t2',
+      source: 'root',
+      target: 't2',
+      type: 'spawn',
     })
   })
 
@@ -37,7 +43,10 @@ describe('deriveEdges', () => {
     const result = deriveEdges(nodes, [])
     expect(result).toHaveLength(1)
     expect(result[0]).toEqual({
-      id: '_read_f1_t1', source: 'f1', target: 't1', type: 'read',
+      id: '_read_f1_t1',
+      source: 'f1',
+      target: 't1',
+      type: 'read',
     })
   })
 
@@ -49,7 +58,10 @@ describe('deriveEdges', () => {
     const result = deriveEdges(nodes, [])
     expect(result).toHaveLength(1)
     expect(result[0]).toEqual({
-      id: '_write_t1_f1', source: 't1', target: 'f1', type: 'write',
+      id: '_write_t1_f1',
+      source: 't1',
+      target: 'f1',
+      type: 'write',
     })
   })
 
@@ -61,7 +73,7 @@ describe('deriveEdges', () => {
       { id: 'rf', type: 'tool', label: 'read_file', parentId: 'root', reads: ['f1'] },
     ]
     const result = deriveEdges(nodes, [])
-    const types = result.map(e => e.type)
+    const types = result.map((e) => e.type)
     expect(types).toContain('spawn')
     expect(types).toContain('write')
     expect(types).toContain('read')
@@ -73,9 +85,7 @@ describe('deriveEdges', () => {
       { id: 'root', type: 'agent', label: 'Root' },
       { id: 't1', type: 'tool', label: 'Tool', parentId: 'root' },
     ]
-    const explicit: AgrexEdge[] = [
-      { id: 'manual', source: 'root', target: 't1', type: 'spawn' },
-    ]
+    const explicit: AgrexEdge[] = [{ id: 'manual', source: 'root', target: 't1', type: 'spawn' }]
     const result = deriveEdges(nodes, explicit)
     expect(result).toHaveLength(1)
     expect(result[0].id).toBe('manual') // keeps the explicit edge
@@ -102,9 +112,7 @@ describe('deriveEdges', () => {
       { id: 'root', type: 'agent', label: 'Root' },
       { id: 't1', type: 'tool', label: 'Tool', parentId: 'root' },
     ]
-    const explicit: AgrexEdge[] = [
-      { id: 'custom', source: 'root', target: 't1', type: 'custom' },
-    ]
+    const explicit: AgrexEdge[] = [{ id: 'custom', source: 'root', target: 't1', type: 'custom' }]
     const result = deriveEdges(nodes, explicit)
     expect(result).toHaveLength(2) // 1 explicit custom + 1 derived spawn
     expect(result[0].id).toBe('custom')
@@ -112,9 +120,7 @@ describe('deriveEdges', () => {
   })
 
   it('skips spawn edge when parentId references non-existent node', () => {
-    const nodes: AgrexNode[] = [
-      { id: 't1', type: 'tool', label: 'Tool', parentId: 'ghost' },
-    ]
+    const nodes: AgrexNode[] = [{ id: 't1', type: 'tool', label: 'Tool', parentId: 'ghost' }]
     const result = deriveEdges(nodes, [])
     expect(result).toHaveLength(0)
   })
@@ -135,7 +141,7 @@ describe('deriveEdges', () => {
     ]
     const result = deriveEdges(nodes, [])
     expect(result).toHaveLength(2) // 1 read from f1, 1 write to f1
-    expect(result.every(e => e.source !== 'ghost' && e.target !== 'ghost')).toBe(true)
-    expect(result.every(e => e.source !== 'missing' && e.target !== 'missing')).toBe(true)
+    expect(result.every((e) => e.source !== 'ghost' && e.target !== 'ghost')).toBe(true)
+    expect(result.every((e) => e.source !== 'missing' && e.target !== 'missing')).toBe(true)
   })
 })

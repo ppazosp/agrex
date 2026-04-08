@@ -18,27 +18,31 @@ export default function App() {
   const [animateEdges, setAnimateEdges] = useState(true)
   const [controller, setController] = useState<ReplayController | null>(null)
 
-  const loadScenario = useCallback((name: ScenarioName) => {
-    controller?.cancel()
-    const scenario = createMockPipeline(name)
-    const ctrl = replay(agrex, scenario, { speed: 1 })
-    setController(ctrl)
-  }, [agrex, controller])
+  const loadScenario = useCallback(
+    (name: ScenarioName) => {
+      controller?.cancel()
+      const scenario = createMockPipeline(name)
+      const ctrl = replay(agrex, scenario, { speed: 1 })
+      setController(ctrl)
+    },
+    [agrex, controller],
+  )
 
-  const loadStatic = useCallback((name: ScenarioName) => {
-    controller?.cancel()
-    agrex.clear()
-    const { nodes, edges } = createMockPipeline(name)
-    agrex.addNodes(nodes)
-    agrex.addEdges(edges)
-  }, [agrex, controller])
+  const loadStatic = useCallback(
+    (name: ScenarioName) => {
+      controller?.cancel()
+      agrex.clear()
+      const { nodes, edges } = createMockPipeline(name)
+      agrex.addNodes(nodes)
+      agrex.addEdges(edges)
+    },
+    [agrex, controller],
+  )
 
   const addRandomNode = useCallback(() => {
     const types = ['agent', 'tool', 'file', 'sub_agent']
     const type = types[Math.floor(Math.random() * types.length)]
-    const parentNode = agrex.nodes.length > 0
-      ? agrex.nodes[Math.floor(Math.random() * agrex.nodes.length)]
-      : null
+    const parentNode = agrex.nodes.length > 0 ? agrex.nodes[Math.floor(Math.random() * agrex.nodes.length)] : null
 
     const node = createMockNode({
       type,
@@ -49,16 +53,22 @@ export default function App() {
     })
     agrex.addNode(node)
 
-    setTimeout(() => agrex.updateNode(node.id, {
-      status: 'done',
-      metadata: { startedAt: node.metadata!.startedAt, endedAt: Date.now(), tokens: Math.floor(Math.random() * 5000) },
-    }), 1500)
+    setTimeout(
+      () =>
+        agrex.updateNode(node.id, {
+          status: 'done',
+          metadata: {
+            startedAt: node.metadata!.startedAt,
+            endedAt: Date.now(),
+            tokens: Math.floor(Math.random() * 5000),
+          },
+        }),
+      1500,
+    )
   }, [agrex])
 
   const addErrorNode = useCallback(() => {
-    const parentNode = agrex.nodes.length > 0
-      ? agrex.nodes[Math.floor(Math.random() * agrex.nodes.length)]
-      : null
+    const parentNode = agrex.nodes.length > 0 ? agrex.nodes[Math.floor(Math.random() * agrex.nodes.length)] : null
 
     const node = createMockNode({
       type: 'tool',
@@ -71,9 +81,13 @@ export default function App() {
   }, [agrex])
 
   const btnStyle: React.CSSProperties = {
-    padding: '6px 12px', borderRadius: 6,
-    border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)',
-    color: '#fff', fontSize: 12, cursor: 'pointer',
+    padding: '6px 12px',
+    borderRadius: 6,
+    border: '1px solid rgba(255,255,255,0.15)',
+    background: 'rgba(255,255,255,0.05)',
+    color: '#fff',
+    fontSize: 12,
+    cursor: 'pointer',
   }
 
   const toggleStyle = (on: boolean): React.CSSProperties => ({
@@ -84,42 +98,91 @@ export default function App() {
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <div style={{
-        padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.1)',
-        display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', background: '#050505', zIndex: 50,
-      }}>
+      <div
+        style={{
+          padding: '10px 16px',
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          flexWrap: 'wrap',
+          background: '#050505',
+          zIndex: 50,
+        }}
+      >
         <span style={{ fontSize: 14, fontWeight: 700, marginRight: 12, opacity: 0.6 }}>agrex</span>
 
-        <button style={btnStyle} onClick={() => loadScenario('research-agent')}>Research Agent</button>
-        <button style={btnStyle} onClick={() => loadScenario('multi-agent')}>Multi Agent</button>
-        <button style={btnStyle} onClick={() => loadScenario('deep-chain')}>Deep Chain</button>
+        <button style={btnStyle} onClick={() => loadScenario('research-agent')}>
+          Research Agent
+        </button>
+        <button style={btnStyle} onClick={() => loadScenario('multi-agent')}>
+          Multi Agent
+        </button>
+        <button style={btnStyle} onClick={() => loadScenario('deep-chain')}>
+          Deep Chain
+        </button>
 
         <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.1)', margin: '0 4px' }} />
 
-        <button style={btnStyle} onClick={() => loadStatic('multi-agent')}>Static Load</button>
-        <button style={btnStyle} onClick={addRandomNode}>+ Random</button>
-        <button style={{ ...btnStyle, borderColor: 'rgba(239,68,68,0.3)' }} onClick={addErrorNode}>+ Error</button>
-        <button style={{ ...btnStyle, borderColor: 'rgba(239,68,68,0.3)' }} onClick={() => { controller?.cancel(); agrex.clear() }}>Clear</button>
+        <button style={btnStyle} onClick={() => loadStatic('multi-agent')}>
+          Static Load
+        </button>
+        <button style={btnStyle} onClick={addRandomNode}>
+          + Random
+        </button>
+        <button style={{ ...btnStyle, borderColor: 'rgba(239,68,68,0.3)' }} onClick={addErrorNode}>
+          + Error
+        </button>
+        <button
+          style={{ ...btnStyle, borderColor: 'rgba(239,68,68,0.3)' }}
+          onClick={() => {
+            controller?.cancel()
+            agrex.clear()
+          }}
+        >
+          Clear
+        </button>
 
         <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.1)', margin: '0 4px' }} />
 
-        <button style={btnStyle} onClick={() => ref.current?.collapseAll()}>Collapse All</button>
-        <button style={btnStyle} onClick={() => ref.current?.expandAll()}>Expand All</button>
-        <button style={btnStyle} onClick={() => ref.current?.fitView()}>Fit</button>
+        <button style={btnStyle} onClick={() => ref.current?.collapseAll()}>
+          Collapse All
+        </button>
+        <button style={btnStyle} onClick={() => ref.current?.expandAll()}>
+          Expand All
+        </button>
+        <button style={btnStyle} onClick={() => ref.current?.fitView()}>
+          Fit
+        </button>
 
         <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.1)', margin: '0 4px' }} />
 
-        <button style={toggleStyle(showControls)} onClick={() => setShowControls(v => !v)}>Controls</button>
-        <button style={toggleStyle(showLegend)} onClick={() => setShowLegend(v => !v)}>Legend</button>
-        <button style={toggleStyle(showToasts)} onClick={() => setShowToasts(v => !v)}>Toasts</button>
-        <button style={toggleStyle(showDetailPanel)} onClick={() => setShowDetailPanel(v => !v)}>Detail</button>
+        <button style={toggleStyle(showControls)} onClick={() => setShowControls((v) => !v)}>
+          Controls
+        </button>
+        <button style={toggleStyle(showLegend)} onClick={() => setShowLegend((v) => !v)}>
+          Legend
+        </button>
+        <button style={toggleStyle(showToasts)} onClick={() => setShowToasts((v) => !v)}>
+          Toasts
+        </button>
+        <button style={toggleStyle(showDetailPanel)} onClick={() => setShowDetailPanel((v) => !v)}>
+          Detail
+        </button>
 
-        <button style={toggleStyle(showStats)} onClick={() => setShowStats(v => !v)}>Stats</button>
-        <button style={toggleStyle(animateEdges)} onClick={() => setAnimateEdges(v => !v)}>Animate</button>
+        <button style={toggleStyle(showStats)} onClick={() => setShowStats((v) => !v)}>
+          Stats
+        </button>
+        <button style={toggleStyle(animateEdges)} onClick={() => setAnimateEdges((v) => !v)}>
+          Animate
+        </button>
 
         <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.1)', margin: '0 4px' }} />
 
-        <button style={toggleStyle(theme === 'dark')} onClick={() => setTheme((t: Theme) => t === 'dark' ? 'light' : t === 'light' ? 'auto' : 'dark')}>
+        <button
+          style={toggleStyle(theme === 'dark')}
+          onClick={() => setTheme((t: Theme) => (t === 'dark' ? 'light' : t === 'light' ? 'auto' : 'dark'))}
+        >
           {theme === 'dark' ? 'Dark' : theme === 'light' ? 'Light' : 'Auto'}
         </button>
       </div>
@@ -133,7 +196,6 @@ export default function App() {
           showLegend={showLegend}
           showToasts={showToasts}
           showDetailPanel={showDetailPanel}
-
           showStats={showStats}
           animateEdges={animateEdges}
         />

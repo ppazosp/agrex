@@ -10,9 +10,7 @@ describe('radialLayout', () => {
   })
 
   it('places child nodes around parent', () => {
-    const nodes: AgrexNode[] = [
-      { id: 'child', type: 'tool', label: 'Tool', parentId: 'root' },
-    ]
+    const nodes: AgrexNode[] = [{ id: 'child', type: 'tool', label: 'Tool', parentId: 'root' }]
     const existing = new Map([['root', { x: 0, y: 0 }]])
     const positions = radialLayout(nodes, [], existing)
     const childPos = positions.get('child')

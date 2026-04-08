@@ -15,9 +15,7 @@ const nodes: AgrexNode[] = [
   { id: '2', type: 'tool', label: 'search', parentId: '1', status: 'running' },
 ]
 
-const edges: AgrexEdge[] = [
-  { id: 'e1', source: '1', target: '2' },
-]
+const edges: AgrexEdge[] = [{ id: 'e1', source: '1', target: '2' }]
 
 describe('Agrex component', () => {
   it('renders without crashing with static nodes', () => {

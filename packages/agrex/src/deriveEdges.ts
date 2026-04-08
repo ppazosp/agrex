@@ -2,14 +2,19 @@ import type { AgrexNode, AgrexEdge } from './types'
 
 /** Derive edges from parentId, reads, and writes fields. */
 export function deriveEdges(nodes: AgrexNode[], explicitEdges: AgrexEdge[]): AgrexEdge[] {
-  const nodeIds = new Set(nodes.map(n => n.id))
-  const explicitSet = new Set(explicitEdges.map(e => `${e.source}:${e.target}:${e.type ?? ''}`))
+  const nodeIds = new Set(nodes.map((n) => n.id))
+  const explicitSet = new Set(explicitEdges.map((e) => `${e.source}:${e.target}:${e.type ?? ''}`))
   const derived: AgrexEdge[] = []
   for (const node of nodes) {
     if (node.parentId && nodeIds.has(node.parentId)) {
       const key = `${node.parentId}:${node.id}:spawn`
       if (!explicitSet.has(key)) {
-        derived.push({ id: `_spawn_${node.parentId}_${node.id}`, source: node.parentId, target: node.id, type: 'spawn' })
+        derived.push({
+          id: `_spawn_${node.parentId}_${node.id}`,
+          source: node.parentId,
+          target: node.id,
+          type: 'spawn',
+        })
         explicitSet.add(key)
       }
     }

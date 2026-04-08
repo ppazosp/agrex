@@ -28,9 +28,7 @@ describe('dagreLayout', () => {
       { id: 'root', type: 'agent', label: 'Root' },
       { id: 'child', type: 'tool', label: 'Child', parentId: 'root' },
     ]
-    const edges: AgrexEdge[] = [
-      { id: 'e1', source: 'root', target: 'child', type: 'spawn' },
-    ]
+    const edges: AgrexEdge[] = [{ id: 'e1', source: 'root', target: 'child', type: 'spawn' }]
     const positions = dagreLayout(nodes, edges, undefined, 'TB')
     expect(positions.get('root')!.y).toBeLessThan(positions.get('child')!.y)
   })
@@ -40,9 +38,7 @@ describe('dagreLayout', () => {
       { id: 'root', type: 'agent', label: 'Root' },
       { id: 'child', type: 'tool', label: 'Child', parentId: 'root' },
     ]
-    const edges: AgrexEdge[] = [
-      { id: 'e1', source: 'root', target: 'child', type: 'spawn' },
-    ]
+    const edges: AgrexEdge[] = [{ id: 'e1', source: 'root', target: 'child', type: 'spawn' }]
     const positions = dagreLayout(nodes, edges, undefined, 'LR')
     expect(positions.get('root')!.x).toBeLessThan(positions.get('child')!.x)
   })

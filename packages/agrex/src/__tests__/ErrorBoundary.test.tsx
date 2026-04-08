@@ -14,7 +14,9 @@ function GoodChild() {
 describe('AgrexErrorBoundary', () => {
   it('renders children when no error', () => {
     const { getByTestId } = render(
-      <AgrexErrorBoundary><GoodChild /></AgrexErrorBoundary>,
+      <AgrexErrorBoundary>
+        <GoodChild />
+      </AgrexErrorBoundary>,
     )
     expect(getByTestId('child').textContent).toBe('ok')
   })
@@ -22,7 +24,9 @@ describe('AgrexErrorBoundary', () => {
   it('renders fallback when child throws', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     const { container } = render(
-      <AgrexErrorBoundary><ThrowingChild /></AgrexErrorBoundary>,
+      <AgrexErrorBoundary>
+        <ThrowingChild />
+      </AgrexErrorBoundary>,
     )
     expect(container.textContent).toContain('agrex: render error')
     consoleSpy.mockRestore()
@@ -31,13 +35,11 @@ describe('AgrexErrorBoundary', () => {
   it('logs error to console', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     render(
-      <AgrexErrorBoundary><ThrowingChild /></AgrexErrorBoundary>,
+      <AgrexErrorBoundary>
+        <ThrowingChild />
+      </AgrexErrorBoundary>,
     )
-    expect(consoleSpy).toHaveBeenCalledWith(
-      '[agrex] Render error:',
-      expect.any(Error),
-      expect.any(String),
-    )
+    expect(consoleSpy).toHaveBeenCalledWith('[agrex] Render error:', expect.any(Error), expect.any(String))
     consoleSpy.mockRestore()
   })
 })

@@ -4,6 +4,8 @@ Real-time graph visualizer for AI agent execution flows. Built on React Flow.
 
 ## Install
 
+> **Note:** This package is ESM-only and requires Node.js 18+.
+
 ```bash
 npm install agrex @xyflow/react react react-dom
 ```
@@ -40,15 +42,23 @@ function App() {
   const agrex = useAgrex()
 
   useEffect(() => {
-    agent.on('agent:start', (e) => {
+    const onStart = (e) => {
       agrex.addNode({ id: e.id, type: 'agent', label: e.name, status: 'running' })
-    })
-    agent.on('tool:call', (e) => {
+    }
+    const onCall = (e) => {
       agrex.addNode({ id: e.id, type: 'tool', label: e.name, parentId: e.agentId, status: 'running' })
-    })
-    agent.on('tool:done', (e) => {
+    }
+    const onDone = (e) => {
       agrex.updateNode(e.id, { status: 'done' })
-    })
+    }
+    agent.on('agent:start', onStart)
+    agent.on('tool:call', onCall)
+    agent.on('tool:done', onDone)
+    return () => {
+      agent.off('agent:start', onStart)
+      agent.off('tool:call', onCall)
+      agent.off('tool:done', onDone)
+    }
   }, [])
 
   return <Agrex instance={agrex} />
@@ -58,23 +68,23 @@ function App() {
 The full store API:
 
 ```tsx
-agrex.addNode(node)           // Add a node
-agrex.addNodes(nodes)         // Add multiple nodes
+agrex.addNode(node) // Add a node
+agrex.addNodes(nodes) // Add multiple nodes
 agrex.updateNode(id, updates) // Update status, label, or metadata
-agrex.removeNode(id)          // Remove a node
-agrex.clear()                 // Clear everything
-agrex.loadJSON({ nodes })     // Load from snapshot
+agrex.removeNode(id) // Remove a node
+agrex.clear() // Clear everything
+agrex.loadJSON({ nodes }) // Load from snapshot
 ```
 
 ## Auto edges
 
 Edges are derived automatically from node fields. You never need to call `addEdge` for common patterns:
 
-| Field | Edge type | Direction |
-|-------|-----------|-----------|
-| `parentId` | `spawn` | parent -> child |
-| `reads: ['id']` | `read` | target -> this node |
-| `writes: ['id']` | `write` | this node -> target |
+| Field            | Edge type | Direction           |
+| ---------------- | --------- | ------------------- |
+| `parentId`       | `spawn`   | parent -> child     |
+| `reads: ['id']`  | `read`    | target -> this node |
+| `writes: ['id']` | `write`   | this node -> target |
 
 ```tsx
 // This single addNode call creates both the node AND a spawn edge from 'agent1'
@@ -251,21 +261,21 @@ for await (const event of eventStream) {
 
 ## Node types
 
-| Type | Shape | Description |
-|------|-------|-------------|
-| `agent` | Rounded rectangle (80px) | Root or top-level agent |
-| `sub_agent` | Rounded rectangle (56px) | Delegated sub-agent |
-| `tool` | Circle (36px) | Tool call (wrench icon default) |
-| `file` | Hexagon (48px) | File artifact |
-| Custom string | Rounded rectangle (48px) | Falls back to DefaultNode |
+| Type          | Shape                    | Description                     |
+| ------------- | ------------------------ | ------------------------------- |
+| `agent`       | Rounded rectangle (80px) | Root or top-level agent         |
+| `sub_agent`   | Rounded rectangle (56px) | Delegated sub-agent             |
+| `tool`        | Circle (36px)            | Tool call (wrench icon default) |
+| `file`        | Hexagon (48px)           | File artifact                   |
+| Custom string | Rounded rectangle (48px) | Falls back to DefaultNode       |
 
 ## Edge types
 
-| Type | Color | Description |
-|------|-------|-------------|
+| Type    | Color              | Description                               |
+| ------- | ------------------ | ----------------------------------------- |
 | `spawn` | Default edge color | Agent spawns child (auto from `parentId`) |
-| `write` | Amber | Write to file (auto from `writes`) |
-| `read` | Blue | Read from file (auto from `reads`) |
+| `write` | Amber              | Write to file (auto from `writes`)        |
+| `read`  | Blue               | Read from file (auto from `reads`)        |
 
 ## Props
 
@@ -274,7 +284,7 @@ interface AgrexProps {
   // Data
   nodes?: AgrexNode[]
   edges?: AgrexEdge[]
-  instance?: UseAgrexReturn        // from useAgrex() for streaming
+  instance?: UseAgrexReturn // from useAgrex() for streaming
 
   // Callbacks
   onNodeClick?: (node: AgrexNode) => void
@@ -282,7 +292,7 @@ interface AgrexProps {
 
   // Appearance
   theme?: 'dark' | 'light' | 'auto' | ThemeObject
-  layout?: 'radial' | 'force' | 'dagre' | LayoutFn  // see "Layout engines" below
+  layout?: 'radial' | 'force' | 'dagre' | LayoutFn // see "Layout engines" below
   className?: string
 
   // Custom rendering
@@ -292,14 +302,14 @@ interface AgrexProps {
   edgeColors?: Record<string, string>
 
   // UI toggles
-  showControls?: boolean           // default: true
-  showLegend?: boolean             // default: true
-  showToasts?: boolean             // default: true
-  showDetailPanel?: boolean        // default: true
-  showStats?: boolean              // default: false
-  fitOnUpdate?: boolean            // default: true
-  keyboardShortcuts?: boolean      // default: true
-  animateEdges?: boolean           // default: true
+  showControls?: boolean // default: true
+  showLegend?: boolean // default: true
+  showToasts?: boolean // default: true
+  showDetailPanel?: boolean // default: true
+  showStats?: boolean // default: false
+  fitOnUpdate?: boolean // default: true
+  keyboardShortcuts?: boolean // default: true
+  animateEdges?: boolean // default: true
 }
 ```
 
@@ -333,7 +343,7 @@ ref.current?.toJSON() // { nodes, edges }
 ```tsx
 import { Search, FileCode, FileJson } from 'lucide-react'
 
-<Agrex
+;<Agrex
   toolIcons={{ web_search: Search, run_tests: TestTube }}
   fileIcons={{ py: FileCode, json: FileJson, md: FileText }}
 />
@@ -343,7 +353,10 @@ import { Search, FileCode, FileJson } from 'lucide-react'
 
 ```tsx
 agrex.addNode({
-  id: 't1', type: 'tool', label: 'web_search', parentId: 'root',
+  id: 't1',
+  type: 'tool',
+  label: 'web_search',
+  parentId: 'root',
   status: 'running',
   metadata: { startedAt: Date.now() },
 })
@@ -367,11 +380,11 @@ agrex.loadJSON(data)
 
 ## Keyboard shortcuts
 
-| Key | Action |
-|-----|--------|
-| `+` / `=` | Zoom in |
-| `-` | Zoom out |
-| `0` | Fit to view |
+| Key       | Action      |
+| --------- | ----------- |
+| `+` / `=` | Zoom in     |
+| `-`       | Zoom out    |
+| `0`       | Fit to view |
 
 ## Layout engines
 
@@ -380,9 +393,9 @@ The `layout` prop accepts `'radial'` (default incremental), `'force'` (d3-force)
 Layout engines with external dependencies are available as separate imports to avoid bundling them when unused:
 
 ```tsx
-import { forceLayout } from 'agrex/layout/force'   // requires d3-force
-import { dagreLayout } from 'agrex/layout/dagre'    // requires @dagrejs/dagre
-import { elkStressLayout } from 'agrex/layout/elk'  // requires elkjs
+import { forceLayout } from 'agrex/layout/force' // requires d3-force
+import { dagreLayout } from 'agrex/layout/dagre' // requires @dagrejs/dagre
+import { elkStressLayout } from 'agrex/layout/elk' // requires elkjs
 ```
 
 **ELK layouts are async** and don't conform to the synchronous `LayoutFn` type. Use them imperatively:
@@ -420,7 +433,7 @@ Scenarios: `research-agent`, `multi-agent`, `deep-chain`.
 The package includes `"use client"`. For dynamic import:
 
 ```tsx
-const Agrex = dynamic(() => import('agrex').then(m => m.Agrex), { ssr: false })
+const Agrex = dynamic(() => import('agrex').then((m) => m.Agrex), { ssr: false })
 ```
 
 ## License

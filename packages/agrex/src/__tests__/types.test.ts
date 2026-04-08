@@ -14,8 +14,11 @@ describe('AgrexNode', () => {
 
   it('accepts optional fields', () => {
     const node: AgrexNode = {
-      id: '3', type: 'tool', label: 'Search',
-      parentId: '1', status: 'running',
+      id: '3',
+      type: 'tool',
+      label: 'Search',
+      parentId: '1',
+      status: 'running',
       metadata: { query: 'hello', results: ['a', 'b'] },
     }
     expect(node.status).toBe('running')
@@ -30,8 +33,11 @@ describe('AgrexNode', () => {
 
   it('accepts reads and writes arrays', () => {
     const node: AgrexNode = {
-      id: '5', type: 'tool', label: 'read_file',
-      reads: ['f1', 'f2'], writes: ['f3'],
+      id: '5',
+      type: 'tool',
+      label: 'read_file',
+      reads: ['f1', 'f2'],
+      writes: ['f3'],
     }
     expect(node.reads).toEqual(['f1', 'f2'])
     expect(node.writes).toEqual(['f3'])

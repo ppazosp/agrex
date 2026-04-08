@@ -1,7 +1,6 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import {
   ReactFlow,
-
   type Node,
   type Edge,
   type NodeTypes,
@@ -10,9 +9,7 @@ import {
   useEdgesState,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import {
-  AgentNode, SubAgentNode, ToolNode, FileNode, DefaultNode,
-} from '../nodes'
+import { AgentNode, SubAgentNode, ToolNode, FileNode, DefaultNode } from '../nodes'
 import { radialLayout } from '../layout/radial'
 import Controls from './Controls'
 import type { AgrexNode, AgrexEdge, ResolvedTheme, LayoutFn } from '../types'
@@ -28,7 +25,9 @@ interface FlowNodeData {
 }
 
 const BUILT_IN_NODE_TYPES: NodeTypes = {
-  agent: AgentNode, sub_agent: SubAgentNode, tool: ToolNode,
+  agent: AgentNode,
+  sub_agent: SubAgentNode,
+  tool: ToolNode,
   file: FileNode,
 }
 
@@ -95,7 +94,16 @@ function toFlowNode(
   return {
     id: n.id,
     type: isCustomType ? 'default_agrex' : n.type,
-    data: { ...n.metadata, label: n.label, status: n.status ?? 'idle', icon, elapsed, collapsed, childCount, childrenAllDone },
+    data: {
+      ...n.metadata,
+      label: n.label,
+      status: n.status ?? 'idle',
+      icon,
+      elapsed,
+      collapsed,
+      childCount,
+      childrenAllDone,
+    },
     position: pos,
   } as Node
 }
@@ -141,7 +149,10 @@ function buildChildrenMap(nodes: AgrexNode[]): Map<string, string[]> {
   for (const n of nodes) {
     if (n.parentId) {
       let children = map.get(n.parentId)
-      if (!children) { children = []; map.set(n.parentId, children) }
+      if (!children) {
+        children = []
+        map.set(n.parentId, children)
+      }
       children.push(n.id)
     }
   }
@@ -154,10 +165,25 @@ export type GraphRef = {
   expandAll: () => void
 }
 
-const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
-  nodes, edges, theme, nodeRenderers, toolIcons, fileIcons, edgeColors: userEdgeColors,
-  fitOnUpdate, showControls, keyboardShortcuts, animateEdges, onNodeClick, onEdgeClick, onNewestNode,
-}, ref) {
+const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph(
+  {
+    nodes,
+    edges,
+    theme,
+    nodeRenderers,
+    toolIcons,
+    fileIcons,
+    edgeColors: userEdgeColors,
+    fitOnUpdate,
+    showControls,
+    keyboardShortcuts,
+    animateEdges,
+    onNodeClick,
+    onEdgeClick,
+    onNewestNode,
+  },
+  ref,
+) {
   const [flowNodes, setFlowNodes, onNodesChange] = useNodesState<Node>([])
   const [flowEdges, setFlowEdges, onEdgesChange] = useEdgesState<Edge>([])
   const rfRef = useRef<ReactFlowInstance | null>(null)
@@ -172,7 +198,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
   const [autoFit, _setAutoFit] = useState(fitOnUpdate)
   const autoFitRef = useRef(fitOnUpdate)
   const setAutoFit = useCallback((v: boolean | ((prev: boolean) => boolean)) => {
-    _setAutoFit(prev => {
+    _setAutoFit((prev) => {
       const next = typeof v === 'function' ? v(prev) : v
       autoFitRef.current = next
       return next
@@ -182,10 +208,10 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
 
   // Tick counter to force elapsed-time re-renders for running nodes
   const [, setTick] = useState(0)
-  const hasRunning = nodes.some(n => n.status === 'running')
+  const hasRunning = nodes.some((n) => n.status === 'running')
   useEffect(() => {
     if (!hasRunning) return
-    const id = setInterval(() => setTick(t => t + 1), 1000)
+    const id = setInterval(() => setTick((t) => t + 1), 1000)
     return () => clearInterval(id)
   }, [hasRunning])
 
@@ -204,24 +230,35 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
   const animateEdgesRef = useRef(animateEdges)
   animateEdgesRef.current = animateEdges
 
-
-
   // Clean up pending timers on unmount
   useEffect(() => {
     const timers = timersRef.current
-    return () => { for (const t of timers) clearTimeout(t); timers.clear() }
+    return () => {
+      for (const t of timers) clearTimeout(t)
+      timers.clear()
+    }
   }, [])
 
   const scheduleTimer = useCallback((fn: () => void, ms: number) => {
-    const id = setTimeout(() => { timersRef.current.delete(id); fn() }, ms)
+    const id = setTimeout(() => {
+      timersRef.current.delete(id)
+      fn()
+    }, ms)
     timersRef.current.add(id)
     return id
   }, [])
 
-  const nodeTypes: NodeTypes = useMemo(() => ({ ...BUILT_IN_NODE_TYPES, ...(nodeRenderers ?? {}), default_agrex: DefaultNode }), [nodeRenderers])
+  const nodeTypes: NodeTypes = useMemo(
+    () => ({ ...BUILT_IN_NODE_TYPES, ...(nodeRenderers ?? {}), default_agrex: DefaultNode }),
+    [nodeRenderers],
+  )
 
-  useEffect(() => { agrexNodesRef.current = nodes }, [nodes])
-  useEffect(() => { agrexEdgesRef.current = edges }, [edges])
+  useEffect(() => {
+    agrexNodesRef.current = nodes
+  }, [nodes])
+  useEffect(() => {
+    agrexEdgesRef.current = edges
+  }, [edges])
 
   // Compute hidden nodes and descendant status for collapsed nodes — O(n) build + O(descendants) per collapsed
   const { hiddenIds, childrenAllDoneMap } = useMemo(() => {
@@ -229,22 +266,28 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
     const allDone = new Map<string, boolean>()
     if (collapsedNodes.size === 0) return { hiddenIds: ids, childrenAllDoneMap: allDone }
     const childrenOf = buildChildrenMap(nodes)
-    const nodeById = new Map(nodes.map(n => [n.id, n]))
+    const nodeById = new Map(nodes.map((n) => [n.id, n]))
     for (const cid of collapsedNodes) {
       const descendants = getDescendants(cid, childrenOf)
       for (const did of descendants) {
         ids.add(did)
       }
-      allDone.set(cid, [...descendants].every(did => {
-        const dn = nodeById.get(did)
-        return dn?.status === 'done'
-      }))
+      allDone.set(
+        cid,
+        [...descendants].every((did) => {
+          const dn = nodeById.get(did)
+          return dn?.status === 'done'
+        }),
+      )
     }
     return { hiddenIds: ids, childrenAllDoneMap: allDone }
   }, [nodes, collapsedNodes])
 
-  const visibleNodes = useMemo(() => nodes.filter(n => !hiddenIds.has(n.id)), [nodes, hiddenIds])
-  const visibleEdges = useMemo(() => edges.filter(e => !hiddenIds.has(e.source) && !hiddenIds.has(e.target)), [edges, hiddenIds])
+  const visibleNodes = useMemo(() => nodes.filter((n) => !hiddenIds.has(n.id)), [nodes, hiddenIds])
+  const visibleEdges = useMemo(
+    () => edges.filter((e) => !hiddenIds.has(e.source) && !hiddenIds.has(e.target)),
+    [edges, hiddenIds],
+  )
 
   // Count direct children for all agent/sub_agent nodes (for badge display) — O(n)
   const childCounts = useMemo(() => {
@@ -274,7 +317,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
     }
 
     // Prune positions for nodes that no longer exist
-    const currentIds = new Set(visibleNodes.map(n => n.id))
+    const currentIds = new Set(visibleNodes.map((n) => n.id))
     for (const id of posRef.current.keys()) {
       if (!currentIds.has(id)) posRef.current.delete(id)
     }
@@ -319,14 +362,18 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
     }
 
     // Determine new edges
-    const currentEdgeIds = new Set(visibleEdges.filter(e => posRef.current.has(e.source) && posRef.current.has(e.target)).map(e => e.id))
-    const newEdges = visibleEdges.filter(e => !prevEdgeIdsRef.current.has(e.id) && posRef.current.has(e.source) && posRef.current.has(e.target))
-    const removedEdgeIds = [...prevEdgeIdsRef.current].filter(id => !currentEdgeIds.has(id))
+    const currentEdgeIds = new Set(
+      visibleEdges.filter((e) => posRef.current.has(e.source) && posRef.current.has(e.target)).map((e) => e.id),
+    )
+    const newEdges = visibleEdges.filter(
+      (e) => !prevEdgeIdsRef.current.has(e.id) && posRef.current.has(e.source) && posRef.current.has(e.target),
+    )
+    const removedEdgeIds = [...prevEdgeIdsRef.current].filter((id) => !currentEdgeIds.has(id))
 
     // Incremental updates — only touch what changed
     const ec = edgeColorsRef.current
 
-    const visibleNodeMap = new Map(visibleNodes.map(n => [n.id, n]))
+    const visibleNodeMap = new Map(visibleNodes.map((n) => [n.id, n]))
 
     const nr = nodeRenderersRef.current
     const ti = toolIconsRef.current
@@ -335,41 +382,76 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
 
     if (prevNodeIdsRef.current.size === 0) {
       // First render — set everything
-      setFlowNodes(visibleNodes.filter(n => posRef.current.has(n.id)).map(n => toFlowNode(n, posRef.current.get(n.id)!, nr, ti, fi, collapsedNodes, childCounts, childrenAllDoneMap)))
-      setFlowEdges(visibleEdges.filter(e => posRef.current.has(e.source) && posRef.current.has(e.target)).map(e => toFlowEdge(e, ec, ae)))
+      setFlowNodes(
+        visibleNodes
+          .filter((n) => posRef.current.has(n.id))
+          .map((n) =>
+            toFlowNode(n, posRef.current.get(n.id)!, nr, ti, fi, collapsedNodes, childCounts, childrenAllDoneMap),
+          ),
+      )
+      setFlowEdges(
+        visibleEdges
+          .filter((e) => posRef.current.has(e.source) && posRef.current.has(e.target))
+          .map((e) => toFlowEdge(e, ec, ae)),
+      )
     } else {
       // Incremental — add new nodes, update changed nodes, add/remove edges
-      if (newNodes.length > 0 || updatedNodes.length > 0 || [...prevNodeIdsRef.current].some(id => !currentIds.has(id))) {
-        setFlowNodes(prev => {
+      if (
+        newNodes.length > 0 ||
+        updatedNodes.length > 0 ||
+        [...prevNodeIdsRef.current].some((id) => !currentIds.has(id))
+      ) {
+        setFlowNodes((prev) => {
           // Remove nodes no longer present
-          let result = prev.filter(fn => currentIds.has(fn.id))
+          let result = prev.filter((fn) => currentIds.has(fn.id))
           // Update existing nodes (status changes etc)
-          result = result.map(fn => {
+          result = result.map((fn) => {
             const agrexNode = visibleNodeMap.get(fn.id)
             if (!agrexNode) return fn
             const newStatus = agrexNode.status ?? 'idle'
             const oldStatus = (fn.data as FlowNodeData)?.status
             const isCollapsed = collapsedNodes.has(agrexNode.id)
             // Always re-render collapsed nodes — their badge color depends on descendant statuses
-            if (isCollapsed) return toFlowNode(agrexNode, posRef.current.get(agrexNode.id)!, nr, ti, fi, collapsedNodes, childCounts, childrenAllDoneMap)
+            if (isCollapsed)
+              return toFlowNode(
+                agrexNode,
+                posRef.current.get(agrexNode.id)!,
+                nr,
+                ti,
+                fi,
+                collapsedNodes,
+                childCounts,
+                childrenAllDoneMap,
+              )
             const wasCollapsed = (fn.data as FlowNodeData)?.collapsed
             if (newStatus === oldStatus && wasCollapsed === isCollapsed) return fn
-            return toFlowNode(agrexNode, posRef.current.get(agrexNode.id)!, nr, ti, fi, collapsedNodes, childCounts, childrenAllDoneMap)
+            return toFlowNode(
+              agrexNode,
+              posRef.current.get(agrexNode.id)!,
+              nr,
+              ti,
+              fi,
+              collapsedNodes,
+              childCounts,
+              childrenAllDoneMap,
+            )
           })
           // Add new nodes
           for (const nd of newNodes) {
-            result.push(toFlowNode(nd, posRef.current.get(nd.id)!, nr, ti, fi, collapsedNodes, childCounts, childrenAllDoneMap))
+            result.push(
+              toFlowNode(nd, posRef.current.get(nd.id)!, nr, ti, fi, collapsedNodes, childCounts, childrenAllDoneMap),
+            )
           }
           return result
         })
       }
 
       if (newEdges.length > 0 || removedEdgeIds.length > 0) {
-        setFlowEdges(prev => {
+        setFlowEdges((prev) => {
           let result = prev
           if (removedEdgeIds.length > 0) {
             const removeSet = new Set(removedEdgeIds)
-            result = result.filter(fe => !removeSet.has(fe.id))
+            result = result.filter((fe) => !removeSet.has(fe.id))
           }
           for (const e of newEdges) {
             result = [...result, toFlowEdge(e, ec, ae)]
@@ -388,13 +470,11 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
     if (autoFitRef.current && newest) {
       scheduleTimer(() => centerView(true), 60)
     }
-
   }, [visibleNodes, visibleEdges, fitOnUpdate, collapsedNodes, childCounts, childrenAllDoneMap, scheduleTimer])
 
   // Update all existing edges when animateEdges changes
   useEffect(() => {
-    setFlowEdges(prev => prev.map(e => ({ ...e, animated: animateEdges })))
-
+    setFlowEdges((prev) => prev.map((e) => ({ ...e, animated: animateEdges })))
   }, [animateEdges])
 
   const handleNodeClick = useCallback(
@@ -403,9 +483,9 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
       if (!orig) return
       // Toggle collapse for agent/sub_agent nodes
       if (orig.type === 'agent' || orig.type === 'sub_agent') {
-        const hasChildren = agrexNodesRef.current.some(n => n.parentId === orig.id)
+        const hasChildren = agrexNodesRef.current.some((n) => n.parentId === orig.id)
         if (hasChildren) {
-          setCollapsedNodes(prev => {
+          setCollapsedNodes((prev) => {
             const next = new Set(prev)
             if (next.has(orig.id)) next.delete(orig.id)
             else next.add(orig.id)
@@ -442,19 +522,26 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
   }, [])
   const fitView = useCallback(() => centerView(false), [centerView])
 
-  useImperativeHandle(ref, () => ({
-    fitView,
-    collapseAll: () => {
-      const ids = new Set<string>()
-      for (const n of agrexNodesRef.current) {
-        if ((n.type === 'agent' || n.type === 'sub_agent') && agrexNodesRef.current.some(c => c.parentId === n.id)) {
-          ids.add(n.id)
+  useImperativeHandle(
+    ref,
+    () => ({
+      fitView,
+      collapseAll: () => {
+        const ids = new Set<string>()
+        for (const n of agrexNodesRef.current) {
+          if (
+            (n.type === 'agent' || n.type === 'sub_agent') &&
+            agrexNodesRef.current.some((c) => c.parentId === n.id)
+          ) {
+            ids.add(n.id)
+          }
         }
-      }
-      setCollapsedNodes(ids)
-    },
-    expandAll: () => setCollapsedNodes(new Set()),
-  }), [fitView])
+        setCollapsedNodes(ids)
+      },
+      expandAll: () => setCollapsedNodes(new Set()),
+    }),
+    [fitView],
+  )
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -484,28 +571,46 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
   const cssVars = themeToCSS(theme)
 
   return (
-    <div ref={containerRef} className="agrex"
-      style={{ width: '100%', height: '100%', position: 'relative', background: theme.background, ...cssVars } as React.CSSProperties}>
+    <div
+      ref={containerRef}
+      className="agrex"
+      style={
+        {
+          width: '100%',
+          height: '100%',
+          position: 'relative',
+          background: theme.background,
+          ...cssVars,
+        } as React.CSSProperties
+      }
+    >
       <ReactFlow
-        nodes={flowNodes} edges={flowEdges} nodeTypes={nodeTypes}
-        onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
+        nodes={flowNodes}
+        edges={flowEdges}
+        nodeTypes={nodeTypes}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
         onNodeClick={handleNodeClick}
         onEdgeClick={handleEdgeClick}
-        onMoveStart={(event) => { if (event) setAutoFit(false) }}
-        onInit={(inst) => { rfRef.current = inst; inst.setCenter(40, 40, { zoom: 1 }) }}
-        minZoom={0.1} maxZoom={2}
+        onMoveStart={(event) => {
+          if (event) setAutoFit(false)
+        }}
+        onInit={(inst) => {
+          rfRef.current = inst
+          inst.setCenter(40, 40, { zoom: 1 })
+        }}
+        minZoom={0.1}
+        maxZoom={2}
         proOptions={{ hideAttribution: true }}
         style={{ background: 'transparent' }}
-      >
-
-      </ReactFlow>
+      ></ReactFlow>
       {showControls && (
         <Controls
           onZoomIn={() => rfRef.current?.zoomIn({ duration: 200 })}
           onZoomOut={() => rfRef.current?.zoomOut({ duration: 200 })}
           autoFit={autoFit}
           onToggleAutoFit={() => {
-            setAutoFit(v => {
+            setAutoFit((v) => {
               if (!v) fitView()
               return !v
             })

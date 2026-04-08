@@ -2,7 +2,15 @@
   "name": "agrex",
   "version": "0.1.0",
   "description": "Real-time graph visualizer for AI agent execution flows",
-  "keywords": ["agent", "graph", "visualizer", "react", "ai", "llm", "react-flow"],
+  "keywords": [
+    "agent",
+    "graph",
+    "visualizer",
+    "react",
+    "ai",
+    "llm",
+    "react-flow"
+  ],
   "author": "ppazosp",
   "license": "MIT",
   "repository": {
@@ -12,6 +20,9 @@
   "homepage": "https://github.com/ppazosp/agrex",
   "bugs": {
     "url": "https://github.com/ppazosp/agrex/issues"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "type": "module",
   "main": "./dist/index.js",
@@ -57,15 +68,20 @@
     "@xyflow/react": ">=12",
     "react": ">=18",
     "react-dom": ">=18",
+    "d3-force": "^3.0.0",
     "@dagrejs/dagre": "^3.0.0",
     "elkjs": "^0.11.1"
   },
   "peerDependenciesMeta": {
-    "@dagrejs/dagre": { "optional": true },
-    "elkjs": { "optional": true }
-  },
-  "dependencies": {
-    "d3-force": "^3.0.0"
+    "d3-force": {
+      "optional": true
+    },
+    "@dagrejs/dagre": {
+      "optional": true
+    },
+    "elkjs": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.0.0",

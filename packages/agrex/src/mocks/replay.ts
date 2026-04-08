@@ -110,7 +110,11 @@ export function replay(
     },
     pause: () => {
       paused = true
-      if (timer) { clearTimeout(timer); timer = null; resumeFn = next }
+      if (timer) {
+        clearTimeout(timer)
+        timer = null
+        resumeFn = next
+      }
     },
     resume: () => {
       if (!paused) return
@@ -118,8 +122,14 @@ export function replay(
       resumeFn?.()
       resumeFn = null
     },
-    setSpeed: (s: number) => { speed = Math.max(0.1, s) },
-    get isPaused() { return paused },
-    get isComplete() { return complete },
+    setSpeed: (s: number) => {
+      speed = Math.max(0.1, s)
+    },
+    get isPaused() {
+      return paused
+    },
+    get isComplete() {
+      return complete
+    },
   }
 }

@@ -1,18 +1,11 @@
 import ELK, { type ElkNode, type ElkExtendedEdge } from 'elkjs/lib/elk.bundled.js'
 import type { AgrexNode, AgrexEdge } from '../types'
-
-const NODE_SIZES: Record<string, { w: number; h: number }> = {
-  agent: { w: 80, h: 80 },
-  sub_agent: { w: 56, h: 56 },
-  tool: { w: 36, h: 36 },
-  file: { w: 46, h: 46 },
-  output: { w: 48, h: 56 },
-  search: { w: 32, h: 32 },
-}
-const DEFAULT_SIZE = { w: 48, h: 48 }
+import { NODE_SIZES, DEFAULT_SIZE } from './sizes'
 
 let elk: ReturnType<typeof createElk> | null = null
-function createElk() { return new ELK() }
+function createElk() {
+  return new ELK()
+}
 function getElk() {
   if (!elk) elk = createElk()
   return elk
@@ -34,9 +27,9 @@ export async function elkStressLayout(
 ): Promise<Map<string, { x: number; y: number }>> {
   if (nodes.length === 0) return new Map()
 
-  const nodeSet = new Set(nodes.map(n => n.id))
+  const nodeSet = new Set(nodes.map((n) => n.id))
 
-  const children: ElkNode[] = nodes.map(node => {
+  const children: ElkNode[] = nodes.map((node) => {
     const size = NODE_SIZES[node.type] ?? DEFAULT_SIZE
     const existing = existingPositions.get(node.id)
     const isFixed = !!existing
@@ -53,8 +46,8 @@ export async function elkStressLayout(
   })
 
   const elkEdges: ElkExtendedEdge[] = edges
-    .filter(e => nodeSet.has(e.source) && nodeSet.has(e.target))
-    .map(e => ({
+    .filter((e) => nodeSet.has(e.source) && nodeSet.has(e.target))
+    .map((e) => ({
       id: e.id,
       sources: [e.source],
       targets: [e.target],

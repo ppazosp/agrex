@@ -97,8 +97,7 @@ export function useAgrex(): UseAgrexReturn {
     addNode: useCallback((node: AgrexNode) => store.addNode(node), [store]),
     addNodes: useCallback((nodes: AgrexNode[]) => store.addNodes(nodes), [store]),
     updateNode: useCallback(
-      (id: string, updates: Partial<Pick<AgrexNode, 'status' | 'label' | 'metadata'>>) =>
-        store.updateNode(id, updates),
+      (id: string, updates: Partial<Pick<AgrexNode, 'status' | 'label' | 'metadata'>>) => store.updateNode(id, updates),
       [store],
     ),
     removeNode: useCallback((id: string) => store.removeNode(id), [store]),

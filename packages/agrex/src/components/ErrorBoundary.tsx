@@ -34,10 +34,18 @@ export default class AgrexErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.error) {
       return (
-        <div style={{
-          width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: 'system-ui, sans-serif', color: '#888', fontSize: 13,
-        }}>
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontFamily: 'system-ui, sans-serif',
+            color: '#888',
+            fontSize: 13,
+          }}
+        >
           <span>agrex: render error — check console</span>
         </div>
       )

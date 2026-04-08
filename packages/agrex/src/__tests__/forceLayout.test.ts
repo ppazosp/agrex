@@ -18,9 +18,7 @@ describe('forceLayout', () => {
       { id: 'a', type: 'agent', label: 'Agent' },
       { id: 'b', type: 'tool', label: 'Tool', parentId: 'a' },
     ]
-    const edges: AgrexEdge[] = [
-      { id: 'e1', source: 'a', target: 'b', type: 'spawn' },
-    ]
+    const edges: AgrexEdge[] = [{ id: 'e1', source: 'a', target: 'b', type: 'spawn' }]
     const positions = forceLayout(nodes, edges, new Map())
     const posA = positions.get('a')!
     const posB = positions.get('b')!
@@ -44,9 +42,7 @@ describe('forceLayout', () => {
       { id: 'root', type: 'agent', label: 'Root' },
       { id: 't1', type: 'tool', label: 'Tool', parentId: 'root' },
     ]
-    const edges: AgrexEdge[] = [
-      { id: 'e1', source: 'root', target: 't1', type: 'spawn' },
-    ]
+    const edges: AgrexEdge[] = [{ id: 'e1', source: 'root', target: 't1', type: 'spawn' }]
     const positions = forceLayout(nodes, edges, existing)
     // Root should stay at origin (pinned)
     expect(positions.get('root')).toEqual({ x: 0, y: 0 })
@@ -62,8 +58,11 @@ describe('forceLayout', () => {
       { id: 'c', type: 'tool', label: 'C', parentId: 'root' },
       { id: 'd', type: 'tool', label: 'D', parentId: 'root' },
     ]
-    const edges: AgrexEdge[] = nodes.slice(1).map(n => ({
-      id: `e-${n.id}`, source: 'root', target: n.id, type: 'spawn' as const,
+    const edges: AgrexEdge[] = nodes.slice(1).map((n) => ({
+      id: `e-${n.id}`,
+      source: 'root',
+      target: n.id,
+      type: 'spawn' as const,
     }))
     const positions = forceLayout(nodes, edges, new Map())
     const entries = [...positions.entries()]

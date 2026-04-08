@@ -15,27 +15,24 @@ import { Agrex } from 'agrex'
 import 'agrex/styles.css'
 
 const nodes = [
-  { id: 'root', type: 'agent', label: 'Researcher', status: 'running' },
+  { id: 'root', type: 'agent', label: 'Researcher', status: 'done' },
   { id: 'ws1', type: 'tool', label: 'web_search', parentId: 'root', status: 'done' },
-  { id: 'f1', type: 'file', label: 'output.md', parentId: 'root', status: 'idle' },
-]
-
-const edges = [
-  { id: 'root-ws1', source: 'root', target: 'ws1' },
-  { id: 'root-f1', source: 'root', target: 'f1', type: 'write', label: 'output.md' },
+  { id: 'wf1', type: 'tool', label: 'write_file', parentId: 'root', status: 'done', writes: ['f1'] },
+  { id: 'f1', type: 'file', label: 'output.md', parentId: 'wf1', status: 'done' },
 ]
 
 function App() {
-  return <Agrex nodes={nodes} edges={edges} theme="dark" />
+  return <Agrex nodes={nodes} />
 }
 ```
+
+No manual edges needed. Edges are auto-generated from `parentId`, `reads`, and `writes`.
 
 ## Streaming mode
 
 For real-time updates from a running agent:
 
 ```tsx
-import { useEffect } from 'react'
 import { Agrex, useAgrex } from 'agrex'
 import 'agrex/styles.css'
 
@@ -43,14 +40,212 @@ function App() {
   const agrex = useAgrex()
 
   useEffect(() => {
-    agrex.addNode({ id: 'root', type: 'agent', label: 'Orchestrator', status: 'running' })
-    // Later, as events arrive:
-    agrex.addNode({ id: 't1', type: 'tool', label: 'web_search', parentId: 'root', status: 'running' })
-    agrex.addEdge({ id: 'root-t1', source: 'root', target: 't1' })
-    agrex.updateNode('t1', { status: 'done' })
+    agent.on('agent:start', (e) => {
+      agrex.addNode({ id: e.id, type: 'agent', label: e.name, status: 'running' })
+    })
+    agent.on('tool:call', (e) => {
+      agrex.addNode({ id: e.id, type: 'tool', label: e.name, parentId: e.agentId, status: 'running' })
+    })
+    agent.on('tool:done', (e) => {
+      agrex.updateNode(e.id, { status: 'done' })
+    })
   }, [])
 
-  return <Agrex instance={agrex} theme="dark" />
+  return <Agrex instance={agrex} />
+}
+```
+
+The full store API:
+
+```tsx
+agrex.addNode(node)           // Add a node
+agrex.addNodes(nodes)         // Add multiple nodes
+agrex.updateNode(id, updates) // Update status, label, or metadata
+agrex.removeNode(id)          // Remove a node
+agrex.clear()                 // Clear everything
+agrex.loadJSON({ nodes })     // Load from snapshot
+```
+
+## Auto edges
+
+Edges are derived automatically from node fields. You never need to call `addEdge` for common patterns:
+
+| Field | Edge type | Direction |
+|-------|-----------|-----------|
+| `parentId` | `spawn` | parent -> child |
+| `reads: ['id']` | `read` | target -> this node |
+| `writes: ['id']` | `write` | this node -> target |
+
+```tsx
+// This single addNode call creates both the node AND a spawn edge from 'agent1'
+agrex.addNode({ id: 't1', type: 'tool', label: 'search', parentId: 'agent1', status: 'running' })
+
+// This creates the node, a spawn edge from 'wf1', AND a write edge to 'f1'
+agrex.addNode({ id: 'f1', type: 'file', label: 'data.json', parentId: 'wf1' })
+```
+
+You can still use `addEdge` for custom edge types not covered by auto-derivation.
+
+## Framework integrations
+
+### Vercel AI SDK
+
+```tsx
+import { useChat } from 'ai/react'
+import { Agrex, useAgrex } from 'agrex'
+import 'agrex/styles.css'
+
+function Chat() {
+  const agrex = useAgrex()
+  const agentId = 'assistant'
+
+  const { messages } = useChat({
+    onToolCall: ({ toolCall }) => {
+      agrex.addNode({
+        id: toolCall.toolCallId,
+        type: 'tool',
+        label: toolCall.toolName,
+        parentId: agentId,
+        status: 'running',
+        metadata: { args: toolCall.args, startedAt: Date.now() },
+      })
+    },
+  })
+
+  // Mark tools as done when results arrive
+  useEffect(() => {
+    for (const msg of messages) {
+      for (const part of msg.parts ?? []) {
+        if (part.type === 'tool-invocation' && part.state === 'result') {
+          agrex.updateNode(part.toolInvocation.toolCallId, {
+            status: 'done',
+            metadata: { endedAt: Date.now() },
+          })
+        }
+      }
+    }
+  }, [messages])
+
+  return <Agrex instance={agrex} />
+}
+```
+
+### Anthropic SDK (Claude)
+
+```tsx
+const agrex = useAgrex()
+const agentId = 'claude'
+
+agrex.addNode({ id: agentId, type: 'agent', label: 'Claude', status: 'running' })
+
+const stream = anthropic.messages.stream({
+  model: 'claude-sonnet-4-20250514',
+  messages,
+  tools,
+})
+
+stream.on('contentBlockStart', (block) => {
+  if (block.content_block.type === 'tool_use') {
+    agrex.addNode({
+      id: block.content_block.id,
+      type: 'tool',
+      label: block.content_block.name,
+      parentId: agentId,
+      status: 'running',
+      metadata: { startedAt: Date.now() },
+    })
+  }
+})
+
+stream.on('finalMessage', (message) => {
+  for (const block of message.content) {
+    if (block.type === 'tool_use') {
+      agrex.updateNode(block.id, { status: 'done', metadata: { endedAt: Date.now() } })
+    }
+  }
+  agrex.updateNode(agentId, { status: 'done' })
+})
+```
+
+### OpenAI SDK
+
+```tsx
+const agrex = useAgrex()
+const agentId = 'gpt'
+
+agrex.addNode({ id: agentId, type: 'agent', label: 'GPT-4', status: 'running' })
+
+const stream = await openai.chat.completions.create({
+  model: 'gpt-4o',
+  messages,
+  tools,
+  stream: true,
+})
+
+const toolCalls = new Map()
+
+for await (const chunk of stream) {
+  for (const tc of chunk.choices[0].delta.tool_calls ?? []) {
+    if (tc.function?.name && !toolCalls.has(tc.index)) {
+      const id = `tool-${tc.index}`
+      toolCalls.set(tc.index, id)
+      agrex.addNode({
+        id,
+        type: 'tool',
+        label: tc.function.name,
+        parentId: agentId,
+        status: 'running',
+        metadata: { startedAt: Date.now() },
+      })
+    }
+  }
+}
+
+// Mark all done after stream completes
+for (const id of toolCalls.values()) {
+  agrex.updateNode(id, { status: 'done', metadata: { endedAt: Date.now() } })
+}
+agrex.updateNode(agentId, { status: 'done' })
+```
+
+### LangChain / LangGraph
+
+```tsx
+const agrex = useAgrex()
+
+const eventStream = agent.streamEvents(input, { version: 'v2' })
+
+for await (const event of eventStream) {
+  switch (event.event) {
+    case 'on_chain_start':
+      agrex.addNode({
+        id: event.run_id,
+        type: 'agent',
+        label: event.name,
+        parentId: event.parent_ids?.[0],
+        status: 'running',
+      })
+      break
+    case 'on_tool_start':
+      agrex.addNode({
+        id: event.run_id,
+        type: 'tool',
+        label: event.name,
+        parentId: event.parent_ids?.[0],
+        status: 'running',
+        metadata: { input: event.data.input, startedAt: Date.now() },
+      })
+      break
+    case 'on_tool_end':
+      agrex.updateNode(event.run_id, {
+        status: 'done',
+        metadata: { endedAt: Date.now() },
+      })
+      break
+    case 'on_chain_end':
+      agrex.updateNode(event.run_id, { status: 'done' })
+      break
+  }
 }
 ```
 
@@ -68,11 +263,9 @@ function App() {
 
 | Type | Color | Description |
 |------|-------|-------------|
-| `spawn` | Default edge color | Agent spawns child |
-| `write` | Amber | Write to file |
-| `read` | Blue | Read from file |
-
-Edges support `label` for showing data flow names.
+| `spawn` | Default edge color | Agent spawns child (auto from `parentId`) |
+| `write` | Amber | Write to file (auto from `writes`) |
+| `read` | Blue | Read from file (auto from `reads`) |
 
 ## Props
 
@@ -103,7 +296,6 @@ interface AgrexProps {
   showLegend?: boolean             // default: true
   showToasts?: boolean             // default: true
   showDetailPanel?: boolean        // default: true
-
   showStats?: boolean              // default: false
   fitOnUpdate?: boolean            // default: true
   keyboardShortcuts?: boolean      // default: true
@@ -113,38 +305,30 @@ interface AgrexProps {
 
 ## Imperative API
 
-Access graph methods via ref:
-
 ```tsx
-import { useRef } from 'react'
-import { Agrex, type AgrexHandle } from 'agrex'
+const ref = useRef<AgrexHandle>(null)
 
-function App() {
-  const ref = useRef<AgrexHandle>(null)
+ref.current?.fitView()
+ref.current?.collapseAll()
+ref.current?.expandAll()
+ref.current?.toJSON() // { nodes, edges }
 
-  return (
-    <>
-      <button onClick={() => ref.current?.fitView()}>Fit</button>
-      <button onClick={() => ref.current?.collapseAll()}>Collapse All</button>
-      <button onClick={() => ref.current?.expandAll()}>Expand All</button>
-      <button onClick={() => console.log(ref.current?.toJSON())}>Export</button>
-      <Agrex ref={ref} nodes={nodes} edges={edges} />
-    </>
-  )
-}
+<Agrex ref={ref} nodes={nodes} />
 ```
 
-## Auto theme
-
-`theme="auto"` follows the system's `prefers-color-scheme`:
+## Theming
 
 ```tsx
-<Agrex nodes={nodes} edges={edges} theme="auto" />
+// Built-in themes
+<Agrex theme="dark" />
+<Agrex theme="light" />
+<Agrex theme="auto" /> // follows prefers-color-scheme
+
+// Custom theme (merges with dark)
+<Agrex theme={{ background: '#1a1a2e', accent: '#e94560', statusRunning: '#f5a623' }} />
 ```
 
 ## Custom icons
-
-Map tool names or file extensions to icon components:
 
 ```tsx
 import { Search, FileCode, FileJson } from 'lucide-react'
@@ -157,8 +341,6 @@ import { Search, FileCode, FileJson } from 'lucide-react'
 
 ## Timing and cost tracking
 
-Pass `startedAt` and `endedAt` in node metadata to show elapsed time badges:
-
 ```tsx
 agrex.addNode({
   id: 't1', type: 'tool', label: 'web_search', parentId: 'root',
@@ -166,47 +348,21 @@ agrex.addNode({
   metadata: { startedAt: Date.now() },
 })
 
-// When done:
 agrex.updateNode('t1', {
   status: 'done',
   metadata: { startedAt: 1234567890, endedAt: Date.now(), tokens: 1500, cost: 0.003 },
 })
 ```
 
-- `tokens` shows as a badge (e.g., "1.5k tok")
-- `cost` shows as a badge (e.g., "$0.0030")
-- Elapsed time auto-computes from `startedAt`/`endedAt`
-
-## Stats bar
-
-Enable `showStats` to see an aggregate dashboard:
-
-```tsx
-<Agrex nodes={nodes} edges={edges} showStats />
-```
-
-Shows total nodes, running/done/error counts, total tokens, and total cost.
-
 ## Node collapsing
 
-Click any `agent` or `sub_agent` node to collapse/expand its children. Agent nodes always show their direct child count as a badge. When collapsed, the badge turns blue and shows "N collapsed".
-
-Use the imperative API for bulk operations: `collapseAll()` / `expandAll()`.
-
-## Error display
-
-When a node has `status: 'error'` and `metadata.error`, the detail panel shows the error prominently in a red highlight box.
+Click any `agent` or `sub_agent` to collapse/expand children. Use `collapseAll()` / `expandAll()` for bulk operations.
 
 ## JSON import/export
 
 ```tsx
-// Export
 const data = ref.current?.toJSON()
-localStorage.setItem('graph', JSON.stringify(data))
-
-// Import
-const saved = JSON.parse(localStorage.getItem('graph')!)
-agrex.loadJSON(saved)
+agrex.loadJSON(data)
 ```
 
 ## Keyboard shortcuts
@@ -218,11 +374,7 @@ agrex.loadJSON(saved)
 | `0` | Fit to view |
 | `r` | Relayout |
 
-Disable with `keyboardShortcuts={false}`.
-
 ## Mocks
-
-For development and testing:
 
 ```tsx
 import { createMockPipeline, replay } from 'agrex/mocks'
@@ -230,21 +382,19 @@ import { createMockPipeline, replay } from 'agrex/mocks'
 const scenario = createMockPipeline('multi-agent')
 const controller = replay(agrex, scenario, { speed: 2 })
 
-// Replay controls
 controller.pause()
 controller.resume()
 controller.setSpeed(4)
 controller.cancel()
 ```
 
-Available scenarios: `research-agent`, `multi-agent`, `deep-chain`.
+Scenarios: `research-agent`, `multi-agent`, `deep-chain`.
 
 ## Next.js
 
-The package includes `"use client"` directive. For dynamic import:
+The package includes `"use client"`. For dynamic import:
 
 ```tsx
-import dynamic from 'next/dynamic'
 const Agrex = dynamic(() => import('agrex').then(m => m.Agrex), { ssr: false })
 ```
 

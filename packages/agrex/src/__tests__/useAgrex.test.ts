@@ -246,4 +246,24 @@ describe('useAgrex', () => {
     expect(result.current.nodes).toHaveLength(1)
     expect(result.current.edges).toEqual([])
   })
+
+  it('loadJSON rejects invalid input and preserves state', () => {
+    const { result } = renderHook(() => useAgrex())
+    act(() => {
+      result.current.addNode({ id: 'a', type: 'agent', label: 'Agent' })
+    })
+    const nodesBefore = result.current.nodes
+    act(() => {
+      result.current.loadJSON(null as any)
+    })
+    expect(result.current.nodes).toBe(nodesBefore)
+    act(() => {
+      result.current.loadJSON({ nodes: 'not-an-array' } as any)
+    })
+    expect(result.current.nodes).toBe(nodesBefore)
+    act(() => {
+      result.current.loadJSON(undefined as any)
+    })
+    expect(result.current.nodes).toBe(nodesBefore)
+  })
 })

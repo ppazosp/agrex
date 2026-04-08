@@ -1,7 +1,8 @@
-import { Component, type ReactNode } from 'react'
+import { Component, type ErrorInfo, type ReactNode } from 'react'
 
 interface Props {
   children: ReactNode
+  resetKey?: string | number
 }
 
 interface State {
@@ -15,7 +16,15 @@ export default class AgrexErrorBoundary extends Component<Props, State> {
     return { error }
   }
 
-  componentDidCatch(error: Error, info: React.ErrorInfo) {
+  static getDerivedStateFromProps(props: Props, state: State): State | null {
+    // Reset error state when resetKey changes, allowing recovery from transient errors
+    if (state.error && props.resetKey !== undefined) {
+      return { error: null }
+    }
+    return null
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('[agrex] Render error:', error, info.componentStack)
   }
 

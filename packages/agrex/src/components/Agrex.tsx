@@ -67,7 +67,7 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex({
   const cssVars = themeToCSS(theme) as Record<string, string>
 
   return (
-    <AgrexErrorBoundary>
+    <AgrexErrorBoundary resetKey={nodes.length}>
       <div style={{ width: '100%', height: '100%', position: 'relative', fontFamily: theme.fontFamily, ...cssVars } as React.CSSProperties} className={className ? `agrex ${className}` : 'agrex'}>
         <Graph ref={graphRef} nodes={nodes} edges={edges} theme={theme} layout={layout}
           nodeRenderers={nodeRenderers} toolIcons={toolIcons} fileIcons={fileIcons} edgeColors={edgeColors}

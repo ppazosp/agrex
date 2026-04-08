@@ -83,6 +83,7 @@ export async function elkStressLayout(
     return positions
   } catch (err) {
     console.warn('[agrex] ELK layout failed, returning existing positions:', err)
+    elk = null
     return new Map(existingPositions)
   }
 }

@@ -110,4 +110,32 @@ describe('deriveEdges', () => {
     expect(result[0].id).toBe('custom')
     expect(result[1].type).toBe('spawn')
   })
+
+  it('skips spawn edge when parentId references non-existent node', () => {
+    const nodes: AgrexNode[] = [
+      { id: 't1', type: 'tool', label: 'Tool', parentId: 'ghost' },
+    ]
+    const result = deriveEdges(nodes, [])
+    expect(result).toHaveLength(0)
+  })
+
+  it('skips read/write edges referencing non-existent nodes', () => {
+    const nodes: AgrexNode[] = [
+      { id: 't1', type: 'tool', label: 'Reader', reads: ['ghost'] },
+      { id: 't2', type: 'tool', label: 'Writer', writes: ['phantom'] },
+    ]
+    const result = deriveEdges(nodes, [])
+    expect(result).toHaveLength(0)
+  })
+
+  it('generates valid edges and skips phantom ones in same node', () => {
+    const nodes: AgrexNode[] = [
+      { id: 'f1', type: 'file', label: 'data.json' },
+      { id: 't1', type: 'tool', label: 'process', reads: ['f1', 'ghost'], writes: ['f1', 'missing'] },
+    ]
+    const result = deriveEdges(nodes, [])
+    expect(result).toHaveLength(2) // 1 read from f1, 1 write to f1
+    expect(result.every(e => e.source !== 'ghost' && e.target !== 'ghost')).toBe(true)
+    expect(result.every(e => e.source !== 'missing' && e.target !== 'missing')).toBe(true)
+  })
 })

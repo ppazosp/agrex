@@ -492,7 +492,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
         onNodeClick={handleNodeClick}
         onEdgeClick={handleEdgeClick}
         onMoveStart={(event) => { if (event) setAutoFit(false) }}
-        onInit={(inst) => { rfRef.current = inst; inst.setCenter(40, 40, { zoom: 1 }) }}
+        onInit={(inst) => { rfRef.current = inst; inst.setCenter(0, 0, { zoom: 1 }) }}
         minZoom={0.1} maxZoom={2}
         proOptions={{ hideAttribution: true }}
         style={{ background: 'transparent' }}

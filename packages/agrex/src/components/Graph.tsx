@@ -12,7 +12,7 @@ import '@xyflow/react/dist/style.css'
 import { AgentNode, SubAgentNode, ToolNode, FileNode, DefaultNode } from '../nodes'
 import { radialLayout } from '../layout/radial'
 import Controls from './Controls'
-import type { AgrexNode, AgrexEdge, ResolvedTheme, LayoutFn } from '../types'
+import type { AgrexNode, AgrexEdge, ResolvedTheme } from '../types'
 import { themeToCSS } from '../theme/tokens'
 
 // React Flow's NodeTypes requires ComponentType<NodeProps<any>> — unavoidable any at the boundary
@@ -39,7 +39,6 @@ interface GraphInternalProps {
   nodes: AgrexNode[]
   edges: AgrexEdge[]
   theme: ResolvedTheme
-  layout: 'radial' | 'force' | 'dagre' | LayoutFn
   nodeRenderers?: NodeRendererMap
   toolIcons?: Record<string, React.ComponentType<{ size: number }>>
   fileIcons?: Record<string, React.ComponentType<{ size: number }>>

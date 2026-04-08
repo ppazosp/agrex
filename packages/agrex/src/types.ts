@@ -8,6 +8,10 @@ export interface AgrexNode {
   parentId?: string
   status?: 'idle' | 'running' | 'done' | 'error'
   metadata?: Record<string, unknown>
+  /** Node IDs this node reads from. Auto-generates read edges (source → this). */
+  reads?: string[]
+  /** Node IDs this node writes to. Auto-generates write edges (this → target). */
+  writes?: string[]
 }
 
 export interface AgrexEdge {
@@ -66,7 +70,7 @@ export interface AgrexProps {
   showLegend?: boolean
   showToasts?: boolean
   showDetailPanel?: boolean
-  showMinimap?: boolean
+
   showStats?: boolean
   fitOnUpdate?: boolean
   keyboardShortcuts?: boolean

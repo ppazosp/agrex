@@ -13,7 +13,7 @@ export default function App() {
   const [showLegend, setShowLegend] = useState(true)
   const [showToasts, setShowToasts] = useState(true)
   const [showDetailPanel, setShowDetailPanel] = useState(true)
-  const [showMinimap, setShowMinimap] = useState(false)
+
   const [showStats, setShowStats] = useState(false)
   const [animateEdges, setAnimateEdges] = useState(true)
   const [controller, setController] = useState<ReplayController | null>(null)
@@ -120,13 +120,13 @@ export default function App() {
         <button style={toggleStyle(showLegend)} onClick={() => setShowLegend(v => !v)}>Legend</button>
         <button style={toggleStyle(showToasts)} onClick={() => setShowToasts(v => !v)}>Toasts</button>
         <button style={toggleStyle(showDetailPanel)} onClick={() => setShowDetailPanel(v => !v)}>Detail</button>
-        <button style={toggleStyle(showMinimap)} onClick={() => setShowMinimap(v => !v)}>Minimap</button>
+
         <button style={toggleStyle(showStats)} onClick={() => setShowStats(v => !v)}>Stats</button>
         <button style={toggleStyle(animateEdges)} onClick={() => setAnimateEdges(v => !v)}>Animate</button>
 
         <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.1)', margin: '0 4px' }} />
 
-        <button style={toggleStyle(theme === 'dark')} onClick={() => setTheme(t => t === 'dark' ? 'light' : t === 'light' ? 'auto' : 'dark')}>
+        <button style={toggleStyle(theme === 'dark')} onClick={() => setTheme((t: Theme) => t === 'dark' ? 'light' : t === 'light' ? 'auto' : 'dark')}>
           {theme === 'dark' ? 'Dark' : theme === 'light' ? 'Light' : 'Auto'}
         </button>
       </div>
@@ -140,7 +140,7 @@ export default function App() {
           showLegend={showLegend}
           showToasts={showToasts}
           showDetailPanel={showDetailPanel}
-          showMinimap={showMinimap}
+
           showStats={showStats}
           animateEdges={animateEdges}
         />

@@ -80,6 +80,17 @@ describe('createMockPipeline', () => {
       }
     }
   })
+
+  it('reads/writes reference existing node ids', () => {
+    for (const name of ['research-agent', 'multi-agent', 'deep-chain'] as const) {
+      const { nodes } = createMockPipeline(name)
+      const ids = new Set(nodes.map(n => n.id))
+      for (const n of nodes) {
+        for (const rid of n.reads ?? []) expect(ids.has(rid)).toBe(true)
+        for (const wid of n.writes ?? []) expect(ids.has(wid)).toBe(true)
+      }
+    }
+  })
 })
 
 describe('replay', () => {

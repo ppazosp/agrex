@@ -103,7 +103,7 @@ interface AgrexProps {
   showLegend?: boolean             // default: true
   showToasts?: boolean             // default: true
   showDetailPanel?: boolean        // default: true
-  showMinimap?: boolean            // default: false
+
   showStats?: boolean              // default: false
   fitOnUpdate?: boolean            // default: true
   keyboardShortcuts?: boolean      // default: true

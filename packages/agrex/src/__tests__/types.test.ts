@@ -27,6 +27,15 @@ describe('AgrexNode', () => {
     const node: AgrexNode = { id: '4', type: 'agent', label: 'Test' }
     expect(node.status).toBeUndefined()
   })
+
+  it('accepts reads and writes arrays', () => {
+    const node: AgrexNode = {
+      id: '5', type: 'tool', label: 'read_file',
+      reads: ['f1', 'f2'], writes: ['f3'],
+    }
+    expect(node.reads).toEqual(['f1', 'f2'])
+    expect(node.writes).toEqual(['f3'])
+  })
 })
 
 describe('AgrexEdge', () => {

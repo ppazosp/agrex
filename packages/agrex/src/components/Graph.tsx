@@ -1,7 +1,7 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import {
   ReactFlow,
-  MiniMap,
+
   type Node,
   type Edge,
   type NodeTypes,
@@ -35,7 +35,7 @@ interface GraphInternalProps {
   edgeColors?: Record<string, string>
   fitOnUpdate: boolean
   showControls: boolean
-  showMinimap: boolean
+
   keyboardShortcuts: boolean
   animateEdges: boolean
   onNodeClick?: (node: AgrexNode) => void
@@ -142,7 +142,7 @@ export type GraphRef = {
 
 const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
   nodes, edges, theme, layout, nodeRenderers, toolIcons, fileIcons, edgeColors: userEdgeColors,
-  fitOnUpdate, showControls, showMinimap, keyboardShortcuts, animateEdges, onNodeClick, onEdgeClick, onNewestNode,
+  fitOnUpdate, showControls, keyboardShortcuts, animateEdges, onNodeClick, onEdgeClick, onNewestNode,
 }, ref) {
   const [flowNodes, setFlowNodes, onNodesChange] = useNodesState<Node>([])
   const [flowEdges, setFlowEdges, onEdgesChange] = useEdgesState<Edge>([])
@@ -254,6 +254,8 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
     // Incremental updates — only touch what changed
     const ec = edgeColorsRef.current
 
+    const visibleNodeMap = new Map(visibleNodes.map(n => [n.id, n]))
+
     if (prevNodeIdsRef.current.size === 0) {
       // First render — set everything
       setFlowNodes(visibleNodes.filter(n => posRef.current.has(n.id)).map(n => toFlowNode(n, posRef.current.get(n.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts, childrenAllDoneMap)))
@@ -266,7 +268,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
           let result = prev.filter(fn => currentIds.has(fn.id))
           // Update existing nodes (status changes etc)
           result = result.map(fn => {
-            const agrexNode = visibleNodes.find(n => n.id === fn.id)
+            const agrexNode = visibleNodeMap.get(fn.id)
             if (!agrexNode) return fn
             const newStatus = agrexNode.status ?? 'idle'
             const oldStatus = (fn.data as any)?.status
@@ -321,13 +323,13 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
         }, 60)
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [visibleNodes, visibleEdges, fitOnUpdate, collapsedNodes])
 
   // Update all existing edges when animateEdges changes
   useEffect(() => {
     setFlowEdges(prev => prev.map(e => ({ ...e, animated: animateEdges })))
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [animateEdges])
 
   const handleNodeClick = useCallback(
@@ -413,8 +415,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
     setFlowNodes(vn.filter(n => posRef.current.has(n.id)).map(n => toFlowNode(n, posRef.current.get(n.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts, childrenAllDoneMap)))
     setFlowEdges(ve.filter(e => posRef.current.has(e.source) && posRef.current.has(e.target)).map(e => toFlowEdge(e, ec, animateEdges)))
     setTimeout(fitView, 60)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fitView, layout, nodeRenderers, toolIcons, fileIcons, collapsedNodes])
+  }, [fitView, layout, nodeRenderers, toolIcons, fileIcons, collapsedNodes, hiddenIds, childCounts, childrenAllDoneMap, animateEdges])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -457,20 +458,10 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
         onMoveStart={(event) => { if (event) setAutoFit(false) }}
         onInit={(inst) => { rfRef.current = inst; inst.setCenter(40, 40, { zoom: 1 }) }}
         minZoom={0.1} maxZoom={2}
-        proOptions={{ hideAttribution: true }}
+        proOptions={{ hideAttribution: false }}
         style={{ background: 'transparent' }}
       >
-        {showMinimap && (
-          <MiniMap
-            nodeColor={() => theme.nodeBorder}
-            maskColor="rgba(0,0,0,0.3)"
-            style={{
-              background: theme.background,
-              border: `1px solid ${theme.nodeBorder}`,
-              borderRadius: 8,
-            }}
-          />
-        )}
+
       </ReactFlow>
       {showControls && (
         <Controls

@@ -45,8 +45,7 @@ export default function ToastStack({ node }: { node: AgrexNode | null }) {
     })
 
     setTimeout(() => dismiss(id), DURATION)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [node])
+  }, [node, dismiss])
 
   if (toasts.length === 0) return null
 

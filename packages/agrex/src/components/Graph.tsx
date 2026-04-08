@@ -155,7 +155,15 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
   const agrexEdgesRef = useRef<AgrexEdge[]>(edges)
   const prevNodeIdsRef = useRef(new Set<string>())
   const prevEdgeIdsRef = useRef(new Set<string>())
-  const [autoFit, setAutoFit] = useState(fitOnUpdate)
+  const [autoFit, _setAutoFit] = useState(fitOnUpdate)
+  const autoFitRef = useRef(fitOnUpdate)
+  const setAutoFit = useCallback((v: boolean | ((prev: boolean) => boolean)) => {
+    _setAutoFit(prev => {
+      const next = typeof v === 'function' ? v(prev) : v
+      autoFitRef.current = next
+      return next
+    })
+  }, [])
   const [collapsedNodes, setCollapsedNodes] = useState<Set<string>>(new Set())
 
   const edgeColorsRef = useRef(DEFAULT_EDGE_COLORS)
@@ -328,7 +336,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
 
     if (newest) onNewestNodeRef.current?.(newest)
 
-    if (autoFit && newest) {
+    if (autoFitRef.current && newest) {
       const rf = rfRef.current
       if (rf) {
         setTimeout(() => {
@@ -418,7 +426,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
     const layoutFn = typeof layout === 'function'
       ? layout
       : layout === 'force' ? forceLayout
-      : layout === 'dagre' ? ((n: AgrexNode[], e: AgrexEdge[]) => dagreLayout(n, e))
+      : layout === 'dagre' ? dagreLayout
       : null
 
     if (layoutFn) {

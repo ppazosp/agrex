@@ -208,6 +208,34 @@ describe('useAgrex', () => {
     expect(result.current.edges[0].id).toBe('e3')
   })
 
+  it('addEdge skips duplicate IDs', () => {
+    const { result } = renderHook(() => useAgrex())
+    act(() => {
+      result.current.addEdge({ id: 'e1', source: 'a', target: 'b' })
+    })
+    act(() => {
+      result.current.addEdge({ id: 'e1', source: 'x', target: 'y' })
+    })
+    expect(result.current.edges).toHaveLength(1)
+    expect(result.current.edges[0].source).toBe('a')
+  })
+
+  it('addEdges filters out duplicate IDs', () => {
+    const { result } = renderHook(() => useAgrex())
+    act(() => {
+      result.current.addEdge({ id: 'e1', source: 'a', target: 'b' })
+    })
+    act(() => {
+      result.current.addEdges([
+        { id: 'e1', source: 'x', target: 'y' },
+        { id: 'e2', source: 'b', target: 'c' },
+      ])
+    })
+    expect(result.current.edges).toHaveLength(2)
+    expect(result.current.edges[0].source).toBe('a')
+    expect(result.current.edges[1].id).toBe('e2')
+  })
+
   it('loadJSON works without edges parameter', () => {
     const { result } = renderHook(() => useAgrex())
     act(() => {

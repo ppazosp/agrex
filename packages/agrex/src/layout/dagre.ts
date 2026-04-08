@@ -18,6 +18,7 @@ const DEFAULT_SIZE = { w: 48, h: 48 }
 export function dagreLayout(
   nodes: AgrexNode[],
   edges: AgrexEdge[],
+  _existingPositions?: Map<string, { x: number; y: number }>,
   direction: 'TB' | 'LR' = 'TB',
 ): Map<string, { x: number; y: number }> {
   const g = new dagre.graphlib.Graph()

@@ -49,11 +49,15 @@ function createStore() {
       emit()
     },
     addEdge: (edge: AgrexEdge) => {
+      if (state.edges.some((e) => e.id === edge.id)) return
       state = { ...state, edges: [...state.edges, edge] }
       emit()
     },
     addEdges: (edges: AgrexEdge[]) => {
-      state = { ...state, edges: [...state.edges, ...edges] }
+      const existing = new Set(state.edges.map((e) => e.id))
+      const fresh = edges.filter((e) => !existing.has(e.id))
+      if (fresh.length === 0) return
+      state = { ...state, edges: [...state.edges, ...fresh] }
       emit()
     },
     removeEdge: (id: string) => {

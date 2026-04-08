@@ -205,6 +205,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
   animateEdgesRef.current = animateEdges
 
   const initRef = useRef(false)
+  const programmaticMoveRef = useRef(false)
 
   // Clean up pending timers on unmount
   useEffect(() => {
@@ -430,6 +431,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
   const fitView = useCallback(() => {
     const rf = rfRef.current
     if (!rf) return
+    programmaticMoveRef.current = true
     const el = containerRef.current
     const vw = el?.clientWidth || 800
     const vh = el?.clientHeight || 600
@@ -441,6 +443,8 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
     const halfSize = Math.min(vw, vh) / 2
     const zoom = Math.min(1, halfSize / (maxDist + 40))
     rf.setCenter(cx, cy, { zoom: Math.max(0.15, zoom), duration: 300 })
+    // Reset flag after animation completes
+    setTimeout(() => { programmaticMoveRef.current = false }, 350)
   }, [])
 
   useImperativeHandle(ref, () => ({
@@ -492,7 +496,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
         onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
         onNodeClick={handleNodeClick}
         onEdgeClick={handleEdgeClick}
-        onMoveStart={() => { if (initRef.current) setAutoFit(false) }}
+        onMoveStart={() => { if (initRef.current && !programmaticMoveRef.current) setAutoFit(false) }}
         onInit={(inst) => { rfRef.current = inst; inst.setCenter(40, 40, { zoom: 1 }); scheduleTimer(() => { initRef.current = true }, 200) }}
         minZoom={0.1} maxZoom={2}
         proOptions={{ hideAttribution: true }}

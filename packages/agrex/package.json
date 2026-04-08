@@ -9,6 +9,10 @@
     "type": "git",
     "url": "https://github.com/ppazosp/agrex.git"
   },
+  "homepage": "https://github.com/ppazosp/agrex",
+  "bugs": {
+    "url": "https://github.com/ppazosp/agrex/issues"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

@@ -42,6 +42,14 @@ export function replay(
   const items = [...scenario.nodes]
   let i = 0
 
+  // Precompute which nodes have children later in the sequence
+  function hasLaterChildren(nodeId: string, fromIndex: number): boolean {
+    for (let j = fromIndex; j < items.length; j++) {
+      if (items[j].parentId === nodeId) return true
+    }
+    return false
+  }
+
   function scheduleNext(fn: () => void) {
     timer = setTimeout(fn, delay / speed)
   }
@@ -57,8 +65,12 @@ export function replay(
     const node = items[i]
     instance.addNode({ ...node, status: 'running' })
 
+    // Mark previous node done only if it has no unprocessed children
     if (i > 0) {
-      instance.updateNode(items[i - 1].id, { status: 'done' })
+      const prev = items[i - 1]
+      if (!hasLaterChildren(prev.id, i)) {
+        instance.updateNode(prev.id, { status: 'done' })
+      }
     }
 
     i++
@@ -66,7 +78,10 @@ export function replay(
     if (i >= items.length) {
       scheduleNext(() => {
         if (!cancelled) {
-          instance.updateNode(node.id, { status: 'done' })
+          // Mark all remaining nodes as done
+          for (const item of items) {
+            instance.updateNode(item.id, { status: 'done' })
+          }
           complete = true
         }
       })

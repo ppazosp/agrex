@@ -51,7 +51,7 @@ export type LayoutFn = (
   positions: Map<string, { x: number; y: number }>,
 ) => Map<string, { x: number; y: number }>
 
-export type Layout = 'radial' | 'force' | LayoutFn
+export type Layout = 'radial' | 'force' | 'dagre' | LayoutFn
 
 export interface AgrexProps {
   nodes?: AgrexNode[]
@@ -113,7 +113,7 @@ export interface UseAgrexReturn {
   addEdges: (edges: AgrexEdge[]) => void
   removeEdge: (id: string) => void
   clear: () => void
-  loadJSON: (data: { nodes: AgrexNode[]; edges: AgrexEdge[] }) => void
+  loadJSON: (data: { nodes: AgrexNode[]; edges?: AgrexEdge[] }) => void
 }
 
 export interface AgrexHandle {

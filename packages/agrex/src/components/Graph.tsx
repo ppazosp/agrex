@@ -16,6 +16,7 @@ import {
 import { radialLayout } from '../layout/radial'
 import { forceLayout } from '../layout/force'
 import Controls from './Controls'
+import { dagreLayout } from '../layout/dagre'
 import type { AgrexNode, AgrexEdge, ResolvedTheme, LayoutFn } from '../types'
 import { themeToCSS } from '../theme/tokens'
 
@@ -28,7 +29,7 @@ interface GraphInternalProps {
   nodes: AgrexNode[]
   edges: AgrexEdge[]
   theme: ResolvedTheme
-  layout: 'radial' | 'force' | LayoutFn
+  layout: 'radial' | 'force' | 'dagre' | LayoutFn
   nodeRenderers?: Record<string, React.ComponentType<any>>
   toolIcons?: Record<string, React.ComponentType<{ size: number }>>
   fileIcons?: Record<string, React.ComponentType<{ size: number }>>
@@ -160,6 +161,20 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
   const edgeColorsRef = useRef(DEFAULT_EDGE_COLORS)
   edgeColorsRef.current = { ...DEFAULT_EDGE_COLORS, ...userEdgeColors }
 
+  // Stable refs for props used inside effects to avoid stale closures
+  const nodeRenderersRef = useRef(nodeRenderers)
+  nodeRenderersRef.current = nodeRenderers
+  const toolIconsRef = useRef(toolIcons)
+  toolIconsRef.current = toolIcons
+  const fileIconsRef = useRef(fileIcons)
+  fileIconsRef.current = fileIcons
+  const onNewestNodeRef = useRef(onNewestNode)
+  onNewestNodeRef.current = onNewestNode
+  const animateEdgesRef = useRef(animateEdges)
+  animateEdgesRef.current = animateEdges
+
+  const initRef = useRef(false)
+
   const nodeTypes: NodeTypes = useMemo(() => ({ ...BUILT_IN_NODE_TYPES, ...(nodeRenderers ?? {}), default_agrex: DefaultNode }), [nodeRenderers])
 
   useEffect(() => { agrexNodesRef.current = nodes }, [nodes])
@@ -256,10 +271,15 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
 
     const visibleNodeMap = new Map(visibleNodes.map(n => [n.id, n]))
 
+    const nr = nodeRenderersRef.current
+    const ti = toolIconsRef.current
+    const fi = fileIconsRef.current
+    const ae = animateEdgesRef.current
+
     if (prevNodeIdsRef.current.size === 0) {
       // First render — set everything
-      setFlowNodes(visibleNodes.filter(n => posRef.current.has(n.id)).map(n => toFlowNode(n, posRef.current.get(n.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts, childrenAllDoneMap)))
-      setFlowEdges(visibleEdges.filter(e => posRef.current.has(e.source) && posRef.current.has(e.target)).map(e => toFlowEdge(e, ec, animateEdges)))
+      setFlowNodes(visibleNodes.filter(n => posRef.current.has(n.id)).map(n => toFlowNode(n, posRef.current.get(n.id)!, nr, ti, fi, collapsedNodes, childCounts, childrenAllDoneMap)))
+      setFlowEdges(visibleEdges.filter(e => posRef.current.has(e.source) && posRef.current.has(e.target)).map(e => toFlowEdge(e, ec, ae)))
     } else {
       // Incremental — add new nodes, update changed nodes, add/remove edges
       if (newNodes.length > 0 || updatedNodes.length > 0 || [...prevNodeIdsRef.current].some(id => !currentIds.has(id))) {
@@ -274,14 +294,14 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
             const oldStatus = (fn.data as any)?.status
             const isCollapsed = collapsedNodes.has(agrexNode.id)
             // Always re-render collapsed nodes — their badge color depends on descendant statuses
-            if (isCollapsed) return toFlowNode(agrexNode, posRef.current.get(agrexNode.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts, childrenAllDoneMap)
+            if (isCollapsed) return toFlowNode(agrexNode, posRef.current.get(agrexNode.id)!, nr, ti, fi, collapsedNodes, childCounts, childrenAllDoneMap)
             const wasCollapsed = (fn.data as any)?.collapsed
             if (newStatus === oldStatus && wasCollapsed === isCollapsed) return fn
-            return toFlowNode(agrexNode, posRef.current.get(agrexNode.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts, childrenAllDoneMap)
+            return toFlowNode(agrexNode, posRef.current.get(agrexNode.id)!, nr, ti, fi, collapsedNodes, childCounts, childrenAllDoneMap)
           })
           // Add new nodes
           for (const nd of newNodes) {
-            result.push(toFlowNode(nd, posRef.current.get(nd.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts, childrenAllDoneMap))
+            result.push(toFlowNode(nd, posRef.current.get(nd.id)!, nr, ti, fi, collapsedNodes, childCounts, childrenAllDoneMap))
           }
           return result
         })
@@ -295,7 +315,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
             result = result.filter(fe => !removeSet.has(fe.id))
           }
           for (const e of newEdges) {
-            result = [...result, toFlowEdge(e, ec, animateEdges)]
+            result = [...result, toFlowEdge(e, ec, ae)]
           }
           return result
         })
@@ -306,7 +326,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
     prevNodeIdsRef.current = currentIds
     prevEdgeIdsRef.current = currentEdgeIds
 
-    if (newest) onNewestNode?.(newest)
+    if (newest) onNewestNodeRef.current?.(newest)
 
     if (autoFit && newest) {
       const rf = rfRef.current
@@ -324,7 +344,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
       }
     }
 
-  }, [visibleNodes, visibleEdges, fitOnUpdate, collapsedNodes])
+  }, [visibleNodes, visibleEdges, fitOnUpdate, collapsedNodes, childCounts, childrenAllDoneMap])
 
   // Update all existing edges when animateEdges changes
   useEffect(() => {
@@ -395,7 +415,11 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
     const vn = agrexNodesRef.current.filter(n => !hiddenIds.has(n.id))
     const ve = agrexEdgesRef.current.filter(e => !hiddenIds.has(e.source) && !hiddenIds.has(e.target))
 
-    const layoutFn = typeof layout === 'function' ? layout : layout === 'force' ? forceLayout : null
+    const layoutFn = typeof layout === 'function'
+      ? layout
+      : layout === 'force' ? forceLayout
+      : layout === 'dagre' ? ((n: AgrexNode[], e: AgrexEdge[]) => dagreLayout(n, e))
+      : null
 
     if (layoutFn) {
       const positions = layoutFn(vn, ve, new Map())
@@ -411,11 +435,15 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
       }
     }
 
+    const nr = nodeRenderersRef.current
+    const ti = toolIconsRef.current
+    const fi = fileIconsRef.current
     const ec = edgeColorsRef.current
-    setFlowNodes(vn.filter(n => posRef.current.has(n.id)).map(n => toFlowNode(n, posRef.current.get(n.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts, childrenAllDoneMap)))
-    setFlowEdges(ve.filter(e => posRef.current.has(e.source) && posRef.current.has(e.target)).map(e => toFlowEdge(e, ec, animateEdges)))
+    const ae = animateEdgesRef.current
+    setFlowNodes(vn.filter(n => posRef.current.has(n.id)).map(n => toFlowNode(n, posRef.current.get(n.id)!, nr, ti, fi, collapsedNodes, childCounts, childrenAllDoneMap)))
+    setFlowEdges(ve.filter(e => posRef.current.has(e.source) && posRef.current.has(e.target)).map(e => toFlowEdge(e, ec, ae)))
     setTimeout(fitView, 60)
-  }, [fitView, layout, nodeRenderers, toolIcons, fileIcons, collapsedNodes, hiddenIds, childCounts, childrenAllDoneMap, animateEdges])
+  }, [fitView, layout, collapsedNodes, hiddenIds, childCounts, childrenAllDoneMap])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -455,8 +483,8 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
         onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
         onNodeClick={handleNodeClick}
         onEdgeClick={handleEdgeClick}
-        onMoveStart={(event) => { if (event) setAutoFit(false) }}
-        onInit={(inst) => { rfRef.current = inst; inst.setCenter(40, 40, { zoom: 1 }) }}
+        onMoveStart={() => { if (initRef.current) setAutoFit(false) }}
+        onInit={(inst) => { rfRef.current = inst; inst.setCenter(40, 40, { zoom: 1 }); setTimeout(() => { initRef.current = true }, 200) }}
         minZoom={0.1} maxZoom={2}
         proOptions={{ hideAttribution: true }}
         style={{ background: 'transparent' }}

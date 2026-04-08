@@ -21,14 +21,19 @@ function createStore() {
       return () => listeners.delete(listener)
     },
     addNode: (node: AgrexNode) => {
+      if (state.nodes.some((n) => n.id === node.id)) return
       state = { ...state, nodes: [...state.nodes, node] }
       emit()
     },
     addNodes: (nodes: AgrexNode[]) => {
-      state = { ...state, nodes: [...state.nodes, ...nodes] }
+      const existing = new Set(state.nodes.map((n) => n.id))
+      const fresh = nodes.filter((n) => !existing.has(n.id))
+      if (fresh.length === 0) return
+      state = { ...state, nodes: [...state.nodes, ...fresh] }
       emit()
     },
     updateNode: (id: string, updates: Partial<Pick<AgrexNode, 'status' | 'label' | 'metadata'>>) => {
+      if (!state.nodes.some((n) => n.id === id)) return
       state = {
         ...state,
         nodes: state.nodes.map((n) => (n.id === id ? { ...n, ...updates } : n)),
@@ -36,7 +41,11 @@ function createStore() {
       emit()
     },
     removeNode: (id: string) => {
-      state = { ...state, nodes: state.nodes.filter((n) => n.id !== id) }
+      state = {
+        ...state,
+        nodes: state.nodes.filter((n) => n.id !== id),
+        edges: state.edges.filter((e) => e.source !== id && e.target !== id),
+      }
       emit()
     },
     addEdge: (edge: AgrexEdge) => {
@@ -55,8 +64,8 @@ function createStore() {
       state = { nodes: [], edges: [] }
       emit()
     },
-    loadJSON: (data: { nodes: AgrexNode[]; edges: AgrexEdge[] }) => {
-      state = { nodes: [...data.nodes], edges: [...data.edges] }
+    loadJSON: (data: { nodes: AgrexNode[]; edges?: AgrexEdge[] }) => {
+      state = { nodes: [...data.nodes], edges: [...(data.edges ?? [])] }
       emit()
     },
   }
@@ -86,6 +95,6 @@ export function useAgrex(): UseAgrexReturn {
     addEdges: useCallback((edges: AgrexEdge[]) => store.addEdges(edges), [store]),
     removeEdge: useCallback((id: string) => store.removeEdge(id), [store]),
     clear: useCallback(() => store.clear(), [store]),
-    loadJSON: useCallback((data: { nodes: AgrexNode[]; edges: AgrexEdge[] }) => store.loadJSON(data), [store]),
+    loadJSON: useCallback((data: { nodes: AgrexNode[]; edges?: AgrexEdge[] }) => store.loadJSON(data), [store]),
   }
 }

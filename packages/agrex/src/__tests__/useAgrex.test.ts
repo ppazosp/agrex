@@ -135,4 +135,87 @@ describe('useAgrex', () => {
     rerender()
     expect(result.current.nodes).toHaveLength(1)
   })
+
+  it('addNode skips duplicate IDs', () => {
+    const { result } = renderHook(() => useAgrex())
+    act(() => {
+      result.current.addNode({ id: 'a', type: 'agent', label: 'First' })
+    })
+    act(() => {
+      result.current.addNode({ id: 'a', type: 'tool', label: 'Duplicate' })
+    })
+    expect(result.current.nodes).toHaveLength(1)
+    expect(result.current.nodes[0].label).toBe('First')
+  })
+
+  it('addNodes filters out duplicate IDs', () => {
+    const { result } = renderHook(() => useAgrex())
+    act(() => {
+      result.current.addNode({ id: 'a', type: 'agent', label: 'Existing' })
+    })
+    act(() => {
+      result.current.addNodes([
+        { id: 'a', type: 'tool', label: 'Dupe' },
+        { id: 'b', type: 'tool', label: 'New' },
+      ])
+    })
+    expect(result.current.nodes).toHaveLength(2)
+    expect(result.current.nodes[0].label).toBe('Existing')
+    expect(result.current.nodes[1].label).toBe('New')
+  })
+
+  it('addNodes does not emit when all are duplicates', () => {
+    const { result } = renderHook(() => useAgrex())
+    act(() => {
+      result.current.addNode({ id: 'a', type: 'agent', label: 'A' })
+    })
+    const nodesBefore = result.current.nodes
+    act(() => {
+      result.current.addNodes([{ id: 'a', type: 'tool', label: 'Dupe' }])
+    })
+    // Same reference — no re-render triggered
+    expect(result.current.nodes).toBe(nodesBefore)
+  })
+
+  it('updateNode is a no-op for nonexistent ID', () => {
+    const { result } = renderHook(() => useAgrex())
+    act(() => {
+      result.current.addNode({ id: 'a', type: 'agent', label: 'Agent', status: 'idle' })
+    })
+    const nodesBefore = result.current.nodes
+    act(() => {
+      result.current.updateNode('nonexistent', { status: 'done' })
+    })
+    // Same reference — no re-render triggered
+    expect(result.current.nodes).toBe(nodesBefore)
+  })
+
+  it('removeNode also removes related edges', () => {
+    const { result } = renderHook(() => useAgrex())
+    act(() => {
+      result.current.addNode({ id: 'a', type: 'agent', label: 'Agent' })
+      result.current.addNode({ id: 'b', type: 'tool', label: 'Tool' })
+      result.current.addNode({ id: 'c', type: 'file', label: 'File' })
+      result.current.addEdge({ id: 'e1', source: 'a', target: 'b' })
+      result.current.addEdge({ id: 'e2', source: 'b', target: 'c' })
+      result.current.addEdge({ id: 'e3', source: 'a', target: 'c' })
+    })
+    act(() => {
+      result.current.removeNode('b')
+    })
+    expect(result.current.nodes).toHaveLength(2)
+    expect(result.current.edges).toHaveLength(1)
+    expect(result.current.edges[0].id).toBe('e3')
+  })
+
+  it('loadJSON works without edges parameter', () => {
+    const { result } = renderHook(() => useAgrex())
+    act(() => {
+      result.current.loadJSON({
+        nodes: [{ id: 'a', type: 'agent', label: 'Agent' }],
+      })
+    })
+    expect(result.current.nodes).toHaveLength(1)
+    expect(result.current.edges).toEqual([])
+  })
 })

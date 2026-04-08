@@ -43,8 +43,7 @@ export default function Legend() {
           <Section title="Shapes">
             <ShapeItem shape={<div style={{ width: 12, height: 12, border: '1.5px solid var(--agrex-node-border)', borderRadius: 3 }} />} label="Agent" />
             <ShapeItem shape={<div style={{ width: 12, height: 12, borderRadius: '50%', border: '1.5px solid var(--agrex-node-border)' }} />} label="Tool" />
-            <ShapeItem shape={<svg width="14" height="14" viewBox="0 0 14 14"><path d="M 5.8,1.3 Q 7,0 8.2,1.3 L 12.7,5.8 Q 14,7 12.7,8.2 L 8.2,12.7 Q 7,14 5.8,12.7 L 1.3,8.2 Q 0,7 1.3,5.8 Z" fill="none" stroke="var(--agrex-node-border)" strokeWidth="1.5" /></svg>} label="File" />
-            <ShapeItem shape={<svg width="14" height="16" viewBox="0 0 48 55"><path d="M 19.6,3.4 Q 24,1 28.4,3.4 L 42.6,11.3 Q 47,13.75 47,18.75 L 47,36.25 Q 47,41.25 42.6,43.7 L 28.4,51.6 Q 24,54 19.6,51.6 L 5.4,43.7 Q 1,41.25 1,36.25 L 1,18.75 Q 1,13.75 5.4,11.3 Z" fill="none" stroke="var(--agrex-node-border)" strokeWidth="2.5" /></svg>} label="Output" />
+            <ShapeItem shape={<svg width="14" height="16" viewBox="0 0 48 55"><path d="M 19.6,3.4 Q 24,1 28.4,3.4 L 42.6,11.3 Q 47,13.75 47,18.75 L 47,36.25 Q 47,41.25 42.6,43.7 L 28.4,51.6 Q 24,54 19.6,51.6 L 5.4,43.7 Q 1,41.25 1,36.25 L 1,18.75 Q 1,13.75 5.4,11.3 Z" fill="none" stroke="var(--agrex-node-border)" strokeWidth="2.5" /></svg>} label="File" />
           </Section>
           <Section title="Data Flow" defaultOpen={false}>
             <ShapeItem shape={<div style={{ width: 20, height: 0, borderTop: '2px solid var(--agrex-edge-write)' }} />} label="Write" />

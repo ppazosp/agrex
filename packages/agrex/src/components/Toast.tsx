@@ -1,7 +1,7 @@
 import type { AgrexNode } from '../types'
 
 const KIND_LABELS: Record<string, string> = {
-  agent: 'AGENT', sub_agent: 'SUB-AGENT', tool: 'TOOL', file: 'FILE', search: 'SEARCH', output: 'OUTPUT',
+  agent: 'AGENT', sub_agent: 'SUB-AGENT', tool: 'TOOL', file: 'FILE',
 }
 
 export default function Toast({ node }: { node: AgrexNode | null }) {

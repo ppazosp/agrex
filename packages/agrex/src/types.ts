@@ -15,6 +15,7 @@ export interface AgrexEdge {
   source: string
   target: string
   type?: 'spawn' | 'read' | 'write' | (string & {})
+  label?: string
 }
 
 export type NodeStatus = 'idle' | 'running' | 'done' | 'error'
@@ -53,6 +54,7 @@ export interface AgrexProps {
   edges?: AgrexEdge[]
   instance?: UseAgrexReturn
   onNodeClick?: (node: AgrexNode) => void
+  onEdgeClick?: (edge: AgrexEdge) => void
   theme?: Theme
   layout?: Layout
   nodeRenderers?: Record<string, React.ComponentType<AgrexNodeProps>>
@@ -63,7 +65,9 @@ export interface AgrexProps {
   showLegend?: boolean
   showToasts?: boolean
   showDetailPanel?: boolean
+  showMinimap?: boolean
   fitOnUpdate?: boolean
+  keyboardShortcuts?: boolean
 }
 
 export interface AgrexNodeProps {

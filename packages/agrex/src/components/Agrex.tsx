@@ -8,9 +8,10 @@ import type { AgrexNode, AgrexProps } from '../types'
 import '../styles/agrex.css'
 
 export default function Agrex({
-  nodes: staticNodes, edges: staticEdges, instance, onNodeClick, theme: themeProp,
+  nodes: staticNodes, edges: staticEdges, instance, onNodeClick, onEdgeClick, theme: themeProp,
   layout = 'force', nodeRenderers, toolIcons, fileIcons, edgeColors,
-  showControls = true, showLegend = true, showToasts = true, showDetailPanel = true, fitOnUpdate = true,
+  showControls = true, showLegend = true, showToasts = true, showDetailPanel = true,
+  showMinimap = false, fitOnUpdate = true, keyboardShortcuts = true,
 }: AgrexProps) {
   const theme = resolveTheme(themeProp)
   const nodes = instance?.nodes ?? staticNodes ?? []
@@ -38,7 +39,9 @@ export default function Agrex({
     <div style={{ width: '100%', height: '100%', position: 'relative', fontFamily: theme.fontFamily, ...cssVars } as React.CSSProperties} className="agrex">
       <Graph nodes={nodes} edges={edges} theme={theme} layout={layout}
         nodeRenderers={nodeRenderers} toolIcons={toolIcons} fileIcons={fileIcons} edgeColors={edgeColors}
-        fitOnUpdate={fitOnUpdate} showControls={showControls} onNodeClick={handleNodeClick} onNewestNode={handleNewestNode} />
+        fitOnUpdate={fitOnUpdate} showControls={showControls} showMinimap={showMinimap}
+        keyboardShortcuts={keyboardShortcuts}
+        onNodeClick={handleNodeClick} onEdgeClick={onEdgeClick} onNewestNode={handleNewestNode} />
       {showLegend && <Legend />}
       {showDetailPanel && <DetailPanel node={selectedNode} onClose={() => setSelectedNode(null)} />}
       {showToasts && <Toast node={toastNode} />}

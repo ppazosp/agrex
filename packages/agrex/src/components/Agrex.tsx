@@ -9,7 +9,7 @@ import '../styles/agrex.css'
 
 export default function Agrex({
   nodes: staticNodes, edges: staticEdges, instance, onNodeClick, theme: themeProp,
-  layout = 'force', nodeRenderers, nodeIcons, edgeColors,
+  layout = 'force', nodeRenderers, toolIcons, fileIcons, edgeColors,
   showControls = true, showLegend = true, showToasts = true, showDetailPanel = true, fitOnUpdate = true,
 }: AgrexProps) {
   const theme = resolveTheme(themeProp)
@@ -37,7 +37,7 @@ export default function Agrex({
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative', fontFamily: theme.fontFamily, ...cssVars } as React.CSSProperties} className="agrex">
       <Graph nodes={nodes} edges={edges} theme={theme} layout={layout}
-        nodeRenderers={nodeRenderers} nodeIcons={nodeIcons} edgeColors={edgeColors}
+        nodeRenderers={nodeRenderers} toolIcons={toolIcons} fileIcons={fileIcons} edgeColors={edgeColors}
         fitOnUpdate={fitOnUpdate} showControls={showControls} onNodeClick={handleNodeClick} onNewestNode={handleNewestNode} />
       {showLegend && <Legend />}
       {showDetailPanel && <DetailPanel node={selectedNode} onClose={() => setSelectedNode(null)} />}

@@ -3,7 +3,7 @@ import type React from 'react'
 /** A node in the agent execution graph. */
 export interface AgrexNode {
   id: string
-  type: 'agent' | 'sub_agent' | 'tool' | 'file' | 'output' | 'search' | (string & {})
+  type: 'agent' | 'sub_agent' | 'tool' | 'file' | (string & {})
   label: string
   parentId?: string
   status?: 'idle' | 'running' | 'done' | 'error'
@@ -56,7 +56,8 @@ export interface AgrexProps {
   theme?: Theme
   layout?: Layout
   nodeRenderers?: Record<string, React.ComponentType<AgrexNodeProps>>
-  nodeIcons?: Record<string, React.ComponentType<{ size: number }>>
+  toolIcons?: Record<string, React.ComponentType<{ size: number }>>
+  fileIcons?: Record<string, React.ComponentType<{ size: number }>>
   edgeColors?: Record<string, string>
   showControls?: boolean
   showLegend?: boolean

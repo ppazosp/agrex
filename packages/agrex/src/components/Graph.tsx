@@ -10,7 +10,7 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import {
-  AgentNode, SubAgentNode, ToolNode, FileNode, OutputNode, SearchNode, DefaultNode,
+  AgentNode, SubAgentNode, ToolNode, FileNode, DefaultNode,
 } from '../nodes'
 import { radialLayout } from '../layout/radial'
 import Controls from './Controls'
@@ -19,7 +19,7 @@ import { themeToCSS } from '../theme/tokens'
 
 const BUILT_IN_NODE_TYPES: NodeTypes = {
   agent: AgentNode, sub_agent: SubAgentNode, tool: ToolNode,
-  file: FileNode, output: OutputNode, search: SearchNode,
+  file: FileNode,
 }
 
 interface GraphInternalProps {
@@ -28,7 +28,8 @@ interface GraphInternalProps {
   theme: ResolvedTheme
   layout: 'radial' | 'force' | LayoutFn
   nodeRenderers?: Record<string, React.ComponentType<any>>
-  nodeIcons?: Record<string, React.ComponentType<{ size: number }>>
+  toolIcons?: Record<string, React.ComponentType<{ size: number }>>
+  fileIcons?: Record<string, React.ComponentType<{ size: number }>>
   edgeColors?: Record<string, string>
   fitOnUpdate: boolean
   showControls: boolean
@@ -42,17 +43,31 @@ const DEFAULT_EDGE_COLORS: Record<string, string> = {
   read: 'var(--agrex-edge-read)',
 }
 
+function getFileIcon(
+  label: string,
+  fileIcons: Record<string, React.ComponentType<{ size: number }>> | undefined,
+): React.ComponentType<{ size: number }> | undefined {
+  if (!fileIcons) return undefined
+  const dot = label.lastIndexOf('.')
+  if (dot === -1) return undefined
+  return fileIcons[label.slice(dot + 1)]
+}
+
 function toFlowNode(
   n: AgrexNode,
   pos: { x: number; y: number },
   nodeRenderers: Record<string, React.ComponentType<any>> | undefined,
-  nodeIcons: Record<string, React.ComponentType<{ size: number }>> | undefined,
+  toolIcons: Record<string, React.ComponentType<{ size: number }>> | undefined,
+  fileIcons: Record<string, React.ComponentType<{ size: number }>> | undefined,
 ): Node {
   const isCustomType = !(n.type in BUILT_IN_NODE_TYPES) && !(n.type in (nodeRenderers ?? {}))
+  let icon: React.ComponentType<{ size: number }> | undefined
+  if (n.type === 'tool') icon = toolIcons?.[n.label]
+  else if (n.type === 'file') icon = getFileIcon(n.label, fileIcons)
   return {
     id: n.id,
     type: isCustomType ? 'default_agrex' : n.type,
-    data: { label: n.label, status: n.status ?? 'idle', icon: nodeIcons?.[n.type], ...n.metadata },
+    data: { label: n.label, status: n.status ?? 'idle', icon, ...n.metadata },
     position: pos,
   } as Node
 }
@@ -72,7 +87,7 @@ function toFlowEdge(e: AgrexEdge, edgeColors: Record<string, string>): Edge {
 }
 
 export default function Graph({
-  nodes, edges, theme, nodeRenderers, nodeIcons, edgeColors: userEdgeColors,
+  nodes, edges, theme, nodeRenderers, toolIcons, fileIcons, edgeColors: userEdgeColors,
   fitOnUpdate, showControls, onNodeClick, onNewestNode,
 }: GraphInternalProps) {
   const [flowNodes, setFlowNodes, onNodesChange] = useNodesState<Node>([])
@@ -151,7 +166,7 @@ export default function Graph({
 
     if (prevNodeIdsRef.current.size === 0) {
       // First render — set everything
-      setFlowNodes(nodes.filter(n => posRef.current.has(n.id)).map(n => toFlowNode(n, posRef.current.get(n.id)!, nodeRenderers, nodeIcons)))
+      setFlowNodes(nodes.filter(n => posRef.current.has(n.id)).map(n => toFlowNode(n, posRef.current.get(n.id)!, nodeRenderers, toolIcons, fileIcons)))
       setFlowEdges(edges.filter(e => posRef.current.has(e.source) && posRef.current.has(e.target)).map(e => toFlowEdge(e, ec)))
     } else {
       // Incremental — add new nodes, update changed nodes, add/remove edges
@@ -166,11 +181,11 @@ export default function Graph({
             const newStatus = agrexNode.status ?? 'idle'
             const oldStatus = (fn.data as any)?.status
             if (newStatus === oldStatus) return fn // no change, keep same reference
-            return toFlowNode(agrexNode, posRef.current.get(agrexNode.id)!, nodeRenderers, nodeIcons)
+            return toFlowNode(agrexNode, posRef.current.get(agrexNode.id)!, nodeRenderers, toolIcons, fileIcons)
           })
           // Add new nodes
           for (const nd of newNodes) {
-            result.push(toFlowNode(nd, posRef.current.get(nd.id)!, nodeRenderers, nodeIcons))
+            result.push(toFlowNode(nd, posRef.current.get(nd.id)!, nodeRenderers, toolIcons, fileIcons))
           }
           return result
         })

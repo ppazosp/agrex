@@ -122,20 +122,33 @@ function toFlowEdge(e: AgrexEdge, edgeColors: Record<string, string>, animated: 
   } as Edge
 }
 
-/** Get all descendant IDs of a node in the tree */
-function getDescendants(nodeId: string, nodes: AgrexNode[]): Set<string> {
+/** Get all descendant IDs using a pre-built children lookup — O(descendants) per call */
+function getDescendants(nodeId: string, childrenOf: Map<string, string[]>): Set<string> {
   const result = new Set<string>()
-  const queue = [nodeId]
-  while (queue.length > 0) {
-    const current = queue.pop()!
-    for (const n of nodes) {
-      if (n.parentId === current && !result.has(n.id)) {
-        result.add(n.id)
-        queue.push(n.id)
-      }
-    }
+  const queue = childrenOf.get(nodeId)
+  if (!queue) return result
+  const stack = [...queue]
+  while (stack.length > 0) {
+    const current = stack.pop()!
+    if (result.has(current)) continue
+    result.add(current)
+    const children = childrenOf.get(current)
+    if (children) for (const c of children) stack.push(c)
   }
   return result
+}
+
+/** Build a parentId → childId[] lookup map in a single O(n) pass */
+function buildChildrenMap(nodes: AgrexNode[]): Map<string, string[]> {
+  const map = new Map<string, string[]>()
+  for (const n of nodes) {
+    if (n.parentId) {
+      let children = map.get(n.parentId)
+      if (!children) { children = []; map.set(n.parentId, children) }
+      children.push(n.id)
+    }
+  }
+  return map
 }
 
 export type GraphRef = {
@@ -213,13 +226,15 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
   useEffect(() => { agrexNodesRef.current = nodes }, [nodes])
   useEffect(() => { agrexEdgesRef.current = edges }, [edges])
 
-  // Compute hidden nodes and descendant status for collapsed nodes
+  // Compute hidden nodes and descendant status for collapsed nodes — O(n) build + O(descendants) per collapsed
   const { hiddenIds, childrenAllDoneMap } = useMemo(() => {
     const ids = new Set<string>()
     const allDone = new Map<string, boolean>()
+    if (collapsedNodes.size === 0) return { hiddenIds: ids, childrenAllDoneMap: allDone }
+    const childrenOf = buildChildrenMap(nodes)
     const nodeById = new Map(nodes.map(n => [n.id, n]))
     for (const cid of collapsedNodes) {
-      const descendants = getDescendants(cid, nodes)
+      const descendants = getDescendants(cid, childrenOf)
       for (const did of descendants) {
         ids.add(did)
       }
@@ -234,14 +249,17 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
   const visibleNodes = useMemo(() => nodes.filter(n => !hiddenIds.has(n.id)), [nodes, hiddenIds])
   const visibleEdges = useMemo(() => edges.filter(e => !hiddenIds.has(e.source) && !hiddenIds.has(e.target)), [edges, hiddenIds])
 
-  // Count direct children for all agent/sub_agent nodes (for badge display)
+  // Count direct children for all agent/sub_agent nodes (for badge display) — O(n)
   const childCounts = useMemo(() => {
-    const counts = new Map<string, number>()
+    const parentCounts = new Map<string, number>()
+    const agentIds = new Set<string>()
     for (const n of nodes) {
-      if (n.type === 'agent' || n.type === 'sub_agent') {
-        const directChildren = nodes.filter(c => c.parentId === n.id).length
-        if (directChildren > 0) counts.set(n.id, directChildren)
-      }
+      if (n.type === 'agent' || n.type === 'sub_agent') agentIds.add(n.id)
+      if (n.parentId) parentCounts.set(n.parentId, (parentCounts.get(n.parentId) ?? 0) + 1)
+    }
+    const counts = new Map<string, number>()
+    for (const [pid, count] of parentCounts) {
+      if (agentIds.has(pid)) counts.set(pid, count)
     }
     return counts
   }, [nodes])

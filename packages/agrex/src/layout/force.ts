@@ -38,64 +38,110 @@ interface SimLink extends SimulationLinkDatum<SimNode> {
 }
 
 /**
- * Hard collision resolver — guarantees zero overlaps.
- * Iterates until no rectangles overlap (max iterations to prevent infinite loops).
- * Only moves unpinned nodes; if both are pinned and overlap, moves the second one anyway.
+ * Spatial hash grid for broad-phase collision detection.
+ * Nodes are bucketed into cells; only pairs in the same or adjacent cells are checked.
+ * Reduces O(n^2) to O(n * k) where k is average neighbors per cell (typically constant).
  */
-function resolveCollisions(nodes: SimNode[], padding: number, maxIter = 50) {
-  for (let iter = 0; iter < maxIter; iter++) {
-    let anyOverlap = false
+function buildSpatialGrid(nodes: SimNode[], cellSize: number) {
+  const grid = new Map<string, SimNode[]>()
+  for (const node of nodes) {
+    const cx = Math.floor((node.x ?? 0) / cellSize)
+    const cy = Math.floor((node.y ?? 0) / cellSize)
+    const key = `${cx},${cy}`
+    let cell = grid.get(key)
+    if (!cell) { cell = []; grid.set(key, cell) }
+    cell.push(node)
+  }
+  return grid
+}
 
-    for (let i = 0; i < nodes.length; i++) {
-      for (let j = i + 1; j < nodes.length; j++) {
-        const a = nodes[i]
-        const b = nodes[j]
+// Half-neighbor offsets: self (intra-cell) + 4 unique neighbor directions.
+// This avoids double-counting pairs across cells without needing a seen-set.
+const HALF_NEIGHBORS: [number, number][] = [[0, 0], [1, 0], [1, 1], [0, 1], [-1, 1]]
 
-        const dx = (b.x ?? 0) - (a.x ?? 0)
-        const dy = (b.y ?? 0) - (a.y ?? 0)
+function* getCandidatePairs(grid: Map<string, SimNode[]>): Generator<[SimNode, SimNode]> {
+  for (const [key, cell] of grid) {
+    const [cxStr, cyStr] = key.split(',')
+    const cx = +cxStr, cy = +cyStr
 
-        const minDx = (a.w + b.w) / 2 + padding
-        const minDy = (a.h + b.h) / 2 + padding
-
-        const overlapX = minDx - Math.abs(dx)
-        const overlapY = minDy - Math.abs(dy)
-
-        if (overlapX > 0 && overlapY > 0) {
-          anyOverlap = true
-
-          // Push apart along the axis of least overlap
-          if (overlapX < overlapY) {
-            const sign = dx >= 0 ? 1 : -1
-            if (!a.pinned && !b.pinned) {
-              a.x = (a.x ?? 0) - sign * overlapX * 0.5
-              b.x = (b.x ?? 0) + sign * overlapX * 0.5
-            } else if (!b.pinned) {
-              b.x = (b.x ?? 0) + sign * overlapX
-            } else if (!a.pinned) {
-              a.x = (a.x ?? 0) - sign * overlapX
-            } else {
-              // Both pinned — force move the later one
-              b.x = (b.x ?? 0) + sign * overlapX
-              b.pinned = false // unpin so it can be adjusted further
-            }
-          } else {
-            const sign = dy >= 0 ? 1 : -1
-            if (!a.pinned && !b.pinned) {
-              a.y = (a.y ?? 0) - sign * overlapY * 0.5
-              b.y = (b.y ?? 0) + sign * overlapY * 0.5
-            } else if (!b.pinned) {
-              b.y = (b.y ?? 0) + sign * overlapY
-            } else if (!a.pinned) {
-              a.y = (a.y ?? 0) - sign * overlapY
-            } else {
-              b.y = (b.y ?? 0) + sign * overlapY
-              b.pinned = false
-            }
-          }
-        }
+    // Intra-cell pairs
+    for (let i = 0; i < cell.length; i++) {
+      for (let j = i + 1; j < cell.length; j++) {
+        yield [cell[i], cell[j]]
       }
     }
 
+    // Cross-cell pairs with 4 half-neighbors (skip [0,0] = self, handled above)
+    for (let n = 1; n < HALF_NEIGHBORS.length; n++) {
+      const neighbor = grid.get(`${cx + HALF_NEIGHBORS[n][0]},${cy + HALF_NEIGHBORS[n][1]}`)
+      if (!neighbor) continue
+      for (const a of cell) {
+        for (const b of neighbor) {
+          yield [a, b]
+        }
+      }
+    }
+  }
+}
+
+function resolvePairOverlap(a: SimNode, b: SimNode, padding: number): boolean {
+  const dx = (b.x ?? 0) - (a.x ?? 0)
+  const dy = (b.y ?? 0) - (a.y ?? 0)
+  const minDx = (a.w + b.w) / 2 + padding
+  const minDy = (a.h + b.h) / 2 + padding
+  const overlapX = minDx - Math.abs(dx)
+  const overlapY = minDy - Math.abs(dy)
+
+  if (overlapX <= 0 || overlapY <= 0) return false
+
+  // Push apart along the axis of least overlap
+  if (overlapX < overlapY) {
+    const sign = dx >= 0 ? 1 : -1
+    if (!a.pinned && !b.pinned) {
+      a.x = (a.x ?? 0) - sign * overlapX * 0.5
+      b.x = (b.x ?? 0) + sign * overlapX * 0.5
+    } else if (!b.pinned) {
+      b.x = (b.x ?? 0) + sign * overlapX
+    } else if (!a.pinned) {
+      a.x = (a.x ?? 0) - sign * overlapX
+    } else {
+      b.x = (b.x ?? 0) + sign * overlapX
+      b.pinned = false
+    }
+  } else {
+    const sign = dy >= 0 ? 1 : -1
+    if (!a.pinned && !b.pinned) {
+      a.y = (a.y ?? 0) - sign * overlapY * 0.5
+      b.y = (b.y ?? 0) + sign * overlapY * 0.5
+    } else if (!b.pinned) {
+      b.y = (b.y ?? 0) + sign * overlapY
+    } else if (!a.pinned) {
+      a.y = (a.y ?? 0) - sign * overlapY
+    } else {
+      b.y = (b.y ?? 0) + sign * overlapY
+      b.pinned = false
+    }
+  }
+  return true
+}
+
+/**
+ * Hard collision resolver — guarantees zero overlaps.
+ * Uses spatial hash grid for O(n) broad-phase detection per iteration.
+ * Only moves unpinned nodes; if both are pinned and overlap, moves the second one.
+ */
+function resolveCollisions(nodes: SimNode[], padding: number, maxIter = 50) {
+  // Cell size = largest node dimension + padding, so overlapping nodes are always in adjacent cells
+  let maxDim = 0
+  for (const n of nodes) maxDim = Math.max(maxDim, n.w, n.h)
+  const cellSize = maxDim + padding * 2
+
+  for (let iter = 0; iter < maxIter; iter++) {
+    const grid = buildSpatialGrid(nodes, cellSize)
+    let anyOverlap = false
+    for (const [a, b] of getCandidatePairs(grid)) {
+      if (resolvePairOverlap(a, b, padding)) anyOverlap = true
+    }
     if (!anyOverlap) break
   }
 }

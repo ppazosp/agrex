@@ -7,17 +7,25 @@ const MIN_DIST = 100
 function placeNode(
   parentPos: { x: number; y: number } | undefined,
   placed: Map<string, { x: number; y: number }>,
-  childIndex: number,
 ): { x: number; y: number } {
   if (!parentPos) return { x: 0, y: 0 }
 
   const parentDist = Math.hypot(parentPos.x, parentPos.y)
 
+  // Count already-placed siblings around this parent
+  let siblingIndex = 0
+  for (const [, pos] of placed) {
+    const d = Math.hypot(pos.x - parentPos.x, pos.y - parentPos.y)
+    if (d > BASE_R * 0.5 && d < BASE_R * 1.5) siblingIndex++
+  }
+
+  const parentAngle = Math.atan2(parentPos.y || 1, parentPos.x || 1)
+
   for (let ring = 1; ring <= 10; ring++) {
     const r = BASE_R * ring
     const slots = Math.max(6, Math.floor((2 * Math.PI * r) / MIN_DIST))
     for (let s = 0; s < slots; s++) {
-      const angle = childIndex * GOLDEN_ANGLE + (s * 2 * Math.PI) / slots
+      const angle = parentAngle + siblingIndex * GOLDEN_ANGLE + (s * 2 * Math.PI) / slots
       const x = parentPos.x + r * Math.cos(angle)
       const y = parentPos.y + r * Math.sin(angle)
 
@@ -43,7 +51,6 @@ function placeNode(
 
 export const radialLayout: LayoutFn = (nodes, edges, existingPositions) => {
   const positions = new Map(existingPositions)
-  const childCount = new Map<string, number>()
 
   const parentOf = new Map<string, string>()
   for (const node of nodes) {
@@ -60,10 +67,8 @@ export const radialLayout: LayoutFn = (nodes, edges, existingPositions) => {
     if (!pid && positions.size > 0) continue
 
     const parentPos = pid ? positions.get(pid) : undefined
-    const ci = pid ? (childCount.get(pid) ?? 0) : 0
-    if (pid) childCount.set(pid, ci + 1)
 
-    positions.set(node.id, placeNode(parentPos, positions, ci))
+    positions.set(node.id, placeNode(parentPos, positions))
   }
 
   return positions

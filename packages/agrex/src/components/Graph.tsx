@@ -192,7 +192,6 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph(
   const rfRef = useRef<ReactFlowInstance | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const posRef = useRef(new Map<string, { x: number; y: number }>())
-  const childCountRef = useRef(new Map<string, number>())
   const agrexNodesRef = useRef<AgrexNode[]>(nodes)
   const agrexEdgesRef = useRef<AgrexEdge[]>(edges)
   const prevNodeIdsRef = useRef(new Set<string>())
@@ -310,7 +309,6 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph(
   useEffect(() => {
     if (visibleNodes.length === 0) {
       posRef.current.clear()
-      childCountRef.current.clear()
       prevNodeIdsRef.current.clear()
       prevEdgeIdsRef.current.clear()
       setAutoFit(fitOnUpdate)
@@ -324,10 +322,6 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph(
     for (const id of posRef.current.keys()) {
       if (!currentIds.has(id)) posRef.current.delete(id)
     }
-    for (const id of childCountRef.current.keys()) {
-      if (!currentIds.has(id)) childCountRef.current.delete(id)
-    }
-
     // Place new nodes using radial layout
     let newest: AgrexNode | null = null
     const newNodes: AgrexNode[] = []
@@ -348,8 +342,6 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph(
         posRef.current.set(nd.id, { x: rootCount * 300, y: 0 })
         rootCount++
       } else {
-        const ci = pid ? (childCountRef.current.get(pid) ?? 0) : 0
-        if (pid) childCountRef.current.set(pid, ci + 1)
         posRef.current.set(nd.id, radialLayout([nd], visibleEdges, posRef.current).get(nd.id) ?? { x: 0, y: 0 })
       }
       newest = nd

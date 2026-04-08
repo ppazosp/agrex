@@ -205,6 +205,27 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
   animateEdgesRef.current = animateEdges
 
   const initRef = useRef(false)
+  const userInteractingRef = useRef(false)
+
+  // Track real user interaction (pointer/wheel) to distinguish from programmatic viewport moves
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const onDown = () => { userInteractingRef.current = true }
+    const onUp = () => { userInteractingRef.current = false }
+    const onWheel = () => {
+      userInteractingRef.current = true
+      setTimeout(() => { userInteractingRef.current = false }, 100)
+    }
+    el.addEventListener('pointerdown', onDown)
+    window.addEventListener('pointerup', onUp)
+    el.addEventListener('wheel', onWheel, { passive: true })
+    return () => {
+      el.removeEventListener('pointerdown', onDown)
+      window.removeEventListener('pointerup', onUp)
+      el.removeEventListener('wheel', onWheel)
+    }
+  }, [])
 
   // Clean up pending timers on unmount
   useEffect(() => {
@@ -492,7 +513,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
         onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
         onNodeClick={handleNodeClick}
         onEdgeClick={handleEdgeClick}
-        onMoveStart={(event) => { if (initRef.current && event) setAutoFit(false) }}
+        onMoveStart={() => { if (initRef.current && userInteractingRef.current) setAutoFit(false) }}
         onInit={(inst) => { rfRef.current = inst; inst.setCenter(40, 40, { zoom: 1 }); scheduleTimer(() => { initRef.current = true }, 200) }}
         minZoom={0.1} maxZoom={2}
         proOptions={{ hideAttribution: true }}

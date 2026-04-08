@@ -43,16 +43,14 @@ describe('createMockEdge', () => {
 
 describe('createMockPipeline', () => {
   it('creates research-agent scenario', () => {
-    const { nodes, edges } = createMockPipeline('research-agent')
+    const { nodes } = createMockPipeline('research-agent')
     expect(nodes.length).toBeGreaterThan(0)
-    expect(edges.length).toBeGreaterThan(0)
     expect(nodes[0].type).toBe('agent')
   })
 
   it('creates multi-agent scenario', () => {
-    const { nodes, edges } = createMockPipeline('multi-agent')
+    const { nodes } = createMockPipeline('multi-agent')
     expect(nodes.length).toBeGreaterThan(5)
-    expect(edges.length).toBeGreaterThan(5)
   })
 
   it('creates deep-chain scenario', () => {
@@ -112,7 +110,6 @@ describe('replay', () => {
     }
 
     expect(instance.addNode).toHaveBeenCalled()
-    expect(instance.addEdge).toHaveBeenCalled()
 
     vi.useRealTimers()
   })

@@ -32,14 +32,12 @@ export function replay(
   let timer: ReturnType<typeof setTimeout> | null = null
   let resumeFn: (() => void) | null = null
 
-  const edgesByTarget = new Map<string, AgrexEdge[]>()
-  for (const edge of scenario.edges) {
-    const existing = edgesByTarget.get(edge.target) ?? []
-    existing.push(edge)
-    edgesByTarget.set(edge.target, existing)
-  }
-
   instance.clear()
+
+  // Add any explicit edges upfront
+  for (const edge of scenario.edges) {
+    instance.addEdge(edge)
+  }
 
   const items = [...scenario.nodes]
   let i = 0
@@ -58,17 +56,6 @@ export function replay(
 
     const node = items[i]
     instance.addNode({ ...node, status: 'running' })
-
-    const nodeEdges = edgesByTarget.get(node.id) ?? []
-    for (const edge of nodeEdges) {
-      instance.addEdge(edge)
-    }
-    for (const edge of scenario.edges) {
-      if (edge.source === node.id && !nodeEdges.includes(edge)) {
-        const targetExists = items.slice(0, i).some(n => n.id === edge.target)
-        if (targetExists) instance.addEdge(edge)
-      }
-    }
 
     if (i > 0) {
       instance.updateNode(items[i - 1].id, { status: 'done' })

@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react'
 import { Agrex, useAgrex, type AgrexHandle, type Theme } from 'agrex'
-import { createMockPipeline, replay, createMockNode, createMockEdge, type ReplayController } from 'agrex/mocks'
+import { createMockPipeline, replay, createMockNode, type ReplayController } from 'agrex/mocks'
 import 'agrex/styles.css'
 
 type ScenarioName = 'research-agent' | 'multi-agent' | 'deep-chain'
@@ -49,10 +49,6 @@ export default function App() {
     })
     agrex.addNode(node)
 
-    if (parentNode) {
-      agrex.addEdge(createMockEdge({ source: parentNode.id, target: node.id }))
-    }
-
     setTimeout(() => agrex.updateNode(node.id, {
       status: 'done',
       metadata: { startedAt: node.metadata!.startedAt, endedAt: Date.now(), tokens: Math.floor(Math.random() * 5000) },
@@ -72,9 +68,6 @@ export default function App() {
       metadata: { error: 'Connection timeout after 30s' },
     })
     agrex.addNode(node)
-    if (parentNode) {
-      agrex.addEdge(createMockEdge({ source: parentNode.id, target: node.id }))
-    }
   }, [agrex])
 
   const btnStyle: React.CSSProperties = {

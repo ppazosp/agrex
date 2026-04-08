@@ -1,6 +1,8 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { createMockNode, createMockEdge, resetMockCounter } from '../mocks/generators'
 import { createMockPipeline } from '../mocks/scenarios'
+import { replay } from '../mocks/replay'
+import type { UseAgrexReturn } from '../types'
 
 beforeEach(() => {
   resetMockCounter()
@@ -54,7 +56,7 @@ describe('createMockPipeline', () => {
   })
 
   it('creates deep-chain scenario', () => {
-    const { nodes, edges } = createMockPipeline('deep-chain')
+    const { nodes } = createMockPipeline('deep-chain')
     const subAgents = nodes.filter(n => n.type === 'sub_agent')
     expect(subAgents.length).toBeGreaterThan(0)
   })
@@ -77,5 +79,30 @@ describe('createMockPipeline', () => {
         expect(ids.has(e.target)).toBe(true)
       }
     }
+  })
+})
+
+describe('replay', () => {
+  it('drips nodes and edges over time', async () => {
+    vi.useFakeTimers()
+    const { nodes, edges } = createMockPipeline('research-agent')
+
+    const instance: Pick<UseAgrexReturn, 'addNode' | 'addEdge' | 'updateNode' | 'clear'> = {
+      addNode: vi.fn(),
+      addEdge: vi.fn(),
+      updateNode: vi.fn(),
+      clear: vi.fn(),
+    }
+
+    replay(instance, { nodes, edges })
+
+    for (let i = 0; i < nodes.length + edges.length; i++) {
+      await vi.advanceTimersByTimeAsync(200)
+    }
+
+    expect(instance.addNode).toHaveBeenCalled()
+    expect(instance.addEdge).toHaveBeenCalled()
+
+    vi.useRealTimers()
   })
 })

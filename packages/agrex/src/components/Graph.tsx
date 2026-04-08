@@ -14,6 +14,7 @@ import {
   AgentNode, SubAgentNode, ToolNode, FileNode, DefaultNode,
 } from '../nodes'
 import { radialLayout } from '../layout/radial'
+import { forceLayout } from '../layout/force'
 import Controls from './Controls'
 import type { AgrexNode, AgrexEdge, ResolvedTheme, LayoutFn } from '../types'
 import { themeToCSS } from '../theme/tokens'
@@ -80,7 +81,7 @@ function toFlowNode(
   fileIcons: Record<string, React.ComponentType<{ size: number }>> | undefined,
   collapsedNodes: Set<string>,
   collapsedChildCounts: Map<string, number>,
-  allNodes: AgrexNode[],
+  childrenAllDoneMap: Map<string, boolean>,
 ): Node {
   const isCustomType = !(n.type in BUILT_IN_NODE_TYPES) && !(n.type in (nodeRenderers ?? {}))
   let icon: React.ComponentType<{ size: number }> | undefined
@@ -89,15 +90,7 @@ function toFlowNode(
   const elapsed = getElapsed(n.metadata)
   const collapsed = collapsedNodes.has(n.id)
   const childCount = collapsedChildCounts.get(n.id)
-  // For collapsed nodes, check if all descendants are done
-  let childrenAllDone: boolean | undefined
-  if (collapsed && childCount) {
-    const descendants = getDescendants(n.id, allNodes)
-    childrenAllDone = [...descendants].every(did => {
-      const dn = allNodes.find(x => x.id === did)
-      return dn?.status === 'done'
-    })
-  }
+  const childrenAllDone = collapsed ? childrenAllDoneMap.get(n.id) : undefined
   return {
     id: n.id,
     type: isCustomType ? 'default_agrex' : n.type,
@@ -148,7 +141,7 @@ export type GraphRef = {
 }
 
 const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
-  nodes, edges, theme, nodeRenderers, toolIcons, fileIcons, edgeColors: userEdgeColors,
+  nodes, edges, theme, layout, nodeRenderers, toolIcons, fileIcons, edgeColors: userEdgeColors,
   fitOnUpdate, showControls, showMinimap, keyboardShortcuts, animateEdges, onNodeClick, onEdgeClick, onNewestNode,
 }, ref) {
   const [flowNodes, setFlowNodes, onNodesChange] = useNodesState<Node>([])
@@ -172,15 +165,22 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
   useEffect(() => { agrexNodesRef.current = nodes }, [nodes])
   useEffect(() => { agrexEdgesRef.current = edges }, [edges])
 
-  // Compute hidden nodes (descendants of collapsed nodes)
-  const hiddenIds = useMemo(() => {
+  // Compute hidden nodes and descendant status for collapsed nodes
+  const { hiddenIds, childrenAllDoneMap } = useMemo(() => {
     const ids = new Set<string>()
+    const allDone = new Map<string, boolean>()
+    const nodeById = new Map(nodes.map(n => [n.id, n]))
     for (const cid of collapsedNodes) {
-      for (const did of getDescendants(cid, nodes)) {
+      const descendants = getDescendants(cid, nodes)
+      for (const did of descendants) {
         ids.add(did)
       }
+      allDone.set(cid, [...descendants].every(did => {
+        const dn = nodeById.get(did)
+        return dn?.status === 'done'
+      }))
     }
-    return ids
+    return { hiddenIds: ids, childrenAllDoneMap: allDone }
   }, [nodes, collapsedNodes])
 
   const visibleNodes = useMemo(() => nodes.filter(n => !hiddenIds.has(n.id)), [nodes, hiddenIds])
@@ -256,7 +256,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
 
     if (prevNodeIdsRef.current.size === 0) {
       // First render — set everything
-      setFlowNodes(visibleNodes.filter(n => posRef.current.has(n.id)).map(n => toFlowNode(n, posRef.current.get(n.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts, nodes)))
+      setFlowNodes(visibleNodes.filter(n => posRef.current.has(n.id)).map(n => toFlowNode(n, posRef.current.get(n.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts, childrenAllDoneMap)))
       setFlowEdges(visibleEdges.filter(e => posRef.current.has(e.source) && posRef.current.has(e.target)).map(e => toFlowEdge(e, ec, animateEdges)))
     } else {
       // Incremental — add new nodes, update changed nodes, add/remove edges
@@ -272,14 +272,14 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
             const oldStatus = (fn.data as any)?.status
             const isCollapsed = collapsedNodes.has(agrexNode.id)
             // Always re-render collapsed nodes — their badge color depends on descendant statuses
-            if (isCollapsed) return toFlowNode(agrexNode, posRef.current.get(agrexNode.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts, nodes)
+            if (isCollapsed) return toFlowNode(agrexNode, posRef.current.get(agrexNode.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts, childrenAllDoneMap)
             const wasCollapsed = (fn.data as any)?.collapsed
             if (newStatus === oldStatus && wasCollapsed === isCollapsed) return fn
-            return toFlowNode(agrexNode, posRef.current.get(agrexNode.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts, nodes)
+            return toFlowNode(agrexNode, posRef.current.get(agrexNode.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts, childrenAllDoneMap)
           })
           // Add new nodes
           for (const nd of newNodes) {
-            result.push(toFlowNode(nd, posRef.current.get(nd.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts, nodes))
+            result.push(toFlowNode(nd, posRef.current.get(nd.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts, childrenAllDoneMap))
           }
           return result
         })
@@ -388,24 +388,33 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
   }), [fitView])
 
   const handleRelayout = useCallback(() => {
-    // Reset all positions and recompute layout
     posRef.current.clear()
     childCountRef.current.clear()
-    for (const nd of agrexNodesRef.current) {
-      if (hiddenIds.has(nd.id)) continue
-      const pid = nd.parentId
-      const ci = pid ? (childCountRef.current.get(pid) ?? 0) : 0
-      if (pid) childCountRef.current.set(pid, ci + 1)
-      posRef.current.set(nd.id, radialLayout([nd], agrexEdgesRef.current, posRef.current).get(nd.id) ?? { x: 0, y: 0 })
-    }
-    const ec = edgeColorsRef.current
     const vn = agrexNodesRef.current.filter(n => !hiddenIds.has(n.id))
     const ve = agrexEdgesRef.current.filter(e => !hiddenIds.has(e.source) && !hiddenIds.has(e.target))
-    setFlowNodes(vn.filter(n => posRef.current.has(n.id)).map(n => toFlowNode(n, posRef.current.get(n.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts, nodes)))
+
+    const layoutFn = typeof layout === 'function' ? layout : layout === 'force' ? forceLayout : null
+
+    if (layoutFn) {
+      const positions = layoutFn(vn, ve, new Map())
+      for (const [id, pos] of positions) {
+        posRef.current.set(id, pos)
+      }
+    } else {
+      for (const nd of vn) {
+        const pid = nd.parentId
+        const ci = pid ? (childCountRef.current.get(pid) ?? 0) : 0
+        if (pid) childCountRef.current.set(pid, ci + 1)
+        posRef.current.set(nd.id, radialLayout([nd], ve, posRef.current).get(nd.id) ?? { x: 0, y: 0 })
+      }
+    }
+
+    const ec = edgeColorsRef.current
+    setFlowNodes(vn.filter(n => posRef.current.has(n.id)).map(n => toFlowNode(n, posRef.current.get(n.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts, childrenAllDoneMap)))
     setFlowEdges(ve.filter(e => posRef.current.has(e.source) && posRef.current.has(e.target)).map(e => toFlowEdge(e, ec, animateEdges)))
     setTimeout(fitView, 60)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fitView, nodeRenderers, toolIcons, fileIcons, collapsedNodes])
+  }, [fitView, layout, nodeRenderers, toolIcons, fileIcons, collapsedNodes])
 
   // Keyboard shortcuts
   useEffect(() => {

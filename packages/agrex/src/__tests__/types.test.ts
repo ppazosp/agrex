@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import type { AgrexNode, AgrexEdge } from '../src/types'
+import type { AgrexNode, AgrexEdge } from '../types'
 
 describe('AgrexNode', () => {
   it('accepts built-in types', () => {

@@ -35,6 +35,7 @@ function App() {
 For real-time updates from a running agent:
 
 ```tsx
+import { useEffect } from 'react'
 import { Agrex, useAgrex } from 'agrex'
 import 'agrex/styles.css'
 

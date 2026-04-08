@@ -46,5 +46,6 @@ jobs:
           registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @ppazosp/agrex build
+      - run: npm install -g npm@latest
       - run: npm publish --provenance --access public
         working-directory: packages/agrex

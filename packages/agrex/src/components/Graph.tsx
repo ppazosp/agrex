@@ -270,8 +270,10 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
             if (!agrexNode) return fn
             const newStatus = agrexNode.status ?? 'idle'
             const oldStatus = (fn.data as any)?.status
-            const wasCollapsed = (fn.data as any)?.collapsed
             const isCollapsed = collapsedNodes.has(agrexNode.id)
+            // Always re-render collapsed nodes — their badge color depends on descendant statuses
+            if (isCollapsed) return toFlowNode(agrexNode, posRef.current.get(agrexNode.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts, nodes)
+            const wasCollapsed = (fn.data as any)?.collapsed
             if (newStatus === oldStatus && wasCollapsed === isCollapsed) return fn
             return toFlowNode(agrexNode, posRef.current.get(agrexNode.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts, nodes)
           })

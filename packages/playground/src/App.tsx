@@ -11,7 +11,7 @@ export default function App() {
   const [theme, setTheme] = useState<Theme>('dark')
   const [showControls, setShowControls] = useState(true)
   const [showLegend, setShowLegend] = useState(true)
-  const [showToasts, setShowToasts] = useState(true)
+  const [showToasts, setShowToasts] = useState(false)
   const [showDetailPanel, setShowDetailPanel] = useState(true)
   const [showMinimap, setShowMinimap] = useState(false)
   const [showStats, setShowStats] = useState(false)

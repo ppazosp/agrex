@@ -33,7 +33,10 @@ function createStore() {
       emit()
     },
     updateNode: (id: string, updates: Partial<Pick<AgrexNode, 'status' | 'label' | 'metadata'>>) => {
-      if (!state.nodes.some((n) => n.id === id)) return
+      if (!state.nodes.some((n) => n.id === id)) {
+        console.warn(`[agrex] updateNode: no node with id "${id}" found`)
+        return
+      }
       state = {
         ...state,
         nodes: state.nodes.map((n) => (n.id === id ? { ...n, ...updates } : n)),
@@ -69,6 +72,10 @@ function createStore() {
       emit()
     },
     loadJSON: (data: { nodes: AgrexNode[]; edges?: AgrexEdge[] }) => {
+      if (!data || !Array.isArray(data.nodes)) {
+        console.warn('[agrex] loadJSON: expected { nodes: AgrexNode[] }, got', data)
+        return
+      }
       state = { nodes: [...data.nodes], edges: [...(data.edges ?? [])] }
       emit()
     },
@@ -82,7 +89,7 @@ export function useAgrex(): UseAgrexReturn {
   }
   const store = storeRef.current
 
-  const state = useSyncExternalStore(store.subscribe, store.getState)
+  const state = useSyncExternalStore(store.subscribe, store.getState, store.getState)
 
   return {
     nodes: state.nodes,

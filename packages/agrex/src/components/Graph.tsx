@@ -67,8 +67,11 @@ function getElapsed(metadata?: Record<string, unknown>): string | undefined {
   const end = metadata.endedAt as number | string | undefined
   if (!start) return undefined
   const startMs = typeof start === 'number' ? start : new Date(start).getTime()
+  if (Number.isNaN(startMs)) return undefined
   const endMs = end ? (typeof end === 'number' ? end : new Date(end).getTime()) : Date.now()
+  if (Number.isNaN(endMs)) return undefined
   const diff = endMs - startMs
+  if (diff < 0) return undefined
   if (diff < 1000) return `${diff}ms`
   if (diff < 60000) return `${(diff / 1000).toFixed(1)}s`
   return `${(diff / 60000).toFixed(1)}m`
@@ -166,6 +169,15 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
     })
   }, [])
   const [collapsedNodes, setCollapsedNodes] = useState<Set<string>>(new Set())
+
+  // Tick counter to force elapsed-time re-renders for running nodes
+  const [, setTick] = useState(0)
+  const hasRunning = nodes.some(n => n.status === 'running')
+  useEffect(() => {
+    if (!hasRunning) return
+    const id = setInterval(() => setTick(t => t + 1), 1000)
+    return () => clearInterval(id)
+  }, [hasRunning])
 
   const edgeColorsRef = useRef(DEFAULT_EDGE_COLORS)
   edgeColorsRef.current = { ...DEFAULT_EDGE_COLORS, ...userEdgeColors }

@@ -4,8 +4,9 @@ import Legend from './Legend'
 import DetailPanel from './DetailPanel'
 import ToastStack from './Toast'
 import StatsBar from './StatsBar'
+import AgrexErrorBoundary from './ErrorBoundary'
 import { resolveTheme, themeToCSS } from '../theme/tokens'
-import type { AgrexNode, AgrexEdge, AgrexProps, AgrexHandle } from '../types'
+import type { AgrexNode, AgrexProps, AgrexHandle } from '../types'
 import { deriveEdges } from '../deriveEdges'
 import '../styles/agrex.css'
 
@@ -66,17 +67,19 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex({
   const cssVars = themeToCSS(theme) as Record<string, string>
 
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative', fontFamily: theme.fontFamily, ...cssVars } as React.CSSProperties} className={className ? `agrex ${className}` : 'agrex'}>
-      <Graph ref={graphRef} nodes={nodes} edges={edges} theme={theme} layout={layout}
-        nodeRenderers={nodeRenderers} toolIcons={toolIcons} fileIcons={fileIcons} edgeColors={edgeColors}
-        fitOnUpdate={fitOnUpdate} showControls={showControls}
-        keyboardShortcuts={keyboardShortcuts} animateEdges={animateEdges}
-        onNodeClick={handleNodeClick} onEdgeClick={onEdgeClick} onNewestNode={handleNewestNode} />
-      {showLegend && <Legend />}
-      {showStats && <StatsBar nodes={nodes} />}
-      {showDetailPanel && <DetailPanel node={selectedNode} onClose={() => setSelectedNode(null)} />}
-      {showToasts && <ToastStack node={toastNode} />}
-    </div>
+    <AgrexErrorBoundary>
+      <div style={{ width: '100%', height: '100%', position: 'relative', fontFamily: theme.fontFamily, ...cssVars } as React.CSSProperties} className={className ? `agrex ${className}` : 'agrex'}>
+        <Graph ref={graphRef} nodes={nodes} edges={edges} theme={theme} layout={layout}
+          nodeRenderers={nodeRenderers} toolIcons={toolIcons} fileIcons={fileIcons} edgeColors={edgeColors}
+          fitOnUpdate={fitOnUpdate} showControls={showControls}
+          keyboardShortcuts={keyboardShortcuts} animateEdges={animateEdges}
+          onNodeClick={handleNodeClick} onEdgeClick={onEdgeClick} onNewestNode={handleNewestNode} />
+        {showLegend && <Legend />}
+        {showStats && <StatsBar nodes={nodes} />}
+        {showDetailPanel && <DetailPanel node={selectedNode} onClose={() => setSelectedNode(null)} />}
+        {showToasts && <ToastStack node={toastNode} />}
+      </div>
+    </AgrexErrorBoundary>
   )
 })
 

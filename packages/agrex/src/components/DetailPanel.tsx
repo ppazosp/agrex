@@ -11,8 +11,11 @@ function formatTokens(n: number): string {
 function formatElapsed(startedAt: unknown, endedAt: unknown): string | undefined {
   if (!startedAt) return undefined
   const startMs = typeof startedAt === 'number' ? startedAt : new Date(startedAt as string).getTime()
+  if (Number.isNaN(startMs)) return undefined
   const endMs = endedAt ? (typeof endedAt === 'number' ? endedAt : new Date(endedAt as string).getTime()) : Date.now()
+  if (Number.isNaN(endMs)) return undefined
   const diff = endMs - startMs
+  if (diff < 0) return undefined
   if (diff < 1000) return `${diff}ms`
   if (diff < 60000) return `${(diff / 1000).toFixed(1)}s`
   return `${(diff / 60000).toFixed(1)}m`
@@ -26,8 +29,8 @@ export default function DetailPanel({ node, onClose }: DetailPanelProps) {
   if (!node) return null
 
   const elapsed = formatElapsed(node.metadata?.startedAt, node.metadata?.endedAt)
-  const tokens = node.metadata?.tokens as number | undefined
-  const cost = node.metadata?.cost as number | undefined
+  const tokens = typeof node.metadata?.tokens === 'number' ? node.metadata.tokens : undefined
+  const cost = typeof node.metadata?.cost === 'number' ? node.metadata.cost : undefined
 
   // Keys to hide from generic metadata display (rendered separately)
   const hiddenKeys = new Set(['error', 'startedAt', 'endedAt', 'tokens', 'cost'])

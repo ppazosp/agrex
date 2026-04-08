@@ -42,7 +42,17 @@ export function dagreLayout(
     }
   }
 
-  dagre.layout(g)
+  try {
+    dagre.layout(g)
+  } catch (err) {
+    console.warn('[agrex] dagre layout failed, using grid fallback:', err)
+    const positions = new Map<string, { x: number; y: number }>()
+    for (let i = 0; i < nodes.length; i++) {
+      const cols = Math.ceil(Math.sqrt(nodes.length))
+      positions.set(nodes[i].id, { x: (i % cols) * 120, y: Math.floor(i / cols) * 120 })
+    }
+    return positions
+  }
 
   const positions = new Map<string, { x: number; y: number }>()
   for (const node of nodes) {

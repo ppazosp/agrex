@@ -11,7 +11,12 @@ const NODE_SIZES: Record<string, { w: number; h: number }> = {
 }
 const DEFAULT_SIZE = { w: 48, h: 48 }
 
-const elk = new ELK()
+let elk: ReturnType<typeof createElk> | null = null
+function createElk() { return new ELK() }
+function getElk() {
+  if (!elk) elk = createElk()
+  return elk
+}
 
 /**
  * ELK stress layout with per-node pinning.
@@ -67,14 +72,19 @@ export async function elkStressLayout(
     edges: elkEdges,
   }
 
-  const result = await elk.layout(graph)
+  try {
+    const result = await getElk().layout(graph)
 
-  const positions = new Map<string, { x: number; y: number }>()
-  for (const child of result.children ?? []) {
-    positions.set(child.id, { x: child.x ?? 0, y: child.y ?? 0 })
+    const positions = new Map<string, { x: number; y: number }>()
+    for (const child of result.children ?? []) {
+      positions.set(child.id, { x: child.x ?? 0, y: child.y ?? 0 })
+    }
+
+    return positions
+  } catch (err) {
+    console.warn('[agrex] ELK layout failed, returning existing positions:', err)
+    return new Map(existingPositions)
   }
-
-  return positions
 }
 
 /**

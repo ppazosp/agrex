@@ -13,8 +13,8 @@ export default function StatsBar({ nodes }: StatsBarProps) {
   let totalTokens = 0
   let totalCost = 0
   for (const n of nodes) {
-    if (n.metadata?.tokens) totalTokens += n.metadata.tokens as number
-    if (n.metadata?.cost) totalCost += n.metadata.cost as number
+    if (n.metadata?.tokens != null) totalTokens += n.metadata.tokens as number
+    if (n.metadata?.cost != null) totalCost += n.metadata.cost as number
   }
 
   return (

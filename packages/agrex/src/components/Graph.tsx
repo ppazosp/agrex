@@ -95,7 +95,7 @@ function toFlowNode(
   return {
     id: n.id,
     type: isCustomType ? 'default_agrex' : n.type,
-    data: { label: n.label, status: n.status ?? 'idle', icon, elapsed, collapsed, childCount, childrenAllDone, ...n.metadata },
+    data: { ...n.metadata, label: n.label, status: n.status ?? 'idle', icon, elapsed, collapsed, childCount, childrenAllDone },
     position: pos,
   } as Node
 }
@@ -155,6 +155,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
   const agrexEdgesRef = useRef<AgrexEdge[]>(edges)
   const prevNodeIdsRef = useRef(new Set<string>())
   const prevEdgeIdsRef = useRef(new Set<string>())
+  const timersRef = useRef(new Set<ReturnType<typeof setTimeout>>())
   const [autoFit, _setAutoFit] = useState(fitOnUpdate)
   const autoFitRef = useRef(fitOnUpdate)
   const setAutoFit = useCallback((v: boolean | ((prev: boolean) => boolean)) => {
@@ -182,6 +183,18 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
   animateEdgesRef.current = animateEdges
 
   const initRef = useRef(false)
+
+  // Clean up pending timers on unmount
+  useEffect(() => {
+    const timers = timersRef.current
+    return () => { for (const t of timers) clearTimeout(t); timers.clear() }
+  }, [])
+
+  const scheduleTimer = useCallback((fn: () => void, ms: number) => {
+    const id = setTimeout(() => { timersRef.current.delete(id); fn() }, ms)
+    timersRef.current.add(id)
+    return id
+  }, [])
 
   const nodeTypes: NodeTypes = useMemo(() => ({ ...BUILT_IN_NODE_TYPES, ...(nodeRenderers ?? {}), default_agrex: DefaultNode }), [nodeRenderers])
 
@@ -246,17 +259,26 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
     let newest: AgrexNode | null = null
     const newNodes: AgrexNode[] = []
 
+    let rootCount = 0
+    for (const nd of visibleNodes) {
+      if (!nd.parentId && posRef.current.has(nd.id)) rootCount++
+    }
+
     for (const nd of visibleNodes) {
       if (posRef.current.has(nd.id)) continue
 
       const pid = nd.parentId
       if (pid && !posRef.current.has(pid) && posRef.current.size > 0) continue
-      if (!pid && posRef.current.size > 0) continue
 
-      const ci = pid ? (childCountRef.current.get(pid) ?? 0) : 0
-      if (pid) childCountRef.current.set(pid, ci + 1)
-
-      posRef.current.set(nd.id, radialLayout([nd], visibleEdges, posRef.current).get(nd.id) ?? { x: 0, y: 0 })
+      if (!pid && posRef.current.size > 0) {
+        // Additional root node — offset from existing roots
+        posRef.current.set(nd.id, { x: rootCount * 300, y: 0 })
+        rootCount++
+      } else {
+        const ci = pid ? (childCountRef.current.get(pid) ?? 0) : 0
+        if (pid) childCountRef.current.set(pid, ci + 1)
+        posRef.current.set(nd.id, radialLayout([nd], visibleEdges, posRef.current).get(nd.id) ?? { x: 0, y: 0 })
+      }
       newest = nd
       newNodes.push(nd)
     }
@@ -339,20 +361,24 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
     if (autoFitRef.current && newest) {
       const rf = rfRef.current
       if (rf) {
-        setTimeout(() => {
+        scheduleTimer(() => {
           const el = containerRef.current
           const vw = el?.clientWidth || 800
           const vh = el?.clientHeight || 600
+          // Compute centroid and max distance from centroid
+          let cx = 0, cy = 0, count = 0
+          for (const [, pos] of posRef.current) { cx += pos.x; cy += pos.y; count++ }
+          if (count > 0) { cx /= count; cy /= count }
           let maxDist = 100
-          for (const [, pos] of posRef.current) maxDist = Math.max(maxDist, Math.hypot(pos.x, pos.y))
+          for (const [, pos] of posRef.current) maxDist = Math.max(maxDist, Math.hypot(pos.x - cx, pos.y - cy))
           const halfSize = Math.min(vw, vh) / 2
           const zoom = Math.min(1, halfSize / (maxDist + 40))
-          rf.setCenter(40, 40, { zoom: Math.max(0.15, zoom), duration: 300 })
+          rf.setCenter(cx, cy, { zoom: Math.max(0.15, zoom), duration: 300 })
         }, 60)
       }
     }
 
-  }, [visibleNodes, visibleEdges, fitOnUpdate, collapsedNodes, childCounts, childrenAllDoneMap])
+  }, [visibleNodes, visibleEdges, fitOnUpdate, collapsedNodes, childCounts, childrenAllDoneMap, scheduleTimer])
 
   // Update all existing edges when animateEdges changes
   useEffect(() => {
@@ -396,11 +422,14 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
     const el = containerRef.current
     const vw = el?.clientWidth || 800
     const vh = el?.clientHeight || 600
+    let cx = 0, cy = 0, count = 0
+    for (const [, pos] of posRef.current) { cx += pos.x; cy += pos.y; count++ }
+    if (count > 0) { cx /= count; cy /= count }
     let maxDist = 100
-    for (const [, pos] of posRef.current) maxDist = Math.max(maxDist, Math.hypot(pos.x, pos.y))
+    for (const [, pos] of posRef.current) maxDist = Math.max(maxDist, Math.hypot(pos.x - cx, pos.y - cy))
     const halfSize = Math.min(vw, vh) / 2
     const zoom = Math.min(1, halfSize / (maxDist + 40))
-    rf.setCenter(40, 40, { zoom: Math.max(0.15, zoom), duration: 300 })
+    rf.setCenter(cx, cy, { zoom: Math.max(0.15, zoom), duration: 300 })
   }, [])
 
   useImperativeHandle(ref, () => ({
@@ -420,6 +449,8 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
   const handleRelayout = useCallback(() => {
     posRef.current.clear()
     childCountRef.current.clear()
+    prevNodeIdsRef.current = new Set()
+    prevEdgeIdsRef.current = new Set()
     const vn = agrexNodesRef.current.filter(n => !hiddenIds.has(n.id))
     const ve = agrexEdgesRef.current.filter(e => !hiddenIds.has(e.source) && !hiddenIds.has(e.target))
 
@@ -450,8 +481,8 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
     const ae = animateEdgesRef.current
     setFlowNodes(vn.filter(n => posRef.current.has(n.id)).map(n => toFlowNode(n, posRef.current.get(n.id)!, nr, ti, fi, collapsedNodes, childCounts, childrenAllDoneMap)))
     setFlowEdges(ve.filter(e => posRef.current.has(e.source) && posRef.current.has(e.target)).map(e => toFlowEdge(e, ec, ae)))
-    setTimeout(fitView, 60)
-  }, [fitView, layout, collapsedNodes, hiddenIds, childCounts, childrenAllDoneMap])
+    scheduleTimer(fitView, 60)
+  }, [fitView, layout, collapsedNodes, hiddenIds, childCounts, childrenAllDoneMap, scheduleTimer])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -492,7 +523,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
         onNodeClick={handleNodeClick}
         onEdgeClick={handleEdgeClick}
         onMoveStart={() => { if (initRef.current) setAutoFit(false) }}
-        onInit={(inst) => { rfRef.current = inst; inst.setCenter(40, 40, { zoom: 1 }); setTimeout(() => { initRef.current = true }, 200) }}
+        onInit={(inst) => { rfRef.current = inst; inst.setCenter(40, 40, { zoom: 1 }); scheduleTimer(() => { initRef.current = true }, 200) }}
         minZoom={0.1} maxZoom={2}
         proOptions={{ hideAttribution: true }}
         style={{ background: 'transparent' }}

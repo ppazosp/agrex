@@ -30,6 +30,8 @@ export { resolveTheme } from './theme/tokens'
 // Layout
 export { radialLayout } from './layout/radial'
 export { forceLayout } from './layout/force'
+// ELK layouts are async and don't conform to the synchronous LayoutFn type.
+// Use them manually: const positions = await elkStressLayout(nodes, edges, existing)
 export { elkStressLayout, elkFullRelayout } from './layout/elk'
 export { dagreLayout } from './layout/dagre'
 

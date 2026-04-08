@@ -18,16 +18,28 @@ const EXIT_MS = 300
 export default function ToastStack({ node }: { node: AgrexNode | null }) {
   const [toasts, setToasts] = useState<ToastItem[]>([])
   const counterRef = useRef(0)
+  const timersRef = useRef(new Set<ReturnType<typeof setTimeout>>())
+
+  // Clear all pending timers on unmount
+  useEffect(() => {
+    const timers = timersRef.current
+    return () => { for (const t of timers) clearTimeout(t); timers.clear() }
+  }, [])
+
+  const scheduleTimer = useCallback((fn: () => void, ms: number) => {
+    const id = setTimeout(() => { timersRef.current.delete(id); fn() }, ms)
+    timersRef.current.add(id)
+  }, [])
 
   const dismiss = useCallback((id: string) => {
     setToasts(prev => {
       if (!prev.some(t => t.id === id && !t.exiting)) return prev
       return prev.map(t => t.id === id ? { ...t, exiting: true } : t)
     })
-    setTimeout(() => {
+    scheduleTimer(() => {
       setToasts(prev => prev.filter(t => t.id !== id))
     }, EXIT_MS)
-  }, [])
+  }, [scheduleTimer])
 
   useEffect(() => {
     if (!node) return
@@ -44,8 +56,8 @@ export default function ToastStack({ node }: { node: AgrexNode | null }) {
       return next
     })
 
-    setTimeout(() => dismiss(id), DURATION)
-  }, [node, dismiss])
+    scheduleTimer(() => dismiss(id), DURATION)
+  }, [node, dismiss, scheduleTimer])
 
   if (toasts.length === 0) return null
 

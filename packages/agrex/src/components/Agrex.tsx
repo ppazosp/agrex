@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import Graph, { type GraphRef } from './Graph'
 import Legend from './Legend'
 import DetailPanel from './DetailPanel'
@@ -9,6 +9,22 @@ import type { AgrexNode, AgrexEdge, AgrexProps, AgrexHandle } from '../types'
 import { deriveEdges } from '../deriveEdges'
 import '../styles/agrex.css'
 
+function usePrefersDark(): boolean {
+  const [dark, setDark] = useState(() => {
+    if (typeof window === 'undefined') return true
+    return window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? true
+  })
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const mq = window.matchMedia?.('(prefers-color-scheme: dark)')
+    if (!mq?.addEventListener) return
+    const handler = (e: MediaQueryListEvent) => setDark(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+  return dark
+}
+
 const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex({
   nodes: staticNodes, edges: staticEdges, instance, onNodeClick, onEdgeClick, theme: themeProp,
   layout = 'force', nodeRenderers, toolIcons, fileIcons, edgeColors, className,
@@ -16,7 +32,10 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex({
   showStats = false, fitOnUpdate = true, keyboardShortcuts = true,
   animateEdges = true,
 }, ref) {
-  const theme = resolveTheme(themeProp)
+  const prefersDark = usePrefersDark()
+  const theme = themeProp === 'auto'
+    ? resolveTheme(prefersDark ? 'dark' : 'light')
+    : resolveTheme(themeProp)
   const rawNodes = instance?.nodes ?? staticNodes ?? []
   const rawEdges = instance?.edges ?? staticEdges ?? []
   const nodes = rawNodes

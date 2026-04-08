@@ -32,7 +32,7 @@ export default function Legend() {
 
   useEffect(() => {
     const el = containerRef.current?.closest('.agrex') as HTMLElement | null
-    if (!el) return
+    if (!el || typeof ResizeObserver === 'undefined') return
     const observer = new ResizeObserver(([entry]) => {
       setCompact(entry.contentRect.width < 500)
     })

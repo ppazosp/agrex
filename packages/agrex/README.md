@@ -282,7 +282,7 @@ interface AgrexProps {
 
   // Appearance
   theme?: 'dark' | 'light' | 'auto' | ThemeObject
-  layout?: 'radial' | 'force' | LayoutFn
+  layout?: 'radial' | 'force' | 'dagre' | LayoutFn
   className?: string
 
   // Custom rendering

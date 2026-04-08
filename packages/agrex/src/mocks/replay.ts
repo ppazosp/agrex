@@ -25,7 +25,7 @@ export function replay(
   options: ReplayOptions = {},
 ): ReplayController {
   const { delay = 150 } = options
-  let speed = options.speed ?? 1
+  let speed = Math.max(0.1, options.speed ?? 1)
   let cancelled = false
   let paused = false
   let complete = false
@@ -107,7 +107,7 @@ export function replay(
       resumeFn?.()
       resumeFn = null
     },
-    setSpeed: (s: number) => { speed = s },
+    setSpeed: (s: number) => { speed = Math.max(0.1, s) },
     get isPaused() { return paused },
     get isComplete() { return complete },
   }

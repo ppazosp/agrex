@@ -11,7 +11,7 @@ import '../styles/agrex.css'
 const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex({
   nodes: staticNodes, edges: staticEdges, instance, onNodeClick, onEdgeClick, theme: themeProp,
   layout = 'force', nodeRenderers, toolIcons, fileIcons, edgeColors, className,
-  showControls = true, showLegend = true, showToasts = true, showDetailPanel = true,
+  showControls = true, showLegend = true, showToasts = false, showDetailPanel = true,
   showMinimap = false, showStats = false, fitOnUpdate = true, keyboardShortcuts = true,
   animateEdges = true,
 }, ref) {

@@ -1,10 +1,9 @@
 import { type NodeProps, type Node } from '@xyflow/react'
 import NodeHandles from './NodeHandles'
 import NodeTooltip from './NodeTooltip'
-import NodeBadge from './NodeBadge'
 import type { NodeStatus } from '../types'
 
-interface AgentNodeData { label: string; status: NodeStatus; icon?: React.ComponentType<{ size: number }>; elapsed?: string; collapsed?: boolean; tokens?: number; cost?: number; childCount?: number; [key: string]: unknown }
+interface AgentNodeData { label: string; status: NodeStatus; icon?: React.ComponentType<{ size: number }>; collapsed?: boolean; childCount?: number; childrenAllDone?: boolean; [key: string]: unknown }
 type AgentNodeType = Node<AgentNodeData, 'agent'>
 
 function statusColor(status: NodeStatus): string {
@@ -14,14 +13,8 @@ function statusColor(status: NodeStatus): string {
   return 'var(--agrex-node-border)'
 }
 
-function formatTokens(n: number): string {
-  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
-  return String(n)
-}
-
 export default function AgentNode({ data }: NodeProps<AgentNodeType>) {
-  const { label, status, icon: Icon, elapsed, collapsed, tokens, cost, childCount } = data
+  const { label, status, icon: Icon, collapsed, childCount, childrenAllDone } = data
   const border = statusColor(status)
   const isRunning = status === 'running'
   return (
@@ -35,21 +28,23 @@ export default function AgentNode({ data }: NodeProps<AgentNodeType>) {
           <NodeHandles />
           {Icon ? <Icon size={40} /> : <span style={{ fontSize: 28, fontWeight: 700, color: 'var(--agrex-fg)', opacity: 0.6 }}>{label.charAt(0).toUpperCase()}</span>}
         </div>
-        {elapsed && <NodeBadge text={elapsed} />}
-        {tokens != null && <NodeBadge text={`${formatTokens(tokens)} tok`} />}
-        {cost != null && !tokens && <NodeBadge text={`$${cost.toFixed(4)}`} />}
-        {childCount != null && (
-          <div style={{
-            position: 'absolute', bottom: -8, left: '50%', transform: 'translateX(-50%)', zIndex: 10,
-            background: collapsed ? 'var(--agrex-accent)' : 'var(--agrex-node-fill)',
-            border: collapsed ? 'none' : '1px solid var(--agrex-node-border)',
-            borderRadius: 8, padding: '0 6px',
-            fontSize: 9, lineHeight: '16px', color: collapsed ? '#fff' : 'var(--agrex-fg)',
-            opacity: collapsed ? 1 : 0.6, whiteSpace: 'nowrap',
-          }}>
-            {collapsed ? `${childCount} collapsed` : childCount}
-          </div>
-        )}
+        {childCount != null && (() => {
+          const badgeColor = collapsed
+            ? (childrenAllDone ? 'var(--agrex-status-done)' : 'var(--agrex-status-running)')
+            : 'var(--agrex-node-border)'
+          return (
+            <div style={{
+              position: 'absolute', top: -8, right: -8, zIndex: 10,
+              width: 20, height: 20, borderRadius: '50%',
+              background: collapsed ? badgeColor : 'var(--agrex-node-fill)',
+              border: `1.5px solid ${badgeColor}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 9, fontWeight: 700, color: collapsed ? '#fff' : 'var(--agrex-fg)',
+            }}>
+              {childCount}
+            </div>
+          )
+        })()}
       </div>
     </NodeTooltip>
   )

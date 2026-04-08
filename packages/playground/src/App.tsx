@@ -1,36 +1,40 @@
-import { useState, useCallback } from 'react'
-import { Agrex, useAgrex } from 'agrex'
-import { createMockPipeline, replay, createMockNode, createMockEdge } from 'agrex/mocks'
+import { useState, useCallback, useRef } from 'react'
+import { Agrex, useAgrex, type AgrexHandle, type Theme } from 'agrex'
+import { createMockPipeline, replay, createMockNode, createMockEdge, type ReplayController } from 'agrex/mocks'
 import 'agrex/styles.css'
-import type { Theme } from 'agrex'
 
 type ScenarioName = 'research-agent' | 'multi-agent' | 'deep-chain'
 
 export default function App() {
   const agrex = useAgrex()
+  const ref = useRef<AgrexHandle>(null)
   const [theme, setTheme] = useState<Theme>('dark')
   const [showControls, setShowControls] = useState(true)
   const [showLegend, setShowLegend] = useState(true)
   const [showToasts, setShowToasts] = useState(true)
   const [showDetailPanel, setShowDetailPanel] = useState(true)
-  const [cancelFn, setCancelFn] = useState<(() => void) | null>(null)
+  const [showMinimap, setShowMinimap] = useState(false)
+  const [showStats, setShowStats] = useState(false)
+  const [animateEdges, setAnimateEdges] = useState(true)
+  const [controller, setController] = useState<ReplayController | null>(null)
 
   const loadScenario = useCallback((name: ScenarioName) => {
-    if (cancelFn) cancelFn()
+    controller?.cancel()
     const scenario = createMockPipeline(name)
-    const cancel = replay(agrex, scenario, { speed: 1 })
-    setCancelFn(() => cancel)
-  }, [agrex, cancelFn])
+    const ctrl = replay(agrex, scenario, { speed: 1 })
+    setController(ctrl)
+  }, [agrex, controller])
 
   const loadStatic = useCallback((name: ScenarioName) => {
+    controller?.cancel()
     agrex.clear()
     const { nodes, edges } = createMockPipeline(name)
     agrex.addNodes(nodes)
     agrex.addEdges(edges)
-  }, [agrex])
+  }, [agrex, controller])
 
   const addRandomNode = useCallback(() => {
-    const types = ['agent', 'tool', 'file', 'output', 'search']
+    const types = ['agent', 'tool', 'file', 'sub_agent']
     const type = types[Math.floor(Math.random() * types.length)]
     const parentNode = agrex.nodes.length > 0
       ? agrex.nodes[Math.floor(Math.random() * agrex.nodes.length)]
@@ -41,6 +45,7 @@ export default function App() {
       label: `Random ${type}`,
       parentId: parentNode?.id,
       status: 'running',
+      metadata: { startedAt: Date.now() },
     })
     agrex.addNode(node)
 
@@ -48,7 +53,28 @@ export default function App() {
       agrex.addEdge(createMockEdge({ source: parentNode.id, target: node.id }))
     }
 
-    setTimeout(() => agrex.updateNode(node.id, { status: 'done' }), 1500)
+    setTimeout(() => agrex.updateNode(node.id, {
+      status: 'done',
+      metadata: { startedAt: node.metadata!.startedAt, endedAt: Date.now(), tokens: Math.floor(Math.random() * 5000) },
+    }), 1500)
+  }, [agrex])
+
+  const addErrorNode = useCallback(() => {
+    const parentNode = agrex.nodes.length > 0
+      ? agrex.nodes[Math.floor(Math.random() * agrex.nodes.length)]
+      : null
+
+    const node = createMockNode({
+      type: 'tool',
+      label: 'failing_tool',
+      parentId: parentNode?.id,
+      status: 'error',
+      metadata: { error: 'Connection timeout after 30s' },
+    })
+    agrex.addNode(node)
+    if (parentNode) {
+      agrex.addEdge(createMockEdge({ source: parentNode.id, target: node.id }))
+    }
   }, [agrex])
 
   const btnStyle: React.CSSProperties = {
@@ -78,8 +104,15 @@ export default function App() {
         <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.1)', margin: '0 4px' }} />
 
         <button style={btnStyle} onClick={() => loadStatic('multi-agent')}>Static Load</button>
-        <button style={btnStyle} onClick={addRandomNode}>+ Random Node</button>
-        <button style={{ ...btnStyle, borderColor: 'rgba(239,68,68,0.3)' }} onClick={() => agrex.clear()}>Clear</button>
+        <button style={btnStyle} onClick={addRandomNode}>+ Random</button>
+        <button style={{ ...btnStyle, borderColor: 'rgba(239,68,68,0.3)' }} onClick={addErrorNode}>+ Error</button>
+        <button style={{ ...btnStyle, borderColor: 'rgba(239,68,68,0.3)' }} onClick={() => { controller?.cancel(); agrex.clear() }}>Clear</button>
+
+        <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.1)', margin: '0 4px' }} />
+
+        <button style={btnStyle} onClick={() => ref.current?.collapseAll()}>Collapse All</button>
+        <button style={btnStyle} onClick={() => ref.current?.expandAll()}>Expand All</button>
+        <button style={btnStyle} onClick={() => ref.current?.fitView()}>Fit</button>
 
         <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.1)', margin: '0 4px' }} />
 
@@ -87,22 +120,29 @@ export default function App() {
         <button style={toggleStyle(showLegend)} onClick={() => setShowLegend(v => !v)}>Legend</button>
         <button style={toggleStyle(showToasts)} onClick={() => setShowToasts(v => !v)}>Toasts</button>
         <button style={toggleStyle(showDetailPanel)} onClick={() => setShowDetailPanel(v => !v)}>Detail</button>
+        <button style={toggleStyle(showMinimap)} onClick={() => setShowMinimap(v => !v)}>Minimap</button>
+        <button style={toggleStyle(showStats)} onClick={() => setShowStats(v => !v)}>Stats</button>
+        <button style={toggleStyle(animateEdges)} onClick={() => setAnimateEdges(v => !v)}>Animate</button>
 
         <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.1)', margin: '0 4px' }} />
 
-        <button style={toggleStyle(theme === 'dark')} onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-          {theme === 'dark' ? 'Dark' : 'Light'}
+        <button style={toggleStyle(theme === 'dark')} onClick={() => setTheme(t => t === 'dark' ? 'light' : t === 'light' ? 'auto' : 'dark')}>
+          {theme === 'dark' ? 'Dark' : theme === 'light' ? 'Light' : 'Auto'}
         </button>
       </div>
 
       <div style={{ flex: 1 }}>
         <Agrex
+          ref={ref}
           instance={agrex}
           theme={theme}
           showControls={showControls}
           showLegend={showLegend}
           showToasts={showToasts}
           showDetailPanel={showDetailPanel}
+          showMinimap={showMinimap}
+          showStats={showStats}
+          animateEdges={animateEdges}
         />
       </div>
     </div>

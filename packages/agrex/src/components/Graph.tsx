@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import {
   ReactFlow,
   MiniMap,
@@ -80,6 +80,7 @@ function toFlowNode(
   fileIcons: Record<string, React.ComponentType<{ size: number }>> | undefined,
   collapsedNodes: Set<string>,
   collapsedChildCounts: Map<string, number>,
+  allNodes: AgrexNode[],
 ): Node {
   const isCustomType = !(n.type in BUILT_IN_NODE_TYPES) && !(n.type in (nodeRenderers ?? {}))
   let icon: React.ComponentType<{ size: number }> | undefined
@@ -88,10 +89,19 @@ function toFlowNode(
   const elapsed = getElapsed(n.metadata)
   const collapsed = collapsedNodes.has(n.id)
   const childCount = collapsedChildCounts.get(n.id)
+  // For collapsed nodes, check if all descendants are done
+  let childrenAllDone: boolean | undefined
+  if (collapsed && childCount) {
+    const descendants = getDescendants(n.id, allNodes)
+    childrenAllDone = [...descendants].every(did => {
+      const dn = allNodes.find(x => x.id === did)
+      return dn?.status === 'done'
+    })
+  }
   return {
     id: n.id,
     type: isCustomType ? 'default_agrex' : n.type,
-    data: { label: n.label, status: n.status ?? 'idle', icon, elapsed, collapsed, childCount, ...n.metadata },
+    data: { label: n.label, status: n.status ?? 'idle', icon, elapsed, collapsed, childCount, childrenAllDone, ...n.metadata },
     position: pos,
   } as Node
 }
@@ -157,29 +167,36 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
   const edgeColorsRef = useRef(DEFAULT_EDGE_COLORS)
   edgeColorsRef.current = { ...DEFAULT_EDGE_COLORS, ...userEdgeColors }
 
-  const nodeTypes: NodeTypes = { ...BUILT_IN_NODE_TYPES, ...(nodeRenderers ?? {}), default_agrex: DefaultNode }
+  const nodeTypes: NodeTypes = useMemo(() => ({ ...BUILT_IN_NODE_TYPES, ...(nodeRenderers ?? {}), default_agrex: DefaultNode }), [nodeRenderers])
 
   useEffect(() => { agrexNodesRef.current = nodes }, [nodes])
   useEffect(() => { agrexEdgesRef.current = edges }, [edges])
 
   // Compute hidden nodes (descendants of collapsed nodes)
-  const hiddenIds = new Set<string>()
-  for (const cid of collapsedNodes) {
-    for (const did of getDescendants(cid, nodes)) {
-      hiddenIds.add(did)
+  const hiddenIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const cid of collapsedNodes) {
+      for (const did of getDescendants(cid, nodes)) {
+        ids.add(did)
+      }
     }
-  }
-  const visibleNodes = nodes.filter(n => !hiddenIds.has(n.id))
-  const visibleEdges = edges.filter(e => !hiddenIds.has(e.source) && !hiddenIds.has(e.target))
+    return ids
+  }, [nodes, collapsedNodes])
+
+  const visibleNodes = useMemo(() => nodes.filter(n => !hiddenIds.has(n.id)), [nodes, hiddenIds])
+  const visibleEdges = useMemo(() => edges.filter(e => !hiddenIds.has(e.source) && !hiddenIds.has(e.target)), [edges, hiddenIds])
 
   // Count direct children for all agent/sub_agent nodes (for badge display)
-  const childCounts = new Map<string, number>()
-  for (const n of nodes) {
-    if (n.type === 'agent' || n.type === 'sub_agent') {
-      const directChildren = nodes.filter(c => c.parentId === n.id).length
-      if (directChildren > 0) childCounts.set(n.id, directChildren)
+  const childCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const n of nodes) {
+      if (n.type === 'agent' || n.type === 'sub_agent') {
+        const directChildren = nodes.filter(c => c.parentId === n.id).length
+        if (directChildren > 0) counts.set(n.id, directChildren)
+      }
     }
-  }
+    return counts
+  }, [nodes])
 
   useEffect(() => {
     if (visibleNodes.length === 0) {
@@ -239,7 +256,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
 
     if (prevNodeIdsRef.current.size === 0) {
       // First render — set everything
-      setFlowNodes(visibleNodes.filter(n => posRef.current.has(n.id)).map(n => toFlowNode(n, posRef.current.get(n.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts)))
+      setFlowNodes(visibleNodes.filter(n => posRef.current.has(n.id)).map(n => toFlowNode(n, posRef.current.get(n.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts, nodes)))
       setFlowEdges(visibleEdges.filter(e => posRef.current.has(e.source) && posRef.current.has(e.target)).map(e => toFlowEdge(e, ec, animateEdges)))
     } else {
       // Incremental — add new nodes, update changed nodes, add/remove edges
@@ -256,11 +273,11 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
             const wasCollapsed = (fn.data as any)?.collapsed
             const isCollapsed = collapsedNodes.has(agrexNode.id)
             if (newStatus === oldStatus && wasCollapsed === isCollapsed) return fn
-            return toFlowNode(agrexNode, posRef.current.get(agrexNode.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts)
+            return toFlowNode(agrexNode, posRef.current.get(agrexNode.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts, nodes)
           })
           // Add new nodes
           for (const nd of newNodes) {
-            result.push(toFlowNode(nd, posRef.current.get(nd.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts))
+            result.push(toFlowNode(nd, posRef.current.get(nd.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts, nodes))
           }
           return result
         })
@@ -304,6 +321,12 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visibleNodes, visibleEdges, fitOnUpdate, collapsedNodes])
+
+  // Update all existing edges when animateEdges changes
+  useEffect(() => {
+    setFlowEdges(prev => prev.map(e => ({ ...e, animated: animateEdges })))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [animateEdges])
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
@@ -376,7 +399,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
     const ec = edgeColorsRef.current
     const vn = agrexNodesRef.current.filter(n => !hiddenIds.has(n.id))
     const ve = agrexEdgesRef.current.filter(e => !hiddenIds.has(e.source) && !hiddenIds.has(e.target))
-    setFlowNodes(vn.filter(n => posRef.current.has(n.id)).map(n => toFlowNode(n, posRef.current.get(n.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts)))
+    setFlowNodes(vn.filter(n => posRef.current.has(n.id)).map(n => toFlowNode(n, posRef.current.get(n.id)!, nodeRenderers, toolIcons, fileIcons, collapsedNodes, childCounts, nodes)))
     setFlowEdges(ve.filter(e => posRef.current.has(e.source) && posRef.current.has(e.target)).map(e => toFlowEdge(e, ec, animateEdges)))
     setTimeout(fitView, 60)
   // eslint-disable-next-line react-hooks/exhaustive-deps

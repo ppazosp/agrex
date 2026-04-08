@@ -2,11 +2,39 @@ import type { AgrexNode } from '../types'
 
 interface DetailPanelProps { node: AgrexNode | null; onClose: () => void }
 
+function formatTokens(n: number): string {
+  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
+  return String(n)
+}
+
+function formatElapsed(startedAt: unknown, endedAt: unknown): string | undefined {
+  if (!startedAt) return undefined
+  const startMs = typeof startedAt === 'number' ? startedAt : new Date(startedAt as string).getTime()
+  const endMs = endedAt ? (typeof endedAt === 'number' ? endedAt : new Date(endedAt as string).getTime()) : Date.now()
+  const diff = endMs - startMs
+  if (diff < 1000) return `${diff}ms`
+  if (diff < 60000) return `${(diff / 1000).toFixed(1)}s`
+  return `${(diff / 60000).toFixed(1)}m`
+}
+
+const ROW: React.CSSProperties = { display: 'flex', gap: 8, marginBottom: 4 }
+const KEY: React.CSSProperties = { color: 'var(--agrex-fg)', opacity: 0.4, flexShrink: 0 }
+const VAL: React.CSSProperties = { color: 'var(--agrex-fg)', opacity: 0.7, wordBreak: 'break-all' }
+
 export default function DetailPanel({ node, onClose }: DetailPanelProps) {
   if (!node) return null
+
+  const elapsed = formatElapsed(node.metadata?.startedAt, node.metadata?.endedAt)
+  const tokens = node.metadata?.tokens as number | undefined
+  const cost = node.metadata?.cost as number | undefined
+
+  // Keys to hide from generic metadata display (rendered separately)
+  const hiddenKeys = new Set(['error', 'startedAt', 'endedAt', 'tokens', 'cost'])
+
   return (
     <div style={{
-      position: 'absolute', bottom: 16, right: 16, width: 280, maxHeight: 320, zIndex: 30, borderRadius: 12,
+      position: 'absolute', bottom: 16, left: 16, width: 280, maxHeight: 320, zIndex: 30, borderRadius: 12,
       background: 'color-mix(in srgb, var(--agrex-bg) 92%, transparent)', backdropFilter: 'blur(16px)',
       border: '1px solid var(--agrex-node-border)', display: 'flex', flexDirection: 'column', overflow: 'hidden',
       animation: 'agrex-slide-in 0.2s ease-out',
@@ -47,18 +75,34 @@ export default function DetailPanel({ node, onClose }: DetailPanelProps) {
             </div>
           </div>
         )}
-        {node.metadata && Object.keys(node.metadata).length > 0 && (
-          <div style={{ fontSize: 12, fontFamily: 'var(--agrex-font-mono)', lineHeight: 1.6 }}>
-            {Object.entries(node.metadata).filter(([key]) => key !== 'error' || node.status !== 'error').map(([key, value]) => (
-              <div key={key} style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
-                <span style={{ color: 'var(--agrex-fg)', opacity: 0.4, flexShrink: 0 }}>{key}:</span>
-                <span style={{ color: 'var(--agrex-fg)', opacity: 0.7, wordBreak: 'break-all' }}>
-                  {typeof value === 'string' ? value : JSON.stringify(value)}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
+        <div style={{ fontSize: 12, fontFamily: 'var(--agrex-font-mono)', lineHeight: 1.6 }}>
+          {elapsed && (
+            <div style={ROW}>
+              <span style={KEY}>time:</span>
+              <span style={VAL}>{elapsed}</span>
+            </div>
+          )}
+          {tokens != null && (
+            <div style={ROW}>
+              <span style={KEY}>tokens:</span>
+              <span style={VAL}>{formatTokens(tokens)}</span>
+            </div>
+          )}
+          {cost != null && (
+            <div style={ROW}>
+              <span style={KEY}>cost:</span>
+              <span style={VAL}>${cost.toFixed(4)}</span>
+            </div>
+          )}
+          {node.metadata && Object.entries(node.metadata).filter(([key]) => !hiddenKeys.has(key)).map(([key, value]) => (
+            <div key={key} style={ROW}>
+              <span style={KEY}>{key}:</span>
+              <span style={VAL}>
+                {typeof value === 'string' ? value : JSON.stringify(value)}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )

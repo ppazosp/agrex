@@ -434,12 +434,12 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
     const vw = el?.clientWidth || 800
     const vh = el?.clientHeight || 600
     let maxDist = 100
-    for (const [, pos] of posRef.current) maxDist = Math.max(maxDist, Math.hypot(pos.x, pos.y))
+    for (const [, pos] of posRef.current) maxDist = Math.max(maxDist, Math.hypot(pos.x + 40, pos.y + 40))
     const halfSize = Math.min(vw, vh) / 2
     const needed = Math.min(1, halfSize / (maxDist + 40))
     const currentZoom = rf.getZoom()
     const zoom = Math.min(currentZoom, needed)
-    rf.setCenter(0, 0, { zoom: Math.max(0.15, zoom), duration: 300 })
+    rf.setCenter(40, 40, { zoom: Math.max(0.15, zoom), duration: 300 })
   }, [])
 
   useImperativeHandle(ref, () => ({
@@ -492,7 +492,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
         onNodeClick={handleNodeClick}
         onEdgeClick={handleEdgeClick}
         onMoveStart={(event) => { if (event) setAutoFit(false) }}
-        onInit={(inst) => { rfRef.current = inst; inst.setCenter(0, 0, { zoom: 1 }) }}
+        onInit={(inst) => { rfRef.current = inst; inst.setCenter(40, 40, { zoom: 1 }) }}
         minZoom={0.1} maxZoom={2}
         proOptions={{ hideAttribution: true }}
         style={{ background: 'transparent' }}

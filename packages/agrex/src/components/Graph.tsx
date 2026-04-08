@@ -433,17 +433,13 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
     const el = containerRef.current
     const vw = el?.clientWidth || 800
     const vh = el?.clientHeight || 600
-    let cx = 0, cy = 0, count = 0
-    for (const [, pos] of posRef.current) { cx += pos.x; cy += pos.y; count++ }
-    if (count > 0) { cx /= count; cy /= count }
     let maxDist = 100
-    for (const [, pos] of posRef.current) maxDist = Math.max(maxDist, Math.hypot(pos.x - cx, pos.y - cy))
+    for (const [, pos] of posRef.current) maxDist = Math.max(maxDist, Math.hypot(pos.x, pos.y))
     const halfSize = Math.min(vw, vh) / 2
     const needed = Math.min(1, halfSize / (maxDist + 40))
     const currentZoom = rf.getZoom()
-    // Only zoom out, never zoom in past current level
     const zoom = Math.min(currentZoom, needed)
-    rf.setCenter(cx, cy, { zoom: Math.max(0.15, zoom), duration: 300 })
+    rf.setCenter(0, 0, { zoom: Math.max(0.15, zoom), duration: 300 })
   }, [])
 
   useImperativeHandle(ref, () => ({

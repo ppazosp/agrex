@@ -69,16 +69,6 @@
         "default": "./dist/layout/dagre.cjs"
       }
     },
-    "./layout/elk": {
-      "import": {
-        "types": "./dist/layout/elk.d.ts",
-        "default": "./dist/layout/elk.js"
-      },
-      "require": {
-        "types": "./dist/layout/elk.d.cts",
-        "default": "./dist/layout/elk.cjs"
-      }
-    },
     "./styles.css": "./dist/index.css"
   },
   "sideEffects": [
@@ -95,12 +85,11 @@
     "prepublishOnly": "tsup"
   },
   "peerDependencies": {
-    "@xyflow/react": ">=12",
-    "react": ">=18",
-    "react-dom": ">=18",
-    "d3-force": "^3.0.0",
     "@dagrejs/dagre": "^3.0.0",
-    "elkjs": "^0.11.1"
+    "@xyflow/react": ">=12",
+    "d3-force": "^3.0.0",
+    "react": ">=18",
+    "react-dom": ">=18"
   },
   "peerDependenciesMeta": {
     "d3-force": {
@@ -108,17 +97,14 @@
     },
     "@dagrejs/dagre": {
       "optional": true
-    },
-    "elkjs": {
-      "optional": true
     }
   },
   "devDependencies": {
-    "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^16.0.0",
     "@types/d3-force": "^3.0.10",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@vitest/coverage-v8": "^2.1.9",
     "@xyflow/react": "^12.6.0",
     "jsdom": "^25.0.0",
     "react": "^19.0.0",

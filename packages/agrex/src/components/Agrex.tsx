@@ -34,7 +34,6 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex(
     onNodeClick,
     onEdgeClick,
     theme: themeProp,
-    layout = 'force',
     nodeRenderers,
     toolIcons,
     fileIcons,
@@ -112,7 +111,6 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex(
           nodes={nodes}
           edges={edges}
           theme={theme}
-          layout={layout}
           nodeRenderers={nodeRenderers}
           toolIcons={toolIcons}
           fileIcons={fileIcons}

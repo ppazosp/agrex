@@ -18,7 +18,6 @@ export type {
   Theme,
   ResolvedTheme,
   LayoutFn,
-  Layout,
   UseAgrexReturn,
 } from './types'
 
@@ -29,11 +28,10 @@ export { resolveTheme } from './theme/tokens'
 
 // Layout — radialLayout is zero-dependency and always available
 export { radialLayout } from './layout/radial'
-// forceLayout, dagreLayout, and ELK layouts have external deps and are available
+// forceLayout and dagreLayout have external deps and are available
 // via subpath imports to avoid bundling them when unused:
 //   import { forceLayout } from 'agrex/layout/force'   // requires d3-force
 //   import { dagreLayout } from 'agrex/layout/dagre'    // requires @dagrejs/dagre
-//   import { elkStressLayout } from 'agrex/layout/elk'  // requires elkjs (async, not LayoutFn-compatible)
 
 // Node components (for advanced customization)
 export { default as AgentNode } from './nodes/AgentNode'

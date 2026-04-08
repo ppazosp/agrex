@@ -1,3 +1,4 @@
+import type { ComponentType } from 'react'
 import { type NodeProps, type Node } from '@xyflow/react'
 import NodeHandles from './NodeHandles'
 import NodeTooltip from './NodeTooltip'
@@ -7,7 +8,7 @@ import type { NodeStatus } from '../types'
 interface AgentNodeData {
   label: string
   status: NodeStatus
-  icon?: React.ComponentType<{ size: number }>
+  icon?: ComponentType<{ size: number }>
   collapsed?: boolean
   childCount?: number
   childrenAllDone?: boolean

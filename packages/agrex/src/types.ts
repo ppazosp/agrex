@@ -51,8 +51,6 @@ export type LayoutFn = (
   positions: Map<string, { x: number; y: number }>,
 ) => Map<string, { x: number; y: number }>
 
-export type Layout = 'radial' | 'force' | 'dagre' | LayoutFn
-
 export interface AgrexProps {
   nodes?: AgrexNode[]
   edges?: AgrexEdge[]
@@ -60,7 +58,6 @@ export interface AgrexProps {
   onNodeClick?: (node: AgrexNode) => void
   onEdgeClick?: (edge: AgrexEdge) => void
   theme?: Theme
-  layout?: Layout
   nodeRenderers?: Record<string, React.ComponentType<AgrexNodeProps>>
   toolIcons?: Record<string, React.ComponentType<{ size: number }>>
   fileIcons?: Record<string, React.ComponentType<{ size: number }>>

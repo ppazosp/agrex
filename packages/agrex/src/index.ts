@@ -27,13 +27,13 @@ export { darkTheme } from './theme/dark'
 export { lightTheme } from './theme/light'
 export { resolveTheme } from './theme/tokens'
 
-// Layout
+// Layout — radialLayout is zero-dependency and always available
 export { radialLayout } from './layout/radial'
-export { forceLayout } from './layout/force'
-// ELK layouts are async and don't conform to the synchronous LayoutFn type.
-// Use them manually: const positions = await elkStressLayout(nodes, edges, existing)
-export { elkStressLayout, elkFullRelayout } from './layout/elk'
-export { dagreLayout } from './layout/dagre'
+// forceLayout, dagreLayout, and ELK layouts have external deps and are available
+// via subpath imports to avoid bundling them when unused:
+//   import { forceLayout } from 'agrex/layout/force'   // requires d3-force
+//   import { dagreLayout } from 'agrex/layout/dagre'    // requires @dagrejs/dagre
+//   import { elkStressLayout } from 'agrex/layout/elk'  // requires elkjs (async, not LayoutFn-compatible)
 
 // Node components (for advanced customization)
 export { default as AgentNode } from './nodes/AgentNode'

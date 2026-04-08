@@ -282,7 +282,7 @@ interface AgrexProps {
 
   // Appearance
   theme?: 'dark' | 'light' | 'auto' | ThemeObject
-  layout?: 'radial' | 'force' | 'dagre' | LayoutFn
+  layout?: 'radial' | 'force' | 'dagre' | LayoutFn  // see "Layout engines" below
   className?: string
 
   // Custom rendering
@@ -373,6 +373,32 @@ agrex.loadJSON(data)
 | `-` | Zoom out |
 | `0` | Fit to view |
 | `r` | Relayout |
+
+## Layout engines
+
+The `layout` prop accepts `'radial'` (default incremental), `'force'` (d3-force), `'dagre'` (hierarchical), or a custom `LayoutFn`.
+
+Layout engines with external dependencies are available as separate imports to avoid bundling them when unused:
+
+```tsx
+import { forceLayout } from 'agrex/layout/force'   // requires d3-force
+import { dagreLayout } from 'agrex/layout/dagre'    // requires @dagrejs/dagre
+import { elkStressLayout } from 'agrex/layout/elk'  // requires elkjs
+```
+
+**ELK layouts are async** and don't conform to the synchronous `LayoutFn` type. Use them imperatively:
+
+```tsx
+const positions = await elkStressLayout(nodes, edges, existingPositions)
+```
+
+Install only the layout deps you need:
+
+```bash
+npm install d3-force          # for layout="force" (included by default)
+npm install @dagrejs/dagre    # for layout="dagre"
+npm install elkjs             # for elkStressLayout / elkFullRelayout
+```
 
 ## Mocks
 

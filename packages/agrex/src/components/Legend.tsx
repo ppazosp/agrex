@@ -28,7 +28,7 @@ function ShapeItem({ shape, label }: { shape: React.ReactNode; label: string }) 
 export default function Legend() {
   const [collapsed, setCollapsed] = useState(false)
   const [compact, setCompact] = useState(false)
-  const containerRef = useRef<HTMLElement>(null)
+  const containerRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     const el = containerRef.current?.closest('.agrex') as HTMLElement | null

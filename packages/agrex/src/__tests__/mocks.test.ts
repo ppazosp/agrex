@@ -92,16 +92,19 @@ describe('createMockPipeline', () => {
 })
 
 describe('replay', () => {
-  it('drips nodes and edges over time', async () => {
-    vi.useFakeTimers()
-    const { nodes, edges } = createMockPipeline('research-agent')
-
-    const instance: Pick<UseAgrexReturn, 'addNode' | 'addEdge' | 'updateNode' | 'clear'> = {
+  function createInstance() {
+    return {
       addNode: vi.fn(),
       addEdge: vi.fn(),
       updateNode: vi.fn(),
       clear: vi.fn(),
-    }
+    } satisfies Pick<UseAgrexReturn, 'addNode' | 'addEdge' | 'updateNode' | 'clear'>
+  }
+
+  it('drips nodes and edges over time', async () => {
+    vi.useFakeTimers()
+    const { nodes, edges } = createMockPipeline('research-agent')
+    const instance = createInstance()
 
     replay(instance, { nodes, edges })
 
@@ -110,7 +113,70 @@ describe('replay', () => {
     }
 
     expect(instance.addNode).toHaveBeenCalled()
+    vi.useRealTimers()
+  })
 
+  it('cancel stops replay', async () => {
+    vi.useFakeTimers()
+    const { nodes, edges } = createMockPipeline('research-agent')
+    const instance = createInstance()
+
+    const ctrl = replay(instance, { nodes, edges })
+    await vi.advanceTimersByTimeAsync(200)
+    ctrl.cancel()
+    const callsAfterCancel = (instance.addNode as ReturnType<typeof vi.fn>).mock.calls.length
+    await vi.advanceTimersByTimeAsync(2000)
+    expect((instance.addNode as ReturnType<typeof vi.fn>).mock.calls.length).toBe(callsAfterCancel)
+    vi.useRealTimers()
+  })
+
+  it('pause and resume work', async () => {
+    vi.useFakeTimers()
+    const { nodes, edges } = createMockPipeline('research-agent')
+    const instance = createInstance()
+
+    const ctrl = replay(instance, { nodes, edges })
+    await vi.advanceTimersByTimeAsync(200)
+    expect(ctrl.isPaused).toBe(false)
+
+    ctrl.pause()
+    expect(ctrl.isPaused).toBe(true)
+    const callsAfterPause = (instance.addNode as ReturnType<typeof vi.fn>).mock.calls.length
+    await vi.advanceTimersByTimeAsync(1000)
+    expect((instance.addNode as ReturnType<typeof vi.fn>).mock.calls.length).toBe(callsAfterPause)
+
+    ctrl.resume()
+    expect(ctrl.isPaused).toBe(false)
+    await vi.advanceTimersByTimeAsync(500)
+    expect((instance.addNode as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(callsAfterPause)
+    vi.useRealTimers()
+  })
+
+  it('setSpeed changes replay speed', async () => {
+    vi.useFakeTimers()
+    const { nodes, edges } = createMockPipeline('research-agent')
+    const instance = createInstance()
+
+    const ctrl = replay(instance, { nodes, edges }, { delay: 200 })
+    ctrl.setSpeed(10)
+    // At speed=10, delay=200 → 20ms per tick
+    await vi.advanceTimersByTimeAsync(500)
+    expect((instance.addNode as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThanOrEqual(2)
+    vi.useRealTimers()
+  })
+
+  it('marks all nodes done on completion', async () => {
+    vi.useFakeTimers()
+    const { nodes, edges } = createMockPipeline('research-agent')
+    const instance = createInstance()
+
+    const ctrl = replay(instance, { nodes, edges }, { delay: 10 })
+    ctrl.setSpeed(100)
+    // Fast-forward enough for all nodes + final done pass
+    await vi.advanceTimersByTimeAsync(nodes.length * 10 + 500)
+    expect(ctrl.isComplete).toBe(true)
+    // updateNode should have been called to mark nodes done
+    expect(instance.updateNode).toHaveBeenCalled()
     vi.useRealTimers()
   })
 })

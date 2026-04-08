@@ -7,6 +7,7 @@ interface Props {
 
 interface State {
   error: Error | null
+  prevResetKey?: string | number
 }
 
 export default class AgrexErrorBoundary extends Component<Props, State> {
@@ -16,10 +17,12 @@ export default class AgrexErrorBoundary extends Component<Props, State> {
     return { error }
   }
 
-  static getDerivedStateFromProps(props: Props, state: State): State | null {
-    // Reset error state when resetKey changes, allowing recovery from transient errors
-    if (state.error && props.resetKey !== undefined) {
-      return { error: null }
+  static getDerivedStateFromProps(props: Props, state: State): Partial<State> | null {
+    if (state.error && props.resetKey !== undefined && props.resetKey !== state.prevResetKey) {
+      return { error: null, prevResetKey: props.resetKey }
+    }
+    if (props.resetKey !== state.prevResetKey) {
+      return { prevResetKey: props.resetKey }
     }
     return null
   }

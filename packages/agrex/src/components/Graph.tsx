@@ -20,6 +20,15 @@ import { dagreLayout } from '../layout/dagre'
 import type { AgrexNode, AgrexEdge, ResolvedTheme, LayoutFn } from '../types'
 import { themeToCSS } from '../theme/tokens'
 
+interface FlowNodeData {
+  label: string
+  status: string
+  collapsed?: boolean
+  childCount?: number
+  childrenAllDone?: boolean
+  [key: string]: unknown
+}
+
 const BUILT_IN_NODE_TYPES: NodeTypes = {
   agent: AgentNode, sub_agent: SubAgentNode, tool: ToolNode,
   file: FileNode,
@@ -351,11 +360,11 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
             const agrexNode = visibleNodeMap.get(fn.id)
             if (!agrexNode) return fn
             const newStatus = agrexNode.status ?? 'idle'
-            const oldStatus = (fn.data as any)?.status
+            const oldStatus = (fn.data as FlowNodeData)?.status
             const isCollapsed = collapsedNodes.has(agrexNode.id)
             // Always re-render collapsed nodes — their badge color depends on descendant statuses
             if (isCollapsed) return toFlowNode(agrexNode, posRef.current.get(agrexNode.id)!, nr, ti, fi, collapsedNodes, childCounts, childrenAllDoneMap)
-            const wasCollapsed = (fn.data as any)?.collapsed
+            const wasCollapsed = (fn.data as FlowNodeData)?.collapsed
             if (newStatus === oldStatus && wasCollapsed === isCollapsed) return fn
             return toFlowNode(agrexNode, posRef.current.get(agrexNode.id)!, nr, ti, fi, collapsedNodes, childCounts, childrenAllDoneMap)
           })

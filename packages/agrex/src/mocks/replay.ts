@@ -42,12 +42,16 @@ export function replay(
   const items = [...scenario.nodes]
   let i = 0
 
-  // Precompute which nodes have children later in the sequence
-  function hasLaterChildren(nodeId: string, fromIndex: number): boolean {
-    for (let j = fromIndex; j < items.length; j++) {
-      if (items[j].parentId === nodeId) return true
-    }
-    return false
+  // Pre-compute set of nodeIds that have children appearing later in the sequence — O(n)
+  const hasChildAfter = new Set<string>()
+  for (let j = items.length - 1; j >= 0; j--) {
+    const pid = items[j].parentId
+    if (pid) hasChildAfter.add(pid)
+  }
+  // Track remaining children count per parent to know when all children are processed
+  const remainingChildren = new Map<string, number>()
+  for (const item of items) {
+    if (item.parentId) remainingChildren.set(item.parentId, (remainingChildren.get(item.parentId) ?? 0) + 1)
   }
 
   function scheduleNext(fn: () => void) {
@@ -65,10 +69,17 @@ export function replay(
     const node = items[i]
     instance.addNode({ ...node, status: 'running' })
 
+    // Decrement remaining children for this node's parent
+    if (node.parentId) {
+      const rem = (remainingChildren.get(node.parentId) ?? 1) - 1
+      remainingChildren.set(node.parentId, rem)
+      if (rem <= 0) hasChildAfter.delete(node.parentId)
+    }
+
     // Mark previous node done only if it has no unprocessed children
     if (i > 0) {
       const prev = items[i - 1]
-      if (!hasLaterChildren(prev.id, i)) {
+      if (!hasChildAfter.has(prev.id)) {
         instance.updateNode(prev.id, { status: 'done' })
       }
     }
@@ -99,7 +110,7 @@ export function replay(
     },
     pause: () => {
       paused = true
-      if (timer) clearTimeout(timer)
+      if (timer) { clearTimeout(timer); timer = null; resumeFn = next }
     },
     resume: () => {
       if (!paused) return

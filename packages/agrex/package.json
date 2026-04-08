@@ -26,6 +26,18 @@
       "import": "./dist/mocks/index.js",
       "types": "./dist/mocks/index.d.ts"
     },
+    "./layout/force": {
+      "import": "./dist/layout/force.js",
+      "types": "./dist/layout/force.d.ts"
+    },
+    "./layout/dagre": {
+      "import": "./dist/layout/dagre.js",
+      "types": "./dist/layout/dagre.d.ts"
+    },
+    "./layout/elk": {
+      "import": "./dist/layout/elk.js",
+      "types": "./dist/layout/elk.d.ts"
+    },
     "./styles.css": "./dist/index.css"
   },
   "sideEffects": [
@@ -44,12 +56,16 @@
   "peerDependencies": {
     "@xyflow/react": ">=12",
     "react": ">=18",
-    "react-dom": ">=18"
+    "react-dom": ">=18",
+    "@dagrejs/dagre": "^3.0.0",
+    "elkjs": "^0.11.1"
+  },
+  "peerDependenciesMeta": {
+    "@dagrejs/dagre": { "optional": true },
+    "elkjs": { "optional": true }
   },
   "dependencies": {
-    "@dagrejs/dagre": "^3.0.0",
-    "d3-force": "^3.0.0",
-    "elkjs": "^0.11.1"
+    "d3-force": "^3.0.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.0.0",

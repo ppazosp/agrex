@@ -458,7 +458,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph({
         onMoveStart={(event) => { if (event) setAutoFit(false) }}
         onInit={(inst) => { rfRef.current = inst; inst.setCenter(40, 40, { zoom: 1 }) }}
         minZoom={0.1} maxZoom={2}
-        proOptions={{ hideAttribution: false }}
+        proOptions={{ hideAttribution: true }}
         style={{ background: 'transparent' }}
       >
 

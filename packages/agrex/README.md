@@ -1,6 +1,25 @@
-# agrex
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ppazosp/agrex/main/.github/logo.svg" alt="agrex" width="200">
+</p>
 
-Real-time graph visualizer for AI agent execution flows. Built on React Flow.
+<h1 align="center">agrex</h1>
+
+<p align="center">
+  Real-time graph visualizer for AI agent execution flows. Built on React Flow.
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@ppazosp/agrex"><img src="https://img.shields.io/npm/v/@ppazosp/agrex" alt="npm version"></a>
+  <a href="https://github.com/ppazosp/agrex/blob/main/LICENSE"><img src="https://img.shields.io/github/license/ppazosp/agrex" alt="License"></a>
+  <a href="https://www.npmjs.com/package/@ppazosp/agrex"><img src="https://img.shields.io/npm/dm/@ppazosp/agrex" alt="Downloads"></a>
+  <a href="https://bundlephobia.com/package/@ppazosp/agrex"><img src="https://img.shields.io/bundlephobia/minzip/@ppazosp/agrex" alt="Bundle size"></a>
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ppazosp/agrex/main/.github/example.png" alt="agrex example" width="800">
+</p>
+
+---
 
 ## Install
 

@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Glow filter for the running node -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur"/>
+      <feColorMatrix in="blur" type="matrix"
+        values="0 0 0 0 0.96
+                0 0 0 0 0.62
+                0 0 0 0 0.04
+                0 0 0 0.6 0" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="48" fill="#000000"/>
+
+  <!-- ═══ Edges (drawn first, behind nodes) ═══ -->
+
+  <!-- Orchestrator → Researcher (spawn) -->
+  <line x1="200" y1="180" x2="108" y2="270" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <!-- Orchestrator → Analyst (spawn) -->
+  <line x1="200" y1="180" x2="290" y2="285" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <!-- Orchestrator → Writer (spawn) -->
+  <line x1="200" y1="180" x2="200" y2="390" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-dasharray="4 3"/>
+
+  <!-- Researcher → web_search tool -->
+  <line x1="108" y1="270" x2="52" y2="190" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <!-- Researcher → write_file tool -->
+  <line x1="108" y1="270" x2="60" y2="345" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <!-- write_file → research.json (write edge) -->
+  <line x1="60" y1="345" x2="108" y2="408" stroke="rgba(251,191,36,0.35)" stroke-width="1.5" stroke-dasharray="4 3"/>
+
+  <!-- Analyst → read_file tool -->
+  <line x1="290" y1="285" x2="355" y2="210" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <!-- read_file → research.json (read edge, crosses graph) -->
+  <line x1="355" y1="210" x2="108" y2="408" stroke="rgba(56,189,248,0.3)" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <!-- Analyst → calculate tool -->
+  <line x1="290" y1="285" x2="370" y2="310" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <!-- Analyst → write_file tool -->
+  <line x1="290" y1="285" x2="350" y2="380" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <!-- write_file → analysis.md (write edge) -->
+  <line x1="350" y1="380" x2="420" y2="435" stroke="rgba(251,191,36,0.35)" stroke-width="1.5" stroke-dasharray="4 3"/>
+
+  <!-- Writer → read_file tool -->
+  <line x1="200" y1="390" x2="280" y2="440" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <!-- read_file → analysis.md (read edge) -->
+  <line x1="280" y1="440" x2="420" y2="435" stroke="rgba(56,189,248,0.3)" stroke-width="1.5" stroke-dasharray="4 3"/>
+
+  <!-- Independent tool (top right, no connection) -->
+  <line x1="420" y1="105" x2="460" y2="160" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-dasharray="4 3"/>
+
+  <!-- ═══ Nodes ═══ -->
+
+  <!-- Orchestrator (agent, done) -->
+  <rect x="160" y="140" width="80" height="80" rx="8" fill="#0d0d0d" stroke="#22c55e" stroke-width="2"/>
+  <text x="200" y="190" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="system-ui, sans-serif" font-size="28" font-weight="700">O</text>
+
+  <!-- Researcher (sub_agent, done) -->
+  <rect x="80" y="242" width="56" height="56" rx="6" fill="#0d0d0d" stroke="#22c55e" stroke-width="2"/>
+  <text x="108" y="278" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="system-ui, sans-serif" font-size="20" font-weight="700">R</text>
+
+  <!-- Analyst (sub_agent, running) -->
+  <g filter="url(#glow)">
+    <rect x="262" y="257" width="56" height="56" rx="6" fill="#0d0d0d" stroke="#f59e0b" stroke-width="2"/>
+    <text x="290" y="293" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="system-ui, sans-serif" font-size="20" font-weight="700">A</text>
+  </g>
+
+  <!-- Writer (sub_agent, done) -->
+  <rect x="172" y="362" width="56" height="56" rx="6" fill="#0d0d0d" stroke="#22c55e" stroke-width="2"/>
+  <text x="200" y="398" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="system-ui, sans-serif" font-size="20" font-weight="700">W</text>
+
+  <!-- web_search tool (done) -->
+  <circle cx="52" cy="190" r="18" fill="#0d0d0d" stroke="#22c55e" stroke-width="2"/>
+  <!-- wrench icon -->
+  <g transform="translate(44,182)" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" fill="none" stroke-linecap="round">
+    <path d="M10.5 1.5a4 4 0 0 0-3.8 5.2l-5 5a1 1 0 1 0 1.4 1.4l5-5A4 4 0 0 0 10.5 1.5z"/>
+  </g>
+
+  <!-- write_file tool (researcher's, done) -->
+  <circle cx="60" cy="345" r="18" fill="#0d0d0d" stroke="#22c55e" stroke-width="2"/>
+  <g transform="translate(52,337)" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" fill="none" stroke-linecap="round">
+    <path d="M10.5 1.5a4 4 0 0 0-3.8 5.2l-5 5a1 1 0 1 0 1.4 1.4l5-5A4 4 0 0 0 10.5 1.5z"/>
+  </g>
+
+  <!-- read_file tool (analyst's, running) -->
+  <g filter="url(#glow)">
+    <circle cx="355" cy="210" r="18" fill="#0d0d0d" stroke="#f59e0b" stroke-width="2"/>
+    <g transform="translate(347,202)" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" fill="none" stroke-linecap="round">
+      <path d="M10.5 1.5a4 4 0 0 0-3.8 5.2l-5 5a1 1 0 1 0 1.4 1.4l5-5A4 4 0 0 0 10.5 1.5z"/>
+    </g>
+  </g>
+
+  <!-- calculate tool (analyst's, done) -->
+  <circle cx="370" cy="310" r="18" fill="#0d0d0d" stroke="#22c55e" stroke-width="2"/>
+  <g transform="translate(362,302)" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" fill="none" stroke-linecap="round">
+    <path d="M10.5 1.5a4 4 0 0 0-3.8 5.2l-5 5a1 1 0 1 0 1.4 1.4l5-5A4 4 0 0 0 10.5 1.5z"/>
+  </g>
+
+  <!-- write_file tool (analyst's, done) -->
+  <circle cx="350" cy="380" r="18" fill="#0d0d0d" stroke="#22c55e" stroke-width="2"/>
+  <g transform="translate(342,372)" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" fill="none" stroke-linecap="round">
+    <path d="M10.5 1.5a4 4 0 0 0-3.8 5.2l-5 5a1 1 0 1 0 1.4 1.4l5-5A4 4 0 0 0 10.5 1.5z"/>
+  </g>
+
+  <!-- read_file tool (writer's, done) -->
+  <circle cx="280" cy="440" r="18" fill="#0d0d0d" stroke="#22c55e" stroke-width="2"/>
+  <g transform="translate(272,432)" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" fill="none" stroke-linecap="round">
+    <path d="M10.5 1.5a4 4 0 0 0-3.8 5.2l-5 5a1 1 0 1 0 1.4 1.4l5-5A4 4 0 0 0 10.5 1.5z"/>
+  </g>
+
+  <!-- research.json file (hexagon, done) -->
+  <g transform="translate(84,383)">
+    <path d="M 9.8 1.7 Q 12 0.5 14.2 1.7 L 21.3 5.65 Q 23.5 6.87 23.5 9.37 L 23.5 18.12 Q 23.5 20.62 21.3 21.85 L 14.2 25.8 Q 12 27 9.8 25.8 L 2.7 21.85 Q 0.5 20.62 0.5 18.12 L 0.5 9.37 Q 0.5 6.87 2.7 5.65 Z"
+      fill="#0d0d0d" stroke="#22c55e" stroke-width="2"/>
+    <!-- file lines icon -->
+    <g transform="translate(6,7.5)" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" fill="none" stroke-linecap="round">
+      <line x1="0" y1="2" x2="12" y2="2"/>
+      <line x1="0" y1="6" x2="10" y2="6"/>
+      <line x1="0" y1="10" x2="8" y2="10"/>
+    </g>
+  </g>
+
+  <!-- analysis.md file (hexagon, done) -->
+  <g transform="translate(396,410)">
+    <path d="M 9.8 1.7 Q 12 0.5 14.2 1.7 L 21.3 5.65 Q 23.5 6.87 23.5 9.37 L 23.5 18.12 Q 23.5 20.62 21.3 21.85 L 14.2 25.8 Q 12 27 9.8 25.8 L 2.7 21.85 Q 0.5 20.62 0.5 18.12 L 0.5 9.37 Q 0.5 6.87 2.7 5.65 Z"
+      fill="#0d0d0d" stroke="#22c55e" stroke-width="2"/>
+    <g transform="translate(6,7.5)" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" fill="none" stroke-linecap="round">
+      <line x1="0" y1="2" x2="12" y2="2"/>
+      <line x1="0" y1="6" x2="10" y2="6"/>
+      <line x1="0" y1="10" x2="8" y2="10"/>
+    </g>
+  </g>
+
+  <!-- ═══ Disconnected independent agent (top-right, error state) ═══ -->
+  <rect x="393" y="70" width="56" height="56" rx="6" fill="#0d0d0d" stroke="#ef4444" stroke-width="2"/>
+  <text x="421" y="106" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="system-ui, sans-serif" font-size="20" font-weight="700">E</text>
+
+  <!-- error tool child -->
+  <circle cx="460" cy="160" r="18" fill="#0d0d0d" stroke="#ef4444" stroke-width="2"/>
+  <g transform="translate(452,152)" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" fill="none" stroke-linecap="round">
+    <path d="M10.5 1.5a4 4 0 0 0-3.8 5.2l-5 5a1 1 0 1 0 1.4 1.4l5-5A4 4 0 0 0 10.5 1.5z"/>
+  </g>
+</svg>

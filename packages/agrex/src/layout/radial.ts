@@ -3,13 +3,49 @@ import type { LayoutFn } from '../types'
 const GOLDEN_ANGLE = 2.399963229728653
 const BASE_R = 140
 const MIN_DIST = 100
+const ROOT_RADIUS = 600
+const ROOT_MIN_DIST = 300
+const ROOT_STEP = 100
 
-function placeNode(
-  parentPos: { x: number; y: number } | undefined,
+/** Place a new root node away from the centroid of all existing nodes. */
+function placeRoot(placed: Map<string, { x: number; y: number }>): { x: number; y: number } {
+  let cx = 0
+  let cy = 0
+  for (const [, pos] of placed) {
+    cx += pos.x
+    cy += pos.y
+  }
+  cx /= placed.size
+  cy /= placed.size
+
+  const angle = Math.random() * 2 * Math.PI
+  const candidate = {
+    x: cx + ROOT_RADIUS * Math.cos(angle),
+    y: cy + ROOT_RADIUS * Math.sin(angle),
+  }
+
+  let tooClose = true
+  let iterations = 0
+  while (tooClose && iterations < 200) {
+    tooClose = false
+    iterations++
+    for (const [, pos] of placed) {
+      if (Math.hypot(pos.x - candidate.x, pos.y - candidate.y) < ROOT_MIN_DIST) {
+        candidate.x += ROOT_STEP * Math.cos(angle)
+        candidate.y += ROOT_STEP * Math.sin(angle)
+        tooClose = true
+        break
+      }
+    }
+  }
+
+  return candidate
+}
+
+function placeChild(
+  parentPos: { x: number; y: number },
   placed: Map<string, { x: number; y: number }>,
 ): { x: number; y: number } {
-  if (!parentPos) return { x: 0, y: 0 }
-
   const parentDist = Math.hypot(parentPos.x, parentPos.y)
 
   // Count already-placed siblings around this parent
@@ -49,7 +85,7 @@ function placeNode(
   }
 }
 
-export const radialLayout: LayoutFn = (nodes, edges, existingPositions) => {
+export const radialLayout: LayoutFn = (nodes, _edges, existingPositions) => {
   const positions = new Map(existingPositions)
 
   const parentOf = new Map<string, string>()
@@ -64,11 +100,14 @@ export const radialLayout: LayoutFn = (nodes, edges, existingPositions) => {
 
     const pid = parentOf.get(node.id)
     if (pid && !positions.has(pid) && positions.size > 0) continue
-    if (!pid && positions.size > 0) continue
+
+    if (!pid && positions.size > 0) {
+      positions.set(node.id, placeRoot(positions))
+      continue
+    }
 
     const parentPos = pid ? positions.get(pid) : undefined
-
-    positions.set(node.id, placeNode(parentPos, positions))
+    positions.set(node.id, parentPos ? placeChild(parentPos, positions) : { x: 0, y: 0 })
   }
 
   return positions

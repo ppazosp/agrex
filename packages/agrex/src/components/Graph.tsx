@@ -326,24 +326,13 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph(
     let newest: AgrexNode | null = null
     const newNodes: AgrexNode[] = []
 
-    let rootCount = 0
-    for (const nd of visibleNodes) {
-      if (!nd.parentId && posRef.current.has(nd.id)) rootCount++
-    }
-
     for (const nd of visibleNodes) {
       if (posRef.current.has(nd.id)) continue
 
       const pid = nd.parentId
       if (pid && !posRef.current.has(pid) && posRef.current.size > 0) continue
 
-      if (!pid && posRef.current.size > 0) {
-        // Additional root node — offset from existing roots
-        posRef.current.set(nd.id, { x: rootCount * 300, y: 0 })
-        rootCount++
-      } else {
-        posRef.current.set(nd.id, radialLayout([nd], visibleEdges, posRef.current).get(nd.id) ?? { x: 0, y: 0 })
-      }
+      posRef.current.set(nd.id, radialLayout([nd], visibleEdges, posRef.current).get(nd.id) ?? { x: 0, y: 0 })
       newest = nd
       newNodes.push(nd)
     }

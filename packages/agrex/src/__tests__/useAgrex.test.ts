@@ -52,6 +52,43 @@ describe('useAgrex', () => {
     expect(result.current.nodes[0].metadata).toEqual({ key: 'val' })
   })
 
+  it('updateNode merges metadata instead of replacing', () => {
+    const { result } = renderHook(() => useAgrex())
+    act(() => {
+      result.current.addNode({
+        id: 'a',
+        type: 'agent',
+        label: 'Agent',
+        metadata: { startedAt: 1000, tokens: 50 },
+      })
+    })
+    act(() => {
+      result.current.updateNode('a', { metadata: { endedAt: 2000, cost: 0.01 } })
+    })
+    expect(result.current.nodes[0].metadata).toEqual({
+      startedAt: 1000,
+      tokens: 50,
+      endedAt: 2000,
+      cost: 0.01,
+    })
+  })
+
+  it('updateNode metadata merge overwrites conflicting keys', () => {
+    const { result } = renderHook(() => useAgrex())
+    act(() => {
+      result.current.addNode({
+        id: 'a',
+        type: 'agent',
+        label: 'Agent',
+        metadata: { tokens: 50 },
+      })
+    })
+    act(() => {
+      result.current.updateNode('a', { metadata: { tokens: 120 } })
+    })
+    expect(result.current.nodes[0].metadata).toEqual({ tokens: 120 })
+  })
+
   it('removeNode removes a node', () => {
     const { result } = renderHook(() => useAgrex())
     act(() => {

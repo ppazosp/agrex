@@ -39,7 +39,14 @@ function createStore() {
       }
       state = {
         ...state,
-        nodes: state.nodes.map((n) => (n.id === id ? { ...n, ...updates } : n)),
+        nodes: state.nodes.map((n) => {
+          if (n.id !== id) return n
+          const merged = { ...n, ...updates }
+          if (updates.metadata && n.metadata) {
+            merged.metadata = { ...n.metadata, ...updates.metadata }
+          }
+          return merged
+        }),
       }
       emit()
     },

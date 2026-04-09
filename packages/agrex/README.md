@@ -66,10 +66,10 @@ function App() {
 The full store API:
 
 ```tsx
-agrex.addNode(node) // Add a node
-agrex.addNodes(nodes) // Add multiple nodes
-agrex.updateNode(id, updates) // Update status, label, or metadata
-agrex.removeNode(id) // Remove a node
+agrex.addNode(node) // Add a node (no-op if id exists)
+agrex.addNodes(nodes) // Add multiple nodes (skips duplicates)
+agrex.updateNode(id, updates) // Update status, label, or metadata (metadata is merged, not replaced)
+agrex.removeNode(id) // Remove a node and its edges
 agrex.clear() // Clear everything
 agrex.loadJSON({ nodes }) // Load from snapshot
 ```
@@ -357,9 +357,10 @@ agrex.addNode({
   metadata: { startedAt: Date.now() },
 })
 
+// metadata is merged — only pass the new keys, existing ones are preserved
 agrex.updateNode('t1', {
   status: 'done',
-  metadata: { startedAt: 1234567890, endedAt: Date.now(), tokens: 1500, cost: 0.003 },
+  metadata: { endedAt: Date.now(), tokens: 1500, cost: 0.003 },
 })
 ```
 

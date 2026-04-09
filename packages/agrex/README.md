@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/ppazosp/agrex/main/.github/logo.svg" alt="agrex" width="200">
+  <img src="https://raw.githubusercontent.com/ppazosp/agrex/main/.github/logo.svg" alt="agrex" width="160">
 </p>
 
 <h1 align="center">agrex</h1>
@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/ppazosp/agrex/main/.github/example.png" alt="agrex example" width="800">
+  <img src="https://raw.githubusercontent.com/ppazosp/agrex/main/.github/example.png" alt="agrex in action" width="700">
 </p>
 
 ---

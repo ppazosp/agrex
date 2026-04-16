@@ -12,7 +12,7 @@ import '@xyflow/react/dist/style.css'
 import { AgentNode, SubAgentNode, ToolNode, FileNode, DefaultNode } from '../nodes'
 import { radialLayout } from '../layout/radial'
 import Controls from './Controls'
-import type { AgrexNode, AgrexEdge, ResolvedTheme } from '../types'
+import type { AgrexNode, AgrexEdge, AgrexNodeProps, ResolvedTheme } from '../types'
 import { themeToCSS } from '../theme/tokens'
 
 // React Flow's NodeTypes requires ComponentType<NodeProps<any>> — unavoidable any at the boundary
@@ -106,9 +106,33 @@ function toFlowNode(
       collapsed,
       childCount,
       childrenAllDone,
+      // Full AgrexNode for custom renderers — see wrapNodeRenderer in nodeTypes
+      __agrexNode: n,
     },
     position: pos,
   } as Node
+}
+
+/**
+ * Wraps a user-supplied custom renderer so it receives {@link AgrexNodeProps}
+ * ({ node, status, theme }) as the public type promises, even though React Flow
+ * internally calls node components with NodeProps ({ id, data, ... }).
+ *
+ * Without this, users get `node`/`status`/`theme` = undefined at runtime despite
+ * a clean TypeScript signature — a silent type lie.
+ */
+function wrapNodeRenderer(
+  Renderer: React.ComponentType<AgrexNodeProps>,
+  theme: ResolvedTheme,
+  displayType: string,
+): React.ComponentType<{ data: { __agrexNode?: AgrexNode } }> {
+  function AgrexRendererAdapter({ data }: { data: { __agrexNode?: AgrexNode } }) {
+    const node = data.__agrexNode
+    if (!node) return null
+    return <Renderer node={node} status={node.status ?? 'idle'} theme={theme} />
+  }
+  AgrexRendererAdapter.displayName = `AgrexRenderer(${displayType})`
+  return AgrexRendererAdapter
 }
 
 function toFlowEdge(e: AgrexEdge, edgeColors: Record<string, string>, animated: boolean): Edge {
@@ -250,10 +274,16 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph(
     return id
   }, [])
 
-  const nodeTypes: NodeTypes = useMemo(
-    () => ({ ...BUILT_IN_NODE_TYPES, ...(nodeRenderers ?? {}), default_agrex: DefaultNode }),
-    [nodeRenderers],
-  )
+  const nodeTypes: NodeTypes = useMemo(() => {
+    const out: NodeTypes = { ...BUILT_IN_NODE_TYPES, default_agrex: DefaultNode }
+    if (nodeRenderers) {
+      for (const [type, Renderer] of Object.entries(nodeRenderers)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        out[type] = wrapNodeRenderer(Renderer as React.ComponentType<AgrexNodeProps>, theme, type) as any
+      }
+    }
+    return out
+  }, [nodeRenderers, theme])
 
   useEffect(() => {
     agrexNodesRef.current = nodes

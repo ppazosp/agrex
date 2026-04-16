@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, fireEvent, act } from '@testing-library/react'
 import { useRef } from 'react'
 import { Agrex } from '../index'
-import type { AgrexNode, AgrexHandle } from '../types'
+import type { AgrexNode, AgrexHandle, AgrexNodeProps } from '../types'
 
 globalThis.ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
@@ -120,6 +120,53 @@ describe('Graph keyboard shortcuts', () => {
     input.focus()
     fireEvent.keyDown(input, { key: '=' })
     expect(container.querySelector('.agrex')).toBeTruthy()
+  })
+})
+
+describe('Graph custom nodeRenderers', () => {
+  it('passes { node, status, theme } to custom renderers (AgrexNodeProps contract)', async () => {
+    const capturedProps: AgrexNodeProps[] = []
+    const CustomRenderer = (props: AgrexNodeProps) => {
+      capturedProps.push(props)
+      return <div data-testid={`custom-${props.node.id}`}>{props.node.label}</div>
+    }
+
+    const customNodes: AgrexNode[] = [
+      { id: 'a', type: 'custom', label: 'Alpha', status: 'running', metadata: { foo: 1 } },
+      { id: 'b', type: 'custom', label: 'Beta', status: 'done' },
+    ]
+
+    render(<Agrex nodes={customNodes} nodeRenderers={{ custom: CustomRenderer }} />)
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 100))
+    })
+
+    expect(capturedProps.length).toBeGreaterThan(0)
+    const byId = new Map(capturedProps.map((p) => [p.node.id, p]))
+
+    const a = byId.get('a')!
+    expect(a.node.label).toBe('Alpha')
+    expect(a.node.metadata).toEqual({ foo: 1 })
+    expect(a.status).toBe('running')
+    expect(a.theme).toBeDefined()
+    expect(typeof a.theme.statusRunning).toBe('string')
+
+    const b = byId.get('b')!
+    expect(b.node.label).toBe('Beta')
+    expect(b.status).toBe('done')
+  })
+
+  it('defaults status to "idle" when AgrexNode.status is omitted', async () => {
+    const captured: AgrexNodeProps[] = []
+    const R = (p: AgrexNodeProps) => {
+      captured.push(p)
+      return <div>{p.node.label}</div>
+    }
+    render(<Agrex nodes={[{ id: 'x', type: 'custom', label: 'X' }]} nodeRenderers={{ custom: R }} />)
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 100))
+    })
+    expect(captured[0]?.status).toBe('idle')
   })
 })
 

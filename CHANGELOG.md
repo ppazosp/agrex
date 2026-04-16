@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.8
+
+- Fix: custom `nodeRenderers` now actually receive `{ node, status, theme }` (the `AgrexNodeProps` contract). Previously they were registered straight into React Flow and called with `NodeProps` (`{ data, id, ... }`), so `node.metadata` threw on first render despite a clean TypeScript signature.
+- Internal: user renderers are now wrapped in an adapter (`AgrexRendererAdapter`) that reconstructs the `AgrexNode` and invokes the user component with the advertised props.
+- Added Graph tests covering the contract, including the `status: 'idle'` default.
+
+## 0.1.7
+
+- Crop example screenshot
+
 ## 0.1.6
 
 - Custom logo and example screenshot in README

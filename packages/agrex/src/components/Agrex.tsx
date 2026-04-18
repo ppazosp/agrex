@@ -52,7 +52,10 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex(
 ) {
   const prefersDark = useMediaQuery('(prefers-color-scheme: dark)', true)
   const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)', false)
-  const theme = themeProp === 'auto' ? resolveTheme(prefersDark ? 'dark' : 'light') : resolveTheme(themeProp)
+  const theme = useMemo(
+    () => (themeProp === 'auto' ? resolveTheme(prefersDark ? 'dark' : 'light') : resolveTheme(themeProp)),
+    [themeProp, prefersDark],
+  )
   const rawNodes = instance?.nodes ?? staticNodes ?? []
   const rawEdges = instance?.edges ?? staticEdges ?? []
   const nodes = rawNodes
@@ -90,7 +93,7 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex(
     [showToasts],
   )
 
-  const cssVars = themeToCSS(theme) as Record<string, string>
+  const cssVars = useMemo(() => themeToCSS(theme) as Record<string, string>, [theme])
 
   return (
     <AgrexErrorBoundary resetKey={nodes.length}>

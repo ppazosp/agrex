@@ -66,6 +66,8 @@ export interface AgrexProps {
   showControls?: boolean
   showLegend?: boolean
   showToasts?: boolean
+  /** Where the toast stack renders. Default: `'top-left'`. */
+  toastPlacement?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
   showDetailPanel?: boolean
 
   showStats?: boolean

@@ -18,7 +18,22 @@ const MAX_VISIBLE = 5
 const DURATION = 2500
 const EXIT_MS = 300
 
-export default function ToastStack({ node }: { node: AgrexNode | null }) {
+type ToastPlacement = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+
+const PLACEMENT_STYLES: Record<ToastPlacement, React.CSSProperties> = {
+  'top-left': { top: 16, left: 16, alignItems: 'flex-start' },
+  'top-right': { top: 16, right: 16, alignItems: 'flex-end' },
+  'bottom-left': { bottom: 16, left: 16, alignItems: 'flex-start' },
+  'bottom-right': { bottom: 16, right: 16, alignItems: 'flex-end' },
+}
+
+export default function ToastStack({
+  node,
+  placement = 'top-left',
+}: {
+  node: AgrexNode | null
+  placement?: ToastPlacement
+}) {
   const [toasts, setToasts] = useState<ToastItem[]>([])
   const counterRef = useRef(0)
   const timersRef = useRef(new Set<ReturnType<typeof setTimeout>>())
@@ -73,15 +88,15 @@ export default function ToastStack({ node }: { node: AgrexNode | null }) {
 
   if (toasts.length === 0) return null
 
+  const isBottom = placement.startsWith('bottom')
   return (
     <div
       style={{
         position: 'absolute',
-        top: 16,
-        left: 16,
-        zIndex: 10,
+        ...PLACEMENT_STYLES[placement],
+        zIndex: 40,
         display: 'flex',
-        flexDirection: 'column',
+        flexDirection: isBottom ? 'column-reverse' : 'column',
         gap: 6,
         pointerEvents: 'none',
       }}

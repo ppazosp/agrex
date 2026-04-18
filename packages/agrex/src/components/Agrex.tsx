@@ -42,6 +42,7 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex(
     showControls = true,
     showLegend = true,
     showToasts = true,
+    toastPlacement = 'top-left',
     showDetailPanel = true,
     showStats = false,
     fitOnUpdate = true,
@@ -129,7 +130,7 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex(
         {showLegend && <Legend toolIcons={toolIcons} fileIcons={fileIcons} />}
         {showStats && <StatsBar nodes={nodes} />}
         {showDetailPanel && <DetailPanel node={selectedNode} onClose={() => setSelectedNode(null)} />}
-        {showToasts && <ToastStack node={toastNode} />}
+        {showToasts && <ToastStack node={toastNode} placement={toastPlacement} />}
       </div>
     </AgrexErrorBoundary>
   )

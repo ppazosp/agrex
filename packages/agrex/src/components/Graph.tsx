@@ -438,7 +438,14 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph(
                 childrenAllDoneMap,
               )
             const wasCollapsed = (fn.data as FlowNodeData)?.collapsed
-            if (newStatus === oldStatus && wasCollapsed === isCollapsed) return fn
+            const prevAgrexNode = (fn.data as { __agrexNode?: AgrexNode })?.__agrexNode
+            if (
+              newStatus === oldStatus &&
+              wasCollapsed === isCollapsed &&
+              prevAgrexNode === agrexNode
+            ) {
+              return fn
+            }
             return toFlowNode(
               agrexNode,
               posRef.current.get(agrexNode.id)!,

@@ -20,19 +20,37 @@ const EXIT_MS = 300
 
 type ToastPlacement = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
 
-const PLACEMENT_STYLES: Record<ToastPlacement, React.CSSProperties> = {
-  'top-left': { top: 16, left: 16, alignItems: 'flex-start' },
-  'top-right': { top: 16, right: 16, alignItems: 'flex-end' },
-  'bottom-left': { bottom: 16, left: 16, alignItems: 'flex-start' },
-  'bottom-right': { bottom: 16, right: 16, alignItems: 'flex-end' },
+interface ToastInsets {
+  top?: number
+  left?: number
+  right?: number
+  bottom?: number
+}
+
+const EDGES: Record<ToastPlacement, [keyof ToastInsets, keyof ToastInsets]> = {
+  'top-left': ['top', 'left'],
+  'top-right': ['top', 'right'],
+  'bottom-left': ['bottom', 'left'],
+  'bottom-right': ['bottom', 'right'],
+}
+
+function placementStyle(placement: ToastPlacement, insets: ToastInsets): React.CSSProperties {
+  const [vertical, horizontal] = EDGES[placement]
+  return {
+    [vertical]: insets[vertical] ?? 16,
+    [horizontal]: insets[horizontal] ?? 16,
+    alignItems: horizontal === 'left' ? 'flex-start' : 'flex-end',
+  }
 }
 
 export default function ToastStack({
   node,
   placement = 'top-left',
+  insets,
 }: {
   node: AgrexNode | null
   placement?: ToastPlacement
+  insets?: ToastInsets
 }) {
   const [toasts, setToasts] = useState<ToastItem[]>([])
   const counterRef = useRef(0)
@@ -93,7 +111,7 @@ export default function ToastStack({
     <div
       style={{
         position: 'absolute',
-        ...PLACEMENT_STYLES[placement],
+        ...placementStyle(placement, insets ?? {}),
         zIndex: 40,
         display: 'flex',
         flexDirection: isBottom ? 'column-reverse' : 'column',

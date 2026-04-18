@@ -68,6 +68,8 @@ export interface AgrexProps {
   showToasts?: boolean
   /** Where the toast stack renders. Default: `'top-left'`. */
   toastPlacement?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+  /** Override the 16px inset on any edge (e.g. to clear a fixed sidebar). */
+  toastInsets?: { top?: number; left?: number; right?: number; bottom?: number }
   showDetailPanel?: boolean
 
   showStats?: boolean

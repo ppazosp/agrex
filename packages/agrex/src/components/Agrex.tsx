@@ -126,7 +126,7 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex(
           onEdgeClick={onEdgeClick}
           onNewestNode={handleNewestNode}
         />
-        {showLegend && <Legend />}
+        {showLegend && <Legend toolIcons={toolIcons} fileIcons={fileIcons} />}
         {showStats && <StatsBar nodes={nodes} />}
         {showDetailPanel && <DetailPanel node={selectedNode} onClose={() => setSelectedNode(null)} />}
         {showToasts && <ToastStack node={toastNode} />}

@@ -1,4 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ComponentType } from 'react'
+
+function prettifyToolName(name: string): string {
+  return name
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ')
+}
 
 function Section({
   title,
@@ -73,7 +84,14 @@ function ShapeItem({ shape, label }: { shape: React.ReactNode; label: string }) 
   )
 }
 
-export default function Legend() {
+type IconComponent = ComponentType<{ size: number }>
+
+interface LegendProps {
+  toolIcons?: Record<string, IconComponent>
+  fileIcons?: Record<string, IconComponent>
+}
+
+export default function Legend({ toolIcons, fileIcons }: LegendProps = {}) {
   const [collapsed, setCollapsed] = useState(false)
   const [compact, setCompact] = useState(false)
   const containerRef = useRef<HTMLElement | null>(null)
@@ -182,6 +200,58 @@ export default function Legend() {
               label="Read"
             />
           </Section>
+          {toolIcons && Object.keys(toolIcons).length > 0 && (
+            <Section title="Tools" defaultOpen={!compact}>
+              {Object.entries(toolIcons)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([name, Icon]) => (
+                  <ShapeItem
+                    key={name}
+                    shape={
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: 14,
+                          height: 14,
+                          color: 'var(--agrex-node-icon)',
+                        }}
+                      >
+                        <Icon size={12} />
+                      </span>
+                    }
+                    label={prettifyToolName(name)}
+                  />
+                ))}
+            </Section>
+          )}
+          {fileIcons && Object.keys(fileIcons).length > 0 && (
+            <Section title="Files" defaultOpen={!compact}>
+              {Object.entries(fileIcons)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([ext, Icon]) => (
+                  <ShapeItem
+                    key={ext}
+                    shape={
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: 14,
+                          height: 14,
+                          color: 'var(--agrex-node-icon)',
+                        }}
+                      >
+                        <Icon size={12} />
+                      </span>
+                    }
+                    label={`.${ext}`}
+                  />
+                ))}
+            </Section>
+          )}
           <Section title="Status">
             <ShapeItem
               shape={

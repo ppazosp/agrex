@@ -96,7 +96,7 @@ export default function ToastStack({ node }: { node: AgrexNode | null }) {
             borderRadius: 8,
             padding: '6px 14px',
             fontSize: 12,
-            fontFamily: 'var(--agrex-font-mono)',
+            fontFamily: 'var(--agrex-font)',
             display: 'flex',
             alignItems: 'center',
             gap: 8,

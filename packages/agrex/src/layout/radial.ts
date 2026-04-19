@@ -7,8 +7,19 @@ const ROOT_RADIUS = 600
 const ROOT_MIN_DIST = 300
 const ROOT_STEP = 100
 
+/** Derive a stable angle in [0, 2π) from a node id. Keeps layouts reproducible
+ * so event-sourced replays render identically to the original live run. */
+function angleFromId(id: string): number {
+  let h = 2166136261 // FNV-1a 32-bit offset basis
+  for (let i = 0; i < id.length; i++) {
+    h ^= id.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return ((h >>> 0) / 0x100000000) * 2 * Math.PI
+}
+
 /** Place a new root node away from the centroid of all existing nodes. */
-function placeRoot(placed: Map<string, { x: number; y: number }>): { x: number; y: number } {
+function placeRoot(id: string, placed: Map<string, { x: number; y: number }>): { x: number; y: number } {
   let cx = 0
   let cy = 0
   for (const [, pos] of placed) {
@@ -18,7 +29,7 @@ function placeRoot(placed: Map<string, { x: number; y: number }>): { x: number; 
   cx /= placed.size
   cy /= placed.size
 
-  const angle = Math.random() * 2 * Math.PI
+  const angle = angleFromId(id)
   const candidate = {
     x: cx + ROOT_RADIUS * Math.cos(angle),
     y: cy + ROOT_RADIUS * Math.sin(angle),
@@ -102,7 +113,7 @@ export const radialLayout: LayoutFn = (nodes, _edges, existingPositions) => {
     if (pid && !positions.has(pid) && positions.size > 0) continue
 
     if (!pid && positions.size > 0) {
-      positions.set(node.id, placeRoot(positions))
+      positions.set(node.id, placeRoot(node.id, positions))
       continue
     }
 

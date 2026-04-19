@@ -1,4 +1,4 @@
-import type { UseAgrexReturn } from '../types'
+import type { Theme, UseAgrexReturn } from '../types'
 
 /**
  * A single event in a recorded execution stream.
@@ -128,4 +128,12 @@ export interface AgrexTimelineProps {
   placement?: TimelinePlacement
   insets?: TimelineInsets
   className?: string
+  /**
+   * Theme to apply to the timeline. Only required when mounting
+   * `<AgrexTimeline>` as a sibling of `<Agrex>` (rather than embedded inside
+   * it via `replay` on `<Agrex>`) — `--agrex-*` CSS variables are scoped to
+   * the Agrex root's subtree, so a sibling panel otherwise inherits nothing
+   * and relies on the baked-in dark fallbacks.
+   */
+  theme?: Theme
 }

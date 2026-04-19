@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { resolveTheme, themeToCSS } from '../theme/tokens'
 import type { AgrexMarker, AgrexTimelineProps, TimelineInsets, TimelinePlacement } from './types'
 
 const PANEL_WIDTH = 820
@@ -74,18 +75,30 @@ function formatElapsed(ms: number): string {
 
 // Match the panel chrome used by <Legend> / <DetailPanel> / <ToastStack>:
 // 80% bg opacity, 16px blur, 1px border in --agrex-node-border, 16px radius.
+//
+// Every `var()` carries a dark-theme fallback so the panel renders with
+// visible chrome even when placed *outside* a wrapping <Agrex> — the CSS
+// variables (`--agrex-bg` etc.) are scoped to the Agrex root's subtree, so a
+// sibling-positioned AgrexTimeline otherwise sees undefined vars and loses
+// its background + border.
 const panelChrome: CSSProperties = {
-  background: 'color-mix(in srgb, var(--agrex-bg) 80%, transparent)',
+  background: 'color-mix(in srgb, var(--agrex-bg, #0a0a0a) 80%, transparent)',
   backdropFilter: 'blur(16px)',
   WebkitBackdropFilter: 'blur(16px)',
-  border: '1px solid var(--agrex-node-border)',
+  border: '1px solid var(--agrex-node-border, rgba(255,255,255,0.15))',
   borderRadius: 16,
 }
 
-function containerStyle(placement: TimelinePlacement, insets: TimelineInsets, collapsed: boolean): CSSProperties {
+function containerStyle(
+  placement: TimelinePlacement,
+  insets: TimelineInsets,
+  collapsed: boolean,
+  themeVars: CSSProperties,
+): CSSProperties {
   const vertical: keyof TimelineInsets = placement === 'top' ? 'top' : 'bottom'
   const inset = insets[vertical] ?? 16
   return {
+    ...themeVars,
     ...panelChrome,
     position: 'absolute',
     left: '50%',
@@ -100,15 +113,21 @@ function containerStyle(placement: TimelinePlacement, insets: TimelineInsets, co
     transition: 'transform 250ms cubic-bezier(0.23, 1, 0.32, 1)',
     zIndex: 30,
     padding: '10px 14px',
-    fontFamily: 'var(--agrex-font)',
-    color: 'var(--agrex-fg)',
+    fontFamily: 'var(--agrex-font, inherit)',
+    color: 'var(--agrex-fg, #fff)',
   }
 }
 
-function tabStyle(placement: TimelinePlacement, insets: TimelineInsets, collapsed: boolean): CSSProperties {
+function tabStyle(
+  placement: TimelinePlacement,
+  insets: TimelineInsets,
+  collapsed: boolean,
+  themeVars: CSSProperties,
+): CSSProperties {
   const vertical: keyof TimelineInsets = placement === 'top' ? 'top' : 'bottom'
   const anchorInset = insets[vertical] ?? 16
   return {
+    ...themeVars,
     ...panelChrome,
     position: 'absolute',
     left: '50%',
@@ -123,7 +142,7 @@ function tabStyle(placement: TimelinePlacement, insets: TimelineInsets, collapse
     alignItems: 'center',
     justifyContent: 'center',
     cursor: 'pointer',
-    color: 'var(--agrex-fg)',
+    color: 'var(--agrex-fg, #fff)',
     opacity: 0.4,
     zIndex: 30,
     padding: 0,
@@ -141,15 +160,15 @@ const buttonStyle: CSSProperties = {
   border: 'none',
   borderRadius: 6,
   cursor: 'pointer',
-  color: 'var(--agrex-fg)',
+  color: 'var(--agrex-fg, #fff)',
   opacity: 0.8,
   padding: 0,
 }
 
 const primaryButtonStyle: CSSProperties = {
   ...buttonStyle,
-  background: 'var(--agrex-fg)',
-  color: 'var(--agrex-bg)',
+  background: 'var(--agrex-fg, #fff)',
+  color: 'var(--agrex-bg, #0a0a0a)',
   opacity: 1,
 }
 
@@ -189,7 +208,19 @@ export default function AgrexTimeline({
   placement = 'bottom',
   insets,
   className,
+  theme,
 }: AgrexTimelineProps) {
+  // When `theme` is passed, apply its CSS custom properties directly on the
+  // panel root — necessary when AgrexTimeline is mounted as a *sibling* of
+  // <Agrex> (not a descendant), because the `--agrex-*` vars are scoped to
+  // the Agrex root's subtree and don't leak to siblings. When `theme` is
+  // absent, `themeVars` is empty and the panel inherits vars normally (the
+  // embedded-in-<Agrex> case) or falls back to the `var(...)` defaults
+  // baked into every style below.
+  const themeVars = useMemo<CSSProperties>(
+    () => (theme ? (themeToCSS(resolveTheme(theme)) as unknown as CSSProperties) : {}),
+    [theme],
+  )
   const {
     events,
     cursor,
@@ -254,7 +285,7 @@ export default function AgrexTimeline({
 
   return (
     <>
-      <div style={containerStyle(placement, safeInsets, collapsed)} className={className}>
+      <div style={containerStyle(placement, safeInsets, collapsed, themeVars)} className={className}>
         {stageSegments.length > 0 && (
           <div style={{ display: 'flex', gap: 2, marginBottom: 8, height: 14 }}>
             {stageSegments.map((seg, i) => {
@@ -473,7 +504,7 @@ export default function AgrexTimeline({
         <button
           type="button"
           onClick={() => setCollapsed((v) => !v)}
-          style={tabStyle(placement, safeInsets, collapsed)}
+          style={tabStyle(placement, safeInsets, collapsed, themeVars)}
           aria-label={collapsed ? 'Expand timeline' : 'Collapse timeline'}
         >
           <svg

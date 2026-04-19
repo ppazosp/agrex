@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+
+- **Truly deterministic radial layout.** `placeRoot` anchored at the centroid of already-placed nodes, and `placeChild` offset siblings by a runtime `siblingIndex` count — both made position history-dependent. A replay that scrubs back and re-plays would prune positions and re-place roots against a different centroid, landing nodes in new absolute coordinates. Both now derive their anchors from id-hash angles alone: roots use a fixed-origin circle, children offset by `angleFromId(child.id)` rather than a live sibling count. Same graph, same positions, every time — regardless of arrival order or the state of the position cache.
+
 ## 0.3.0
 
 Fixes three issues surfaced while dog-fooding the 0.2.0 replay engine.

@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { applyEvents, composeReducers, coreReducers, defaultStepBoundaries } from '../replay/reduceEvents'
+import {
+  applyEventRange,
+  applyEvents,
+  composeReducers,
+  coreReducers,
+  defaultStepBoundaries,
+} from '../replay/reduceEvents'
 import type { AgrexEvent, ReducerStore } from '../replay/types'
 import type { AgrexNode } from '../types'
 
@@ -165,6 +171,35 @@ describe('applyEvents', () => {
     ]
     applyEvents(s, events, 2, coreReducers)
     expect(s._nodes).toHaveLength(1)
+  })
+})
+
+describe('applyEventRange', () => {
+  it('applies events[from..to) without clearing', () => {
+    const s = makeStore()
+    s.addNode({ id: 'stale', type: 'agent', label: 'S' })
+    const events: AgrexEvent[] = [
+      { type: 'node_add', ts: 1, node: { id: 'a', type: 'agent', label: 'A' } },
+      { type: 'node_add', ts: 2, node: { id: 'b', type: 'agent', label: 'B' } },
+    ]
+    applyEventRange(s, events, 0, 1, coreReducers)
+    // Stale stays because we didn't clear; range only covered event 0.
+    expect(s._nodes.map((n) => n.id)).toEqual(['stale', 'a'])
+  })
+
+  it('handles out-of-range bounds safely', () => {
+    const s = makeStore()
+    const events: AgrexEvent[] = [{ type: 'node_add', ts: 1, node: { id: 'a', type: 'agent', label: 'A' } }]
+    applyEventRange(s, events, -5, 99, coreReducers)
+    expect(s._nodes.map((n) => n.id)).toEqual(['a'])
+  })
+
+  it('is a no-op when from >= to', () => {
+    const s = makeStore()
+    const events: AgrexEvent[] = [{ type: 'node_add', ts: 1, node: { id: 'a', type: 'agent', label: 'A' } }]
+    applyEventRange(s, events, 1, 1, coreReducers)
+    applyEventRange(s, events, 2, 1, coreReducers)
+    expect(s._nodes).toEqual([])
   })
 })
 

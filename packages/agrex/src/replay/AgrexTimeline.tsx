@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
-import type { AgrexTimelineProps, TimelinePlacement, TimelineInsets } from './types'
+import type { AgrexMarker, AgrexTimelineProps, TimelineInsets, TimelinePlacement } from './types'
 
 const PANEL_WIDTH = 820
-const PANEL_HEIGHT = 58
+const PANEL_HEIGHT = 76
 const DEFAULT_PERSIST_KEY = 'agrex.timeline.collapsed'
 
-// Inline SVGs (lucide geometry, MIT). Keeping them here avoids a lucide-react
-// peer dep just for six icons.
+// Inline SVGs (lucide geometry, MIT). Keeps the dep footprint at zero icons.
 const iconProps = {
   width: 14,
   height: 14,
@@ -73,16 +72,26 @@ function formatElapsed(ms: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
+// Match the panel chrome used by <Legend> / <DetailPanel> / <ToastStack>:
+// 80% bg opacity, 16px blur, 1px border in --agrex-node-border, 16px radius.
+const panelChrome: CSSProperties = {
+  background: 'color-mix(in srgb, var(--agrex-bg) 80%, transparent)',
+  backdropFilter: 'blur(16px)',
+  WebkitBackdropFilter: 'blur(16px)',
+  border: '1px solid var(--agrex-node-border)',
+  borderRadius: 16,
+}
+
 function containerStyle(placement: TimelinePlacement, insets: TimelineInsets, collapsed: boolean): CSSProperties {
   const vertical: keyof TimelineInsets = placement === 'top' ? 'top' : 'bottom'
   const inset = insets[vertical] ?? 16
   return {
+    ...panelChrome,
     position: 'absolute',
     left: '50%',
     [vertical]: inset,
     width: PANEL_WIDTH,
     maxWidth: 'calc(100% - 32px)',
-    // Slide the panel fully off-screen in the direction of its anchor edge.
     transform: collapsed
       ? placement === 'top'
         ? `translate(-50%, calc(-100% - ${PANEL_HEIGHT}px))`
@@ -90,12 +99,6 @@ function containerStyle(placement: TimelinePlacement, insets: TimelineInsets, co
       : 'translate(-50%, 0)',
     transition: 'transform 250ms cubic-bezier(0.23, 1, 0.32, 1)',
     zIndex: 30,
-    background: 'color-mix(in srgb, var(--agrex-bg) 88%, transparent)',
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
-    border: '1px solid var(--agrex-node-border)',
-    borderRadius: 16,
-    boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
     padding: '10px 14px',
     fontFamily: 'var(--agrex-font)',
     color: 'var(--agrex-fg)',
@@ -106,6 +109,7 @@ function tabStyle(placement: TimelinePlacement, insets: TimelineInsets, collapse
   const vertical: keyof TimelineInsets = placement === 'top' ? 'top' : 'bottom'
   const anchorInset = insets[vertical] ?? 16
   return {
+    ...panelChrome,
     position: 'absolute',
     left: '50%',
     transform: 'translateX(-50%)',
@@ -113,10 +117,6 @@ function tabStyle(placement: TimelinePlacement, insets: TimelineInsets, collapse
     width: 40,
     height: 20,
     borderRadius: placement === 'top' ? '0 0 6px 6px' : '6px 6px 0 0',
-    background: 'color-mix(in srgb, var(--agrex-bg) 88%, transparent)',
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
-    border: '1px solid var(--agrex-node-border)',
     borderBottomWidth: placement === 'top' ? 1 : 0,
     borderTopWidth: placement === 'top' ? 0 : 1,
     display: 'flex',
@@ -124,8 +124,9 @@ function tabStyle(placement: TimelinePlacement, insets: TimelineInsets, collapse
     justifyContent: 'center',
     cursor: 'pointer',
     color: 'var(--agrex-fg)',
-    opacity: 0.6,
+    opacity: 0.4,
     zIndex: 30,
+    padding: 0,
     transition: `${vertical} 250ms cubic-bezier(0.23, 1, 0.32, 1), opacity 150ms`,
   }
 }
@@ -150,6 +151,30 @@ const primaryButtonStyle: CSSProperties = {
   background: 'var(--agrex-fg)',
   color: 'var(--agrex-bg)',
   opacity: 1,
+}
+
+interface StageSegment {
+  cursor: number
+  end: number
+  label: string
+  color?: string
+}
+
+/**
+ * Build contiguous chapter segments from jump-kind markers. Each segment spans
+ * from one marker's cursor up to the next marker's cursor (or the end of the
+ * event log). Segments render as labeled bars — a `<details>`-like chapter
+ * track on top of the precision scrub slider.
+ */
+function buildStageSegments(markers: readonly AgrexMarker[], kind: string, totalEvents: number): StageSegment[] {
+  const pool = markers.filter((m) => m.kind === kind).sort((a, b) => a.cursor - b.cursor)
+  if (pool.length === 0 || totalEvents === 0) return []
+  return pool.map((m, i) => ({
+    cursor: m.cursor,
+    end: i + 1 < pool.length ? pool[i + 1].cursor : totalEvents,
+    label: m.label ?? m.kind,
+    color: m.color,
+  }))
 }
 
 export default function AgrexTimeline({
@@ -212,15 +237,68 @@ export default function AgrexTimeline({
     return Number(events[total - 1].ts) - Number(events[0].ts)
   }, [events, total])
 
+  const stageSegments = useMemo(
+    () => (jumpMarkerKind ? buildStageSegments(markers, jumpMarkerKind, total) : []),
+    [jumpMarkerKind, markers, total],
+  )
+  const nonStageMarkers = useMemo(
+    () => (jumpMarkerKind ? markers.filter((m) => m.kind !== jumpMarkerKind) : markers),
+    [jumpMarkerKind, markers],
+  )
+
   if (mode === 'idle') return null
 
   const safeInsets: TimelineInsets = insets ?? {}
-  const jumpMarkers = jumpMarkerKind ? markers.filter((m) => m.kind === jumpMarkerKind) : []
-  const showMarkerJump = !!jumpMarkerKind && jumpMarkers.length > 0
+  const showMarkerJump = !!jumpMarkerKind && stageSegments.length > 0
+  const activeStage = stageSegments.findIndex((s) => cursor > s.cursor && cursor <= s.end)
 
   return (
     <>
       <div style={containerStyle(placement, safeInsets, collapsed)} className={className}>
+        {stageSegments.length > 0 && (
+          <div style={{ display: 'flex', gap: 2, marginBottom: 8, height: 14 }}>
+            {stageSegments.map((seg, i) => {
+              const widthPct = total > 0 ? ((seg.end - seg.cursor) / total) * 100 : 0
+              const isActive = i === activeStage
+              return (
+                <button
+                  key={`seg-${i}`}
+                  type="button"
+                  onClick={() => seek(seg.cursor)}
+                  title={seg.label}
+                  style={{
+                    flex: `${widthPct} 1 0`,
+                    minWidth: 0,
+                    height: '100%',
+                    padding: '0 8px',
+                    background: isActive
+                      ? (seg.color ?? 'color-mix(in srgb, var(--agrex-fg) 25%, transparent)')
+                      : 'color-mix(in srgb, var(--agrex-fg) 8%, transparent)',
+                    border: 'none',
+                    borderRadius: 3,
+                    color: 'var(--agrex-fg)',
+                    opacity: isActive ? 1 : 0.55,
+                    fontSize: 9,
+                    letterSpacing: 1,
+                    textTransform: 'uppercase',
+                    fontFamily: 'var(--agrex-font)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap',
+                    textOverflow: 'ellipsis',
+                    transition: 'opacity 150ms, background 150ms',
+                  }}
+                >
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{seg.label}</span>
+                </button>
+              )
+            })}
+          </div>
+        )}
+
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {showMarkerJump && (
             <button
@@ -290,7 +368,7 @@ export default function AgrexTimeline({
                 opacity: 0.6,
               }}
             />
-            {markers.map((m, i) => (
+            {nonStageMarkers.map((m, i) => (
               <div
                 key={`m-${i}`}
                 title={m.label ?? m.kind}
@@ -299,12 +377,12 @@ export default function AgrexTimeline({
                   position: 'absolute',
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  left: `calc(${total ? (m.cursor / total) * 100 : 0}% - 4px)`,
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
+                  left: `calc(${total ? (m.cursor / total) * 100 : 0}% - 3px)`,
+                  width: 6,
+                  height: 12,
+                  borderRadius: 2,
                   background: m.color ?? 'var(--agrex-fg)',
-                  opacity: 0.6,
+                  opacity: 0.8,
                   cursor: 'pointer',
                 }}
               />

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0
+
+Fixes three issues surfaced while dog-fooding the 0.2.0 replay engine.
+
+- **Incremental forward reduction.** `useAgrexReplay` used to clear the store and replay the entire prefix on every cursor change — during playback that meant each tick triggered a full rebuild, causing downstream layout caches (per-node positions) to see nodes disappear and reappear and re-solve layout from scratch. That's what made nodes drift to new positions after scrub-back + play. Forward motion (live appends, step, play, seek forward) now applies only the new events via the new `applyEventRange` primitive. Backward motion and event-log replacement still clear-and-rebuild.
+- **Panel chrome matches other agrex surfaces.** `<AgrexTimeline>` now uses the same background mix (80% `--agrex-bg`), blur (16px), border (`--agrex-node-border`), and radius as `<Legend>` / `<DetailPanel>` / `<ToastStack>`. Drops the stray box-shadow.
+- **Stage chapter track.** When `jumpMarkerKind` is set, the timeline renders a labeled segment strip above the scrub slider — each marker of that kind becomes a chapter bar with its label. Click a chapter to seek to its start; the current chapter is highlighted. Non-jump markers still render as colored ticks on the scrub line.
+- New export: `applyEventRange(store, events, from, to, reducers)` — the incremental primitive, for consumers who want to own the reduction loop.
+
 ## 0.2.0
 
 Event-replay is now a first-class feature — agrex ships "graph viz + execution tracking" instead of just a renderer.

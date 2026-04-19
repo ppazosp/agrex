@@ -13,6 +13,7 @@ export {
   coreReducers,
   composeReducers,
   applyEvents,
+  applyEventRange,
   defaultStepBoundaries,
   DEFAULT_BOUNDARY_TYPES,
 } from './replay/reduceEvents'

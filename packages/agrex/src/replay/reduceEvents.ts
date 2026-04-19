@@ -67,9 +67,8 @@ export function composeReducers(consumer?: Record<string, EventReducer>): Record
 }
 
 /**
- * Reduce a prefix of events into a cleared store. Used on every cursor change;
- * cost is O(cursor) per invocation, acceptable for the graph sizes agrex
- * targets.
+ * Reduce a prefix of events into a cleared store. Used when the cursor jumps
+ * backward or the event log is replaced; cost is O(cursor) per invocation.
  */
 export function applyEvents(
   store: ReducerStore,
@@ -78,8 +77,25 @@ export function applyEvents(
   reducers: Record<string, EventReducer>,
 ): void {
   store.clear()
-  const end = Math.min(upTo, events.length)
-  for (let i = 0; i < end; i++) {
+  applyEventRange(store, events, 0, upTo, reducers)
+}
+
+/**
+ * Apply `events[from..to)` without clearing the store. Used for forward
+ * cursor motion (live streaming, playback, step-forward) so graph layouts
+ * that cache per-node positions don't see nodes disappear and reappear
+ * between ticks — that's what causes deterministic-layout regressions during
+ * replay playback.
+ */
+export function applyEventRange(
+  store: ReducerStore,
+  events: readonly AgrexEvent[],
+  from: number,
+  to: number,
+  reducers: Record<string, EventReducer>,
+): void {
+  const end = Math.min(to, events.length)
+  for (let i = Math.max(0, from); i < end; i++) {
     const ev = events[i]
     const fn = reducers[ev.type]
     if (fn) fn(store, ev)

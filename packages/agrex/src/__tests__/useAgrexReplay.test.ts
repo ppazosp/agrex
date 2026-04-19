@@ -167,6 +167,31 @@ describe('useAgrexReplay — instance sync', () => {
   })
 })
 
+describe('useAgrexReplay — incremental forward motion', () => {
+  it('forward stepping does not evict existing nodes from the store', async () => {
+    // When cursor moves forward through a pre-loaded stream, the store should
+    // retain all previously-added nodes and only *append* the new ones. This
+    // is what keeps downstream layout position caches stable during playback.
+    const events: AgrexEvent[] = [
+      { type: 'node_add', ts: 0, node: { id: 'a', type: 'agent', label: 'A' } },
+      { type: 'node_add', ts: 1, node: { id: 'b', type: 'agent', label: 'B' } },
+      { type: 'node_add', ts: 2, node: { id: 'c', type: 'agent', label: 'C' } },
+    ]
+    const { result } = renderHook(() => useAgrexReplay())
+    await act(async () => {
+      await result.current.load(events)
+    })
+    act(() => result.current.seek(1))
+    const nodeA_atSeek1 = result.current.instance.nodes.find((n) => n.id === 'a')
+    expect(nodeA_atSeek1).toBeDefined()
+    act(() => result.current.seek(2))
+    const nodeA_atSeek2 = result.current.instance.nodes.find((n) => n.id === 'a')
+    // Same reference — incremental forward motion must not recreate existing
+    // nodes, otherwise layout caches keyed by reference equality miss.
+    expect(nodeA_atSeek2).toBe(nodeA_atSeek1)
+  })
+})
+
 describe('useAgrexReplay — markers', () => {
   it('markerExtractor output is exposed and filterable by kind', async () => {
     const { result } = renderHook(() =>

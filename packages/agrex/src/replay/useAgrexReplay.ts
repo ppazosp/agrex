@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAgrex } from '../hooks/useAgrex'
-import { applyEvents, composeReducers, defaultStepBoundaries } from './reduceEvents'
+import { applyEventRange, applyEvents, composeReducers, defaultStepBoundaries } from './reduceEvents'
 import type { AgrexEvent, AgrexMarker, ReplayMode, UseAgrexReplay, UseAgrexReplayOptions } from './types'
 
 const DEFAULT_MAX_GAP_MS = 300
@@ -57,9 +57,31 @@ export function useAgrexReplay(options: UseAgrexReplayOptions = {}): UseAgrexRep
   const instanceRef = useRef(instance)
   instanceRef.current = instance
 
-  // The store projection. Runs whenever the rendered prefix changes.
+  // Track the prefix we've already reduced so we can apply forward motion
+  // incrementally instead of clear-and-rebuild on every tick. Rebuilding
+  // every tick makes downstream layout caches (per-node positions) see nodes
+  // disappear and reappear, which causes deterministic layouts to drift
+  // during playback. Forward motion (live append, step, play, seek forward)
+  // should keep existing node positions stable.
+  const lastAppliedEventsRef = useRef<readonly AgrexEvent[]>([])
+  const lastAppliedCursorRef = useRef(0)
+
   useEffect(() => {
-    applyEvents(instanceRef.current, events, cursor, reducers)
+    const lastEvents = lastAppliedEventsRef.current
+    const lastCursor = lastAppliedCursorRef.current
+    // Cheap prefix-unchanged check: if events[lastCursor-1] is still the same
+    // reference as the last one we saw, the prefix we already reduced is
+    // intact (even if `events` is a fresh array from an appendLive spread).
+    const prefixIntact =
+      lastCursor > 0 && lastCursor <= events.length && events[lastCursor - 1] === lastEvents[lastCursor - 1]
+
+    if (prefixIntact && cursor >= lastCursor) {
+      applyEventRange(instanceRef.current, events, lastCursor, cursor, reducers)
+    } else {
+      applyEvents(instanceRef.current, events, cursor, reducers)
+    }
+    lastAppliedEventsRef.current = events
+    lastAppliedCursorRef.current = cursor
   }, [events, cursor, reducers])
 
   const stopTimer = useCallback(() => {

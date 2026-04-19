@@ -233,13 +233,7 @@ export default function AgrexTimeline({
               <Icon.SkipBack />
             </button>
           )}
-          <button
-            type="button"
-            style={buttonStyle}
-            onClick={stepBack}
-            aria-label="Step back"
-            title="Step back"
-          >
+          <button type="button" style={buttonStyle} onClick={stepBack} aria-label="Step back" title="Step back">
             <Icon.StepBack />
           </button>
           <button
@@ -390,13 +384,7 @@ export default function AgrexTimeline({
           </button>
 
           {mode === 'replay' && onExit && (
-            <button
-              type="button"
-              style={buttonStyle}
-              onClick={onExit}
-              aria-label="Exit replay"
-              title="Exit replay"
-            >
+            <button type="button" style={buttonStyle} onClick={onExit} aria-label="Exit replay" title="Exit replay">
               <Icon.Close />
             </button>
           )}

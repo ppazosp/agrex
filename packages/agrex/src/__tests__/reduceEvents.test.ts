@@ -7,8 +7,12 @@ function makeStore(): ReducerStore & { _nodes: AgrexNode[]; _edges: { id: string
   const state = { _nodes: [] as AgrexNode[], _edges: [] as { id: string; source: string; target: string }[] }
   return {
     ...state,
-    addNode(node) { state._nodes.push(node) },
-    addNodes(nodes) { state._nodes.push(...nodes) },
+    addNode(node) {
+      state._nodes.push(node)
+    },
+    addNodes(nodes) {
+      state._nodes.push(...nodes)
+    },
     updateNode(id, updates) {
       const n = state._nodes.find((x) => x.id === id)
       if (n) Object.assign(n, updates)
@@ -17,14 +21,29 @@ function makeStore(): ReducerStore & { _nodes: AgrexNode[]; _edges: { id: string
       state._nodes = state._nodes.filter((n) => n.id !== id)
       state._edges = state._edges.filter((e) => e.source !== id && e.target !== id)
     },
-    addEdge(edge) { state._edges.push(edge) },
-    addEdges(edges) { state._edges.push(...edges) },
-    removeEdge(id) { state._edges = state._edges.filter((e) => e.id !== id) },
-    clear() { state._nodes = []; state._edges = [] },
-    loadJSON() { /* not used by core reducers */ },
+    addEdge(edge) {
+      state._edges.push(edge)
+    },
+    addEdges(edges) {
+      state._edges.push(...edges)
+    },
+    removeEdge(id) {
+      state._edges = state._edges.filter((e) => e.id !== id)
+    },
+    clear() {
+      state._nodes = []
+      state._edges = []
+    },
+    loadJSON() {
+      /* not used by core reducers */
+    },
     // Expose the mutable arrays so assertions can read post-reduce state.
-    get _nodes() { return state._nodes },
-    get _edges() { return state._edges },
+    get _nodes() {
+      return state._nodes
+    },
+    get _edges() {
+      return state._edges
+    },
   }
 }
 
@@ -47,7 +66,11 @@ describe('coreReducers', () => {
     const s = makeStore()
     s.addNode({ id: 'a', type: 'agent', label: 'old' })
     coreReducers.node_update(s, {
-      type: 'node_update', ts: 0, id: 'a', label: 'new', metadata: { k: 1 },
+      type: 'node_update',
+      ts: 0,
+      id: 'a',
+      label: 'new',
+      metadata: { k: 1 },
     })
     expect(s._nodes[0].label).toBe('new')
     expect(s._nodes[0].metadata).toEqual({ k: 1 })
@@ -80,9 +103,9 @@ describe('coreReducers', () => {
 
   it('malformed events are no-ops', () => {
     const s = makeStore()
-    coreReducers.node_add(s, { type: 'node_add', ts: 0 })          // no node
-    coreReducers.node_update(s, { type: 'node_update', ts: 0 })    // no id
-    coreReducers.edge_add(s, { type: 'edge_add', ts: 0 })          // no edge
+    coreReducers.node_add(s, { type: 'node_add', ts: 0 }) // no node
+    coreReducers.node_update(s, { type: 'node_update', ts: 0 }) // no id
+    coreReducers.edge_add(s, { type: 'edge_add', ts: 0 }) // no edge
     expect(s._nodes).toEqual([])
     expect(s._edges).toEqual([])
   })
@@ -96,7 +119,9 @@ describe('composeReducers', () => {
   it('consumer keys override built-ins', () => {
     let called = false
     const composed = composeReducers({
-      node_add: () => { called = true },
+      node_add: () => {
+        called = true
+      },
     })
     const s = makeStore()
     composed.node_add(s, { type: 'node_add', ts: 0, node: { id: 'x', type: 'agent', label: 'X' } })

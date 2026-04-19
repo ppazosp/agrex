@@ -27,7 +27,9 @@ describe('AgrexTimeline', () => {
 
   it('play button toggles playing state', async () => {
     const { result } = renderHook(() => useAgrexReplay())
-    await act(async () => { await result.current.load(events) })
+    await act(async () => {
+      await result.current.load(events)
+    })
     const { rerender } = render(<AgrexTimeline replay={result.current} />)
     act(() => result.current.seek(0))
     rerender(<AgrexTimeline replay={result.current} />)
@@ -39,7 +41,9 @@ describe('AgrexTimeline', () => {
 
   it('step-forward advances cursor to next boundary', async () => {
     const { result } = renderHook(() => useAgrexReplay())
-    await act(async () => { await result.current.load(events) })
+    await act(async () => {
+      await result.current.load(events)
+    })
     act(() => result.current.seek(0))
     const { rerender } = render(<AgrexTimeline replay={result.current} />)
     rerender(<AgrexTimeline replay={result.current} />)
@@ -57,7 +61,9 @@ describe('AgrexTimeline', () => {
             .filter((m): m is { cursor: number; kind: 'stage' } => m !== null),
       }),
     )
-    await act(async () => { await result.current.load(events) })
+    await act(async () => {
+      await result.current.load(events)
+    })
 
     const { rerender } = render(<AgrexTimeline replay={result.current} jumpMarkerKind="stage" />)
     rerender(<AgrexTimeline replay={result.current} jumpMarkerKind="stage" />)
@@ -72,7 +78,9 @@ describe('AgrexTimeline', () => {
 
   it('hides marker skip buttons without jumpMarkerKind', async () => {
     const { result } = renderHook(() => useAgrexReplay())
-    await act(async () => { await result.current.load(events) })
+    await act(async () => {
+      await result.current.load(events)
+    })
     render(<AgrexTimeline replay={result.current} />)
     expect(screen.queryByLabelText('Previous marker')).toBeNull()
     expect(screen.queryByLabelText('Next marker')).toBeNull()
@@ -80,7 +88,9 @@ describe('AgrexTimeline', () => {
 
   it('exit button only renders when onExit provided and mode=replay', async () => {
     const { result } = renderHook(() => useAgrexReplay())
-    await act(async () => { await result.current.load(events) })
+    await act(async () => {
+      await result.current.load(events)
+    })
     const onExit = vi.fn()
     render(<AgrexTimeline replay={result.current} onExit={onExit} />)
     const btn = screen.getByLabelText('Exit replay')
@@ -90,7 +100,9 @@ describe('AgrexTimeline', () => {
 
   it('persists collapsed state in localStorage', async () => {
     const { result } = renderHook(() => useAgrexReplay())
-    await act(async () => { await result.current.load(events) })
+    await act(async () => {
+      await result.current.load(events)
+    })
     render(<AgrexTimeline replay={result.current} persistKey="test-key" />)
     const toggle = screen.getByLabelText('Collapse timeline')
     fireEvent.click(toggle)
@@ -99,7 +111,9 @@ describe('AgrexTimeline', () => {
 
   it('speed control sets the replay speed', async () => {
     const { result } = renderHook(() => useAgrexReplay())
-    await act(async () => { await result.current.load(events) })
+    await act(async () => {
+      await result.current.load(events)
+    })
     const { rerender } = render(<AgrexTimeline replay={result.current} speeds={[1, 2]} />)
     rerender(<AgrexTimeline replay={result.current} speeds={[1, 2]} />)
     fireEvent.click(screen.getByText('2×'))

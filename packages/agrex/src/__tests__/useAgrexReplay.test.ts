@@ -39,7 +39,9 @@ describe('useAgrexReplay — load / seek / step', () => {
 
   it('seek clamps to bounds', async () => {
     const { result } = renderHook(() => useAgrexReplay())
-    await act(async () => { await result.current.load(sampleEvents) })
+    await act(async () => {
+      await result.current.load(sampleEvents)
+    })
     act(() => result.current.seek(-10))
     expect(result.current.cursor).toBe(0)
     act(() => result.current.seek(999))
@@ -50,7 +52,9 @@ describe('useAgrexReplay — load / seek / step', () => {
 
   it('stepForward advances to next mutation boundary', async () => {
     const { result } = renderHook(() => useAgrexReplay())
-    await act(async () => { await result.current.load(sampleEvents) })
+    await act(async () => {
+      await result.current.load(sampleEvents)
+    })
     act(() => result.current.seek(0))
     // Mutating events in sampleEvents: node_add @ idx 2, node_update @ idx 4.
     // Default boundaries: [3, 5].
@@ -65,7 +69,9 @@ describe('useAgrexReplay — load / seek / step', () => {
 
   it('stepBack retreats to previous mutation boundary', async () => {
     const { result } = renderHook(() => useAgrexReplay())
-    await act(async () => { await result.current.load(sampleEvents) })
+    await act(async () => {
+      await result.current.load(sampleEvents)
+    })
     // cursor starts at 5; boundaries [3, 5].
     act(() => result.current.stepBack())
     expect(result.current.cursor).toBe(3)
@@ -76,11 +82,12 @@ describe('useAgrexReplay — load / seek / step', () => {
   it('custom stepBoundaries override the default', async () => {
     const { result } = renderHook(() =>
       useAgrexReplay({
-        stepBoundaries: (events) =>
-          events.map((e, i) => (e.type === 'stage_change' ? i + 1 : -1)).filter((n) => n > 0),
+        stepBoundaries: (events) => events.map((e, i) => (e.type === 'stage_change' ? i + 1 : -1)).filter((n) => n > 0),
       }),
     )
-    await act(async () => { await result.current.load(sampleEvents) })
+    await act(async () => {
+      await result.current.load(sampleEvents)
+    })
     act(() => result.current.seek(0))
     act(() => result.current.stepForward())
     // stage_change @ idx 1 → boundary at 2
@@ -89,7 +96,9 @@ describe('useAgrexReplay — load / seek / step', () => {
 
   it('play at end auto-rewinds to 0', async () => {
     const { result } = renderHook(() => useAgrexReplay())
-    await act(async () => { await result.current.load(sampleEvents) })
+    await act(async () => {
+      await result.current.load(sampleEvents)
+    })
     expect(result.current.cursor).toBe(5)
     act(() => result.current.play())
     expect(result.current.cursor).toBe(0)
@@ -98,7 +107,9 @@ describe('useAgrexReplay — load / seek / step', () => {
 
   it('appendLive is ignored in replay mode', async () => {
     const { result } = renderHook(() => useAgrexReplay())
-    await act(async () => { await result.current.load(sampleEvents) })
+    await act(async () => {
+      await result.current.load(sampleEvents)
+    })
     const before = result.current.events.length
     act(() => {
       result.current.appendLive({ type: 'node_add', ts: 9999, node: { id: 'stray', type: 'agent', label: 's' } })
@@ -108,7 +119,9 @@ describe('useAgrexReplay — load / seek / step', () => {
 
   it('reset clears events and returns to idle', async () => {
     const { result } = renderHook(() => useAgrexReplay())
-    await act(async () => { await result.current.load(sampleEvents) })
+    await act(async () => {
+      await result.current.load(sampleEvents)
+    })
     act(() => result.current.reset())
     expect(result.current.events).toEqual([])
     expect(result.current.cursor).toBe(0)
@@ -120,28 +133,20 @@ describe('useAgrexReplay — live streaming', () => {
   it('appendLive pins cursor to tail', () => {
     const { result } = renderHook(() => useAgrexReplay())
     act(() => result.current.setMode('live'))
-    act(() =>
-      result.current.appendLive({ type: 'node_add', ts: 1, node: { id: 'a', type: 'agent', label: 'A' } }),
-    )
+    act(() => result.current.appendLive({ type: 'node_add', ts: 1, node: { id: 'a', type: 'agent', label: 'A' } }))
     expect(result.current.events).toHaveLength(1)
     expect(result.current.cursor).toBe(1)
-    act(() =>
-      result.current.appendLive({ type: 'node_add', ts: 2, node: { id: 'b', type: 'agent', label: 'B' } }),
-    )
+    act(() => result.current.appendLive({ type: 'node_add', ts: 2, node: { id: 'b', type: 'agent', label: 'B' } }))
     expect(result.current.cursor).toBe(2)
   })
 
   it('scrubbed-back cursor stays put while live events append', () => {
     const { result } = renderHook(() => useAgrexReplay())
     act(() => result.current.setMode('live'))
-    act(() =>
-      result.current.appendLive({ type: 'node_add', ts: 1, node: { id: 'a', type: 'agent', label: 'A' } }),
-    )
+    act(() => result.current.appendLive({ type: 'node_add', ts: 1, node: { id: 'a', type: 'agent', label: 'A' } }))
     act(() => result.current.seek(0))
     expect(result.current.cursor).toBe(0)
-    act(() =>
-      result.current.appendLive({ type: 'node_add', ts: 2, node: { id: 'b', type: 'agent', label: 'B' } }),
-    )
+    act(() => result.current.appendLive({ type: 'node_add', ts: 2, node: { id: 'b', type: 'agent', label: 'B' } }))
     expect(result.current.cursor).toBe(0) // user kept their scrub
     expect(result.current.events).toHaveLength(2)
   })
@@ -150,7 +155,9 @@ describe('useAgrexReplay — live streaming', () => {
 describe('useAgrexReplay — instance sync', () => {
   it('graph store reflects cursor prefix', async () => {
     const { result } = renderHook(() => useAgrexReplay())
-    await act(async () => { await result.current.load(sampleEvents) })
+    await act(async () => {
+      await result.current.load(sampleEvents)
+    })
     expect(result.current.instance.nodes).toHaveLength(1)
     expect(result.current.instance.nodes[0].status).toBe('done')
     act(() => result.current.seek(3)) // before node_update
@@ -166,11 +173,15 @@ describe('useAgrexReplay — markers', () => {
       useAgrexReplay({
         markerExtractor: (events) =>
           events
-            .map((ev, i) => (ev.type === 'stage_change' ? { cursor: i, kind: 'stage' as const, label: String(ev.stage) } : null))
+            .map((ev, i) =>
+              ev.type === 'stage_change' ? { cursor: i, kind: 'stage' as const, label: String(ev.stage) } : null,
+            )
             .filter((m): m is { cursor: number; kind: 'stage'; label: string } => m !== null),
       }),
     )
-    await act(async () => { await result.current.load(sampleEvents) })
+    await act(async () => {
+      await result.current.load(sampleEvents)
+    })
     expect(result.current.markers).toHaveLength(1)
     expect(result.current.markers[0].kind).toBe('stage')
 
@@ -183,8 +194,12 @@ describe('useAgrexReplay — markers', () => {
 })
 
 describe('useAgrexReplay — playback timing', () => {
-  beforeEach(() => { vi.useFakeTimers() })
-  afterEach(() => { vi.useRealTimers() })
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+  })
 
   it('advances at inter-event ts deltas', async () => {
     const events: AgrexEvent[] = [
@@ -193,15 +208,23 @@ describe('useAgrexReplay — playback timing', () => {
       { type: 'node_add', ts: 250, node: { id: 'b', type: 'agent', label: 'B' } },
     ]
     const { result } = renderHook(() => useAgrexReplay())
-    await act(async () => { await result.current.load(events) })
+    await act(async () => {
+      await result.current.load(events)
+    })
     act(() => result.current.seek(0))
     act(() => result.current.play())
 
-    await act(async () => { vi.advanceTimersByTime(100) })
+    await act(async () => {
+      vi.advanceTimersByTime(100)
+    })
     expect(result.current.cursor).toBe(1)
-    await act(async () => { vi.advanceTimersByTime(150) })
+    await act(async () => {
+      vi.advanceTimersByTime(150)
+    })
     expect(result.current.cursor).toBe(2)
-    await act(async () => { vi.advanceTimersByTime(1000) })
+    await act(async () => {
+      vi.advanceTimersByTime(1000)
+    })
     expect(result.current.cursor).toBe(3)
     expect(result.current.playing).toBe(false)
   })
@@ -212,10 +235,14 @@ describe('useAgrexReplay — playback timing', () => {
       { type: 'node_add', ts: 5000, node: { id: 'a', type: 'agent', label: 'A' } },
     ]
     const { result } = renderHook(() => useAgrexReplay())
-    await act(async () => { await result.current.load(events) })
+    await act(async () => {
+      await result.current.load(events)
+    })
     act(() => result.current.seek(0))
     act(() => result.current.play())
-    await act(async () => { vi.advanceTimersByTime(300) })
+    await act(async () => {
+      vi.advanceTimersByTime(300)
+    })
     expect(result.current.cursor).toBe(1)
   })
 
@@ -225,10 +252,14 @@ describe('useAgrexReplay — playback timing', () => {
       { type: 'node_add', ts: 5000, node: { id: 'a', type: 'agent', label: 'A' } },
     ]
     const { result } = renderHook(() => useAgrexReplay({ maxPlaybackGapMs: 50 }))
-    await act(async () => { await result.current.load(events) })
+    await act(async () => {
+      await result.current.load(events)
+    })
     act(() => result.current.seek(0))
     act(() => result.current.play())
-    await act(async () => { vi.advanceTimersByTime(50) })
+    await act(async () => {
+      vi.advanceTimersByTime(50)
+    })
     expect(result.current.cursor).toBe(1)
   })
 
@@ -238,11 +269,15 @@ describe('useAgrexReplay — playback timing', () => {
       { type: 'node_add', ts: 100, node: { id: 'a', type: 'agent', label: 'A' } },
     ]
     const { result } = renderHook(() => useAgrexReplay())
-    await act(async () => { await result.current.load(events) })
+    await act(async () => {
+      await result.current.load(events)
+    })
     act(() => result.current.seek(0))
     act(() => result.current.setSpeed(2))
     act(() => result.current.play())
-    await act(async () => { vi.advanceTimersByTime(50) })
+    await act(async () => {
+      vi.advanceTimersByTime(50)
+    })
     expect(result.current.cursor).toBe(1)
   })
 })

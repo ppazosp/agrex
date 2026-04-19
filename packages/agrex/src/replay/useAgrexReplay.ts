@@ -1,13 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAgrex } from '../hooks/useAgrex'
 import { applyEvents, composeReducers, defaultStepBoundaries } from './reduceEvents'
-import type {
-  AgrexEvent,
-  AgrexMarker,
-  ReplayMode,
-  UseAgrexReplay,
-  UseAgrexReplayOptions,
-} from './types'
+import type { AgrexEvent, AgrexMarker, ReplayMode, UseAgrexReplay, UseAgrexReplayOptions } from './types'
 
 const DEFAULT_MAX_GAP_MS = 300
 

@@ -5,6 +5,7 @@ import DetailPanel from './DetailPanel'
 import ToastStack from './Toast'
 import StatsBar from './StatsBar'
 import AgrexErrorBoundary from './ErrorBoundary'
+import AgrexTimeline from '../replay/AgrexTimeline'
 import { resolveTheme, themeToCSS } from '../theme/tokens'
 import type { AgrexNode, AgrexProps, AgrexHandle } from '../types'
 import { deriveEdges } from '../deriveEdges'
@@ -49,6 +50,11 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex(
     fitOnUpdate = true,
     keyboardShortcuts = true,
     animateEdges = true,
+    replay,
+    showTimeline = true,
+    timelinePlacement = 'bottom',
+    timelineInsets,
+    timelineProps,
   },
   ref,
 ) {
@@ -58,8 +64,12 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex(
     () => (themeProp === 'auto' ? resolveTheme(prefersDark ? 'dark' : 'light') : resolveTheme(themeProp)),
     [themeProp, prefersDark],
   )
-  const rawNodes = instance?.nodes ?? staticNodes ?? []
-  const rawEdges = instance?.edges ?? staticEdges ?? []
+  // Precedence: explicit `instance` > `replay.instance` > static props. Passing
+  // both `replay` and `instance` is legal for advanced cases (e.g. driving the
+  // graph from a non-replay store while still rendering a timeline).
+  const effectiveInstance = instance ?? replay?.instance
+  const rawNodes = effectiveInstance?.nodes ?? staticNodes ?? []
+  const rawEdges = effectiveInstance?.edges ?? staticEdges ?? []
   const nodes = rawNodes
   const edges = useMemo(() => deriveEdges(rawNodes, rawEdges), [rawNodes, rawEdges])
 
@@ -132,6 +142,14 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex(
         {showStats && <StatsBar nodes={nodes} />}
         {showDetailPanel && <DetailPanel node={selectedNode} onClose={() => setSelectedNode(null)} />}
         {showToasts && <ToastStack node={toastNode} placement={toastPlacement} insets={toastInsets} />}
+        {replay && showTimeline && (
+          <AgrexTimeline
+            {...timelineProps}
+            replay={replay}
+            placement={timelineProps?.placement ?? timelinePlacement}
+            insets={timelineProps?.insets ?? timelineInsets}
+          />
+        )}
       </div>
     </AgrexErrorBoundary>
   )

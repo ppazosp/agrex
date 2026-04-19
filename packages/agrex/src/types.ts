@@ -1,4 +1,5 @@
 import type React from 'react'
+import type { UseAgrexReplay, AgrexTimelineProps, TimelinePlacement, TimelineInsets } from './replay/types'
 
 /** A node in the agent execution graph. */
 export interface AgrexNode {
@@ -76,6 +77,19 @@ export interface AgrexProps {
   fitOnUpdate?: boolean
   keyboardShortcuts?: boolean
   animateEdges?: boolean
+
+  /**
+   * Replay instance from `useAgrexReplay`. When provided, an embedded
+   * `<AgrexTimeline>` is rendered (unless `showTimeline` is false) and the
+   * graph renders from `replay.instance` (no need to pass `instance`
+   * separately — still allowed for advanced cases).
+   */
+  replay?: UseAgrexReplay
+  showTimeline?: boolean
+  timelinePlacement?: TimelinePlacement
+  timelineInsets?: TimelineInsets
+  /** Extra props for the embedded timeline. `replay` is filled in automatically. */
+  timelineProps?: Omit<AgrexTimelineProps, 'replay'>
 }
 
 export interface AgrexNodeProps {

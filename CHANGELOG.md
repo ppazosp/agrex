@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0
+
+Event-replay is now a first-class feature — agrex ships "graph viz + execution tracking" instead of just a renderer.
+
+- **`useAgrexReplay(options)`** — new hook. Owns an internal `useAgrex` store and keeps it in sync with `events[0..cursor]`. Live streaming (`appendLive`), saved runs (`load`), scrub/step/play, speed control, markers, and mode machine (`idle | live | live-finished | replay`) in one surface. Graph state becomes a pure projection of the event prefix — no more dual-source (live reducer + scrub reducer).
+- **`<AgrexTimeline replay={...} />`** — new floating timeline component. Play/pause, step forward/back, scrubber with markers, speed selector, live/exit buttons, collapsible tab with localStorage persistence. Styled via agrex theme tokens; zero icon deps (inline SVGs). Rendered automatically by `<Agrex>` when `replay` is passed (`showTimeline={false}` to opt out, `timelinePlacement` / `timelineInsets` / `timelineProps` to customize).
+- **Built-in event reducers** for 6 canonical mutation types: `node_add`, `node_update`, `node_remove`, `edge_add`, `edge_remove`, `clear`. Flat payload shape (`{type, id, status, ...}`) to match how most emitters already serialize. Consumers register extra reducers via `reducers: { stage_change: ... }`; `markerExtractor` and `stepBoundaries` are fully pluggable.
+- **New exports**: the UI pieces embedded in `<Agrex>` are now importable standalone — `Graph`, `Legend`, `DetailPanel`, `StatsBar`, `ToastStack`, `Controls`, `AgrexErrorBoundary` — for consumers who want to assemble their own layout.
+- `AgrexProps.instance` is still supported; when both `instance` and `replay` are passed, `instance` wins (covers the rare case of driving the graph from a non-replay store while still rendering a timeline).
+
 ## 0.1.15
 
 - Deterministic layout: `placeRoot` now picks its angle from a hash of the node id instead of `Math.random()`, so replays of a recorded event stream reproduce the exact same node positions as the original live run.

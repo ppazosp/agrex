@@ -6,6 +6,17 @@ export { default as Agrex } from './components/Agrex'
 // Hook
 export { useAgrex } from './hooks/useAgrex'
 
+// Replay engine (new in 0.2.0) — events-driven time travel over the agrex store.
+export { useAgrexReplay } from './replay/useAgrexReplay'
+export { default as AgrexTimeline } from './replay/AgrexTimeline'
+export {
+  coreReducers,
+  composeReducers,
+  applyEvents,
+  defaultStepBoundaries,
+  DEFAULT_BOUNDARY_TYPES,
+} from './replay/reduceEvents'
+
 // Types
 export type {
   AgrexNode,
@@ -21,6 +32,20 @@ export type {
   UseAgrexReturn,
 } from './types'
 
+// Replay types
+export type {
+  AgrexEvent,
+  AgrexMarker,
+  ReplayMode,
+  EventReducer,
+  ReducerStore,
+  UseAgrexReplay,
+  UseAgrexReplayOptions,
+  AgrexTimelineProps,
+  TimelinePlacement,
+  TimelineInsets,
+} from './replay/types'
+
 // Theme presets
 export { darkTheme } from './theme/dark'
 export { lightTheme } from './theme/light'
@@ -32,6 +57,16 @@ export { radialLayout } from './layout/radial'
 // via subpath imports to avoid bundling them when unused:
 //   import { forceLayout } from 'agrex/layout/force'   // requires d3-force
 //   import { dagreLayout } from 'agrex/layout/dagre'    // requires @dagrejs/dagre
+
+// Composable UI pieces (rendered internally by <Agrex>; re-exported for
+// consumers who want to assemble their own layout).
+export { default as Graph } from './components/Graph'
+export { default as Legend } from './components/Legend'
+export { default as DetailPanel } from './components/DetailPanel'
+export { default as StatsBar } from './components/StatsBar'
+export { default as ToastStack } from './components/Toast'
+export { default as Controls } from './components/Controls'
+export { default as AgrexErrorBoundary } from './components/ErrorBoundary'
 
 // Node components (for advanced customization)
 export { default as AgentNode } from './nodes/AgentNode'

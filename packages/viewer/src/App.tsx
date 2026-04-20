@@ -131,11 +131,11 @@ export default function App() {
 
   const loadEvents = useCallback(
     async (events: AgrexEvent[], label: string) => {
-      // `replay.load` already sets cursor to `events.length` — an extra
-      // `replay.seek(events.length)` here races against the events ref
-      // (clamp reads the stale length on the first drop) and resets cursor
-      // to 0. Trust `load`.
+      // Rewind to 0 so the viewer opens on an empty canvas ready to play,
+      // not on the final state. `seek(0)` clamps to 0 regardless of the
+      // events-ref length, so it's safe to call immediately after `load`.
       await replay.load(events)
+      replay.seek(0)
       setSourceLabel(label)
       // Push a history entry so the browser back button returns to the
       // landing instead of leaving the site. Only push if we're not

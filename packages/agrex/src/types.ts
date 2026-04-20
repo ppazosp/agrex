@@ -90,6 +90,14 @@ export interface AgrexProps {
   timelineInsets?: TimelineInsets
   /** Extra props for the embedded timeline. `replay` is filled in automatically. */
   timelineProps?: Omit<AgrexTimelineProps, 'replay'>
+  /**
+   * Set when the consumer renders `<AgrexTimeline>` as a sibling of `<Agrex>`
+   * (e.g. because the replay store doesn't hold `AgrexNode`-shaped data and
+   * can't be passed to `<Agrex replay>` directly). Suppresses the internal
+   * `<StatsBar>` and embedded timeline so they don't duplicate the ones the
+   * sibling timeline already provides.
+   */
+  externalTimeline?: boolean
 }
 
 export interface AgrexNodeProps {

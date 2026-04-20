@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.3
+
+- **`externalTimeline` prop on `<Agrex>`.** Opt-in flag for consumers who mount `<AgrexTimeline>` as a sibling of `<Agrex>` (typical when the replay store holds backend-native objects and can't be piped through `<Agrex replay>` directly). When set, the internal `<StatsBar>` is suppressed and the embedded timeline is skipped, so the sibling timeline's inline stats aren't duplicated above the canvas. Previously the only workaround was `showStats={false}`, which was easy to miss because `showStats` defaults to `true`. Closes #6.
+
 ## 0.4.2
 
 - **Stats panel folded into the timeline.** New `<AgrexTimeline showStats>` prop renders a stats row (nodes, running, done, errors, time, tokens, cost) _inside_ the timeline panel, above the transport row. Values are computed from `replay.instance.nodes`, so they update as the cursor moves (scrub back and counts/tokens/time shrink; live forward and they grow). Row uses `justify-content: space-between` so the cells stretch across the full panel width.

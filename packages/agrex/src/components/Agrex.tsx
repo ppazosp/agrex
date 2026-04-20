@@ -55,6 +55,7 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex(
     timelinePlacement = 'bottom',
     timelineInsets,
     timelineProps,
+    externalTimeline = false,
   },
   ref,
 ) {
@@ -152,7 +153,9 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex(
           onNewestNode={handleNewestNode}
         />
         {showLegend && <Legend toolIcons={toolIcons} fileIcons={fileIcons} forceCollapsed={detailOpen} />}
-        {showStats && !timelineVisible && <StatsBar nodes={nodes} bottomOffset={statsBottomOffset} />}
+        {showStats && !timelineVisible && !externalTimeline && (
+          <StatsBar nodes={nodes} bottomOffset={statsBottomOffset} />
+        )}
         {showDetailPanel && lastSelectedNode && (
           <NodeTooltip
             node={lastSelectedNode}
@@ -162,7 +165,7 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex(
           />
         )}
         {showToasts && <ToastStack node={toastNode} placement={toastPlacement} insets={toastInsets} />}
-        {replay && showTimeline && (
+        {replay && showTimeline && !externalTimeline && (
           <AgrexTimeline
             {...timelineProps}
             replay={replay}

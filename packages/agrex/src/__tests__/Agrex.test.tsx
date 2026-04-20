@@ -39,6 +39,17 @@ describe('Agrex component', () => {
     expect(el.style.getPropertyValue('--agrex-bg')).toBe('#ffffff')
   })
 
+  it('renders StatsBar by default', () => {
+    const { container } = render(<Agrex nodes={nodes} edges={edges} />)
+    expect(container.textContent).toContain('nodes')
+  })
+
+  it('suppresses StatsBar when externalTimeline is set', () => {
+    const { container } = render(<Agrex nodes={nodes} edges={edges} externalTimeline />)
+    // StatsBar renders "nodes" label; nothing else in Agrex does
+    expect(container.textContent).not.toContain('nodes')
+  })
+
   it('auto-generates edges from reads/writes', () => {
     const rwNodes: AgrexNode[] = [
       { id: 'a', type: 'agent', label: 'Agent' },

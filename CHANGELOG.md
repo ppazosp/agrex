@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0
+
+- **Trace I/O utilities at `@ppazosp/agrex/trace`.** New tree-shakeable subpath with two pure functions:
+  - `snapshotToEvents(nodes, edges)` — synthesize an `AgrexEvent[]` stream from a `{nodes, edges}` snapshot, using `metadata.startedAt` / `metadata.endedAt` to order events and emit a `running` → final-status transition when both timestamps are present. Lossy by design (intermediate updates aren't in a snapshot) but lets any exported graph feed `useAgrexReplay.load()` and get scrubbing for free.
+  - `parseTrace(source)` — auto-detect loader that accepts the canonical `{events: [...]}` shape, raw `{nodes, edges}` snapshots, and JSONL (one event per line). Throws `TraceParseError` with a `format` tag and line number (for JSONL) on failure. Meant for file-drop viewers and debug tooling.
+- **`toTrace()` on `AgrexHandle`.** Companion to `toJSON()`; returns `{events}` synthesized via `snapshotToEvents`. Round-trips with `useAgrexReplay.load()`.
+- Both utilities are also re-exported from the main entry (`@ppazosp/agrex`) for discoverability; the `/trace` subpath keeps them bundleable without pulling in React or xyflow.
+
 ## 0.4.3
 
 - **`externalTimeline` prop on `<Agrex>`.** Opt-in flag for consumers who mount `<AgrexTimeline>` as a sibling of `<Agrex>` (typical when the replay store holds backend-native objects and can't be piped through `<Agrex replay>` directly). When set, the internal `<StatsBar>` is suppressed and the embedded timeline is skipped, so the sibling timeline's inline stats aren't duplicated above the canvas. Previously the only workaround was `showStats={false}`, which was easy to miss because `showStats` defaults to `true`. Closes #6.

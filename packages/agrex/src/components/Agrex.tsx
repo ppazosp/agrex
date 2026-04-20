@@ -9,6 +9,7 @@ import AgrexTimeline from '../replay/AgrexTimeline'
 import { resolveTheme, themeToCSS } from '../theme/tokens'
 import type { AgrexNode, AgrexProps, AgrexHandle } from '../types'
 import { deriveEdges } from '../deriveEdges'
+import { snapshotToEvents } from '../trace'
 import '../styles/agrex.css'
 
 function useMediaQuery(query: string, fallback: boolean): boolean {
@@ -103,6 +104,7 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex(
       collapseAll: () => graphRef.current?.collapseAll(),
       expandAll: () => graphRef.current?.expandAll(),
       toJSON: () => ({ nodes, edges }),
+      toTrace: () => ({ events: snapshotToEvents(nodes, edges) }),
     }),
     [nodes, edges],
   )

@@ -1,6 +1,6 @@
 {
   "name": "@ppazosp/agrex",
-  "version": "0.4.3",
+  "version": "0.5.0",
   "description": "Real-time graph visualizer for AI agent execution flows",
   "keywords": [
     "agent",
@@ -67,6 +67,16 @@
       "require": {
         "types": "./dist/layout/dagre.d.cts",
         "default": "./dist/layout/dagre.cjs"
+      }
+    },
+    "./trace": {
+      "import": {
+        "types": "./dist/trace/index.d.ts",
+        "default": "./dist/trace/index.js"
+      },
+      "require": {
+        "types": "./dist/trace/index.d.cts",
+        "default": "./dist/trace/index.cjs"
       }
     },
     "./styles.css": "./dist/index.css"

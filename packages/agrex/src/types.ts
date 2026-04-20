@@ -144,4 +144,11 @@ export interface AgrexHandle {
   collapseAll: () => void
   expandAll: () => void
   toJSON: () => { nodes: AgrexNode[]; edges: AgrexEdge[] }
+  /**
+   * Export the current graph as an event trace — the shape `useAgrexReplay`
+   * accepts. Synthesized from the snapshot plus any `startedAt` / `endedAt`
+   * metadata on nodes, so scrubbing shows the same order the nodes arrived
+   * in (or array order, if timestamps are absent).
+   */
+  toTrace: () => { events: import('./replay/types').AgrexEvent[] }
 }

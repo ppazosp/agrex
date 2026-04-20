@@ -130,7 +130,11 @@ function extractMarkers(events: AgrexEvent[]): AgrexMarker[] {
 
 export default function App() {
   const [sourceLabel, setSourceLabel] = useState<string | null>(null)
-  const replay = useAgrexReplay({ markerExtractor: extractMarkers })
+  // The library default caps inter-event delay at 300ms. The viewer is a
+  // faithful-playback tool: if a trace recorded a 50s wait, the user sees
+  // 50s. They can skip forward with step / next-marker / scrub if they
+  // don't want to wait. No cap.
+  const replay = useAgrexReplay({ markerExtractor: extractMarkers, maxPlaybackGapMs: Infinity })
   const agrexRef = useRef<AgrexHandle>(null)
 
   const loadEvents = useCallback(

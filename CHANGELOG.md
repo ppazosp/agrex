@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.2
+
+- **Fix interpolation off-by-one — the elapsed display now ticks all the way through inter-event gaps.** The 0.6.1 fix read `events[cursor - 1].ts` as the interpolation base, but the playback loop at cursor K actually waits `events[K+1].ts − events[K].ts` before advancing, so the current wait position is `events[K].ts`. On any non-trivial trace (e.g. the demo's 2.4s gap between the search and read phases) the interpolation window collapsed to ~10ms and the timer stalled at the last-applied event's ts for the whole gap. Bumped `idx` from `cursor − 1` to `cursor` (clamped to `total − 1`) and widened `nextTs` to `events[cursor + 1].ts`; the display now matches wall-clock playback second by second.
+- **Timer counter no longer reflows siblings as digits change.** The `MM:SS / MM:SS` span now uses `font-variant-numeric: tabular-nums` so every digit shares a width, plus `display: inline-block` + `min-width: 11ch` + `text-align: right` so the counter has a fixed slot big enough for `99:59 / 99:59`. At 10 Hz tick rate the previous layout shift was noticeable.
+- **`<NodeTooltip>` formats `size` / `bytes` metadata as human-readable file sizes.** A raw `size: 2290000` rendered verbatim in the Metadata section; it now renders as `2.2 MB` (1024-based, "B / KB / MB / GB / TB" labels, integer for sub-KB values, one decimal up to 10 in the current unit). Formatting is keyed on field name to stay consistent with how `tokens` / `cost` are already specialised.
+
 ## 0.6.1
 
 - **`<AgrexTimeline>` elapsed display ticks during inter-event gaps.** The playback loop only advances `cursor` when the next event fires, so during a multi-second inter-event gap (e.g. a 3s LLM call recorded in the trace) `cursor` was constant and the `MM:SS / MM:SS` counter froze for the whole gap. The timeline now captures the wall-clock moment of each cursor transition and interpolates elapsed time between events at 10 Hz while playing, clamped to the next event's ts so the display never reads ahead of the actual replay position.

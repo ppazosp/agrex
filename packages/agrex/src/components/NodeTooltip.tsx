@@ -16,6 +16,27 @@ function formatTokens(n: number): string {
   return String(n)
 }
 
+// 1024-based file size with "B / KB / MB / GB / TB" labels. Sub-KB values
+// render as integers since fractional bytes don't exist; values ≥10 in
+// their unit drop the decimal since a third significant digit doesn't
+// add info at that scale.
+function formatBytes(n: number): string {
+  if (!Number.isFinite(n) || n < 0) return String(n)
+  if (n < 1024) return `${n} B`
+  const units = ['KB', 'MB', 'GB', 'TB']
+  let v = n / 1024
+  let i = 0
+  while (v >= 1024 && i < units.length - 1) {
+    v /= 1024
+    i++
+  }
+  return `${v.toFixed(v >= 10 ? 0 : 1)} ${units[i]}`
+}
+
+// Metadata keys that represent byte counts. The node schema doesn't type
+// these specially, so we format by name.
+const BYTE_KEYS = new Set(['size', 'bytes'])
+
 function prettify(value: unknown): string {
   if (typeof value === 'string') return value
   try {
@@ -277,14 +298,20 @@ export default function NodeTooltip({ node, onClose, rightOffset = 16, open = tr
         {extras.length > 0 && (
           <Section title="Metadata">
             <div style={{ fontSize: 12, lineHeight: 1.6 }}>
-              {extras.map(([key, value]) => (
-                <div key={key} style={{ display: 'flex', gap: 8 }}>
-                  <span style={{ opacity: 0.4, flexShrink: 0 }}>{key}:</span>
-                  <span style={{ opacity: 0.8, wordBreak: 'break-word' }}>
-                    {typeof value === 'string' ? value : JSON.stringify(value)}
-                  </span>
-                </div>
-              ))}
+              {extras.map(([key, value]) => {
+                const display =
+                  BYTE_KEYS.has(key) && typeof value === 'number'
+                    ? formatBytes(value)
+                    : typeof value === 'string'
+                      ? value
+                      : JSON.stringify(value)
+                return (
+                  <div key={key} style={{ display: 'flex', gap: 8 }}>
+                    <span style={{ opacity: 0.4, flexShrink: 0 }}>{key}:</span>
+                    <span style={{ opacity: 0.8, wordBreak: 'break-word' }}>{display}</span>
+                  </div>
+                )
+              })}
             </div>
           </Section>
         )}

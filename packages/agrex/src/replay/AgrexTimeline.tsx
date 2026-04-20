@@ -385,14 +385,13 @@ export default function AgrexTimeline({
   const total = events.length
 
   // Capture the wall-clock moment of each cursor transition so we can
-  // interpolate elapsed time between events. The playback loop only
-  // advances `cursor` when the next event fires, so during a multi-second
-  // inter-event gap `cursor` is constant — without interpolation, the
-  // elapsed display would freeze for the entire gap.
+  // interpolate elapsed time during the wait at that cursor position.
+  // Without interpolation the displayed timer freezes for the whole
+  // inter-event gap (cursor doesn't move until the next event fires).
   const cursorAtRef = useRef<{ wall: number; ts: number }>({ wall: 0, ts: 0 })
   useLayoutEffect(() => {
     if (total === 0) return
-    const idx = Math.max(0, Math.min(cursor, total) - 1)
+    const idx = Math.min(cursor, total - 1)
     cursorAtRef.current = { wall: performance.now(), ts: Number(events[idx].ts) }
   }, [cursor, total, events])
 
@@ -414,17 +413,22 @@ export default function AgrexTimeline({
   // Not a useMemo: depends on `performance.now()`, which changes every
   // render — the `forceTick` above is what drives those renders. The
   // computation is trivial so recalculating each render is free.
+  //
+  // Why `idx = cursor` (not `cursor - 1`): the playback loop at cursor=K
+  // waits `events[K+1].ts - events[K].ts` before advancing, so the "trace
+  // time of the current wait position" is `events[K].ts`, not the last
+  // applied event's ts. Interpolation then ticks from `events[K].ts`
+  // toward `events[K+1].ts` over the wait, matching wall time.
   const elapsed = (() => {
     if (total === 0) return 0
     const first = Number(events[0].ts)
-    const idx = Math.max(0, Math.min(cursor, total) - 1)
+    const idx = Math.min(cursor, total - 1)
     const base = Number(events[idx].ts) - first
-    if (!playing || cursor >= total) return base
-    const nextTs = Number(events[cursor].ts) - first
+    if (!playing || cursor >= total - 1) return base
+    const nextTs = Number(events[cursor + 1].ts) - first
     const wallDelta = (performance.now() - cursorAtRef.current.wall) * speed
     // Clamp to the next event's ts so the display never reads ahead of
-    // actual replay position (otherwise a stalled timer on a slow tick
-    // could overshoot the next event's own ts).
+    // actual replay position if a slow tick produces a large wallDelta.
     return Math.min(nextTs, base + wallDelta)
   })()
 
@@ -694,6 +698,16 @@ export default function AgrexTimeline({
               fontFamily: 'var(--agrex-font, inherit)',
               color: 'color-mix(in srgb, var(--agrex-fg) 60%, transparent)',
               whiteSpace: 'nowrap',
+              // Tabular numerals keep digit widths equal so the counter
+              // doesn't reflow (and push siblings around) as digits change
+              // — especially important at 10 Hz during playback.
+              fontVariantNumeric: 'tabular-nums',
+              // Reserve space for the full "MM:SS / MM:SS" string so the
+              // counter has a fixed slot regardless of current value. 11ch
+              // at this font size fits "99:59 / 99:59".
+              display: 'inline-block',
+              minWidth: '11ch',
+              textAlign: 'right',
             }}
           >
             {formatElapsed(elapsed)} / {formatElapsed(duration)}

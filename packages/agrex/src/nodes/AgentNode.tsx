@@ -12,12 +12,13 @@ interface AgentNodeData {
   collapsed?: boolean
   childCount?: number
   childrenAllDone?: boolean
+  onCollapseToggle?: () => void
   [key: string]: unknown
 }
 type AgentNodeType = Node<AgentNodeData, 'agent'>
 
 export default function AgentNode({ data }: NodeProps<AgentNodeType>) {
-  const { label, status, icon: Icon, collapsed, childCount, childrenAllDone } = data
+  const { label, status, icon: Icon, collapsed, childCount, childrenAllDone, onCollapseToggle } = data
   const border = statusColor(status)
   const isRunning = status === 'running'
   return (
@@ -59,7 +60,15 @@ export default function AgentNode({ data }: NodeProps<AgentNodeType>) {
                 : 'var(--agrex-status-running)'
               : 'var(--agrex-node-border)'
             return (
-              <div
+              <button
+                type="button"
+                aria-label={collapsed ? 'Expand children' : 'Collapse children'}
+                title={collapsed ? 'Expand' : 'Collapse'}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onCollapseToggle?.()
+                }}
+                onMouseDown={(e) => e.stopPropagation()}
                 style={{
                   position: 'absolute',
                   top: -8,
@@ -76,10 +85,12 @@ export default function AgentNode({ data }: NodeProps<AgentNodeType>) {
                   fontSize: 9,
                   fontWeight: 700,
                   color: collapsed ? '#fff' : 'var(--agrex-fg)',
+                  cursor: 'pointer',
+                  padding: 0,
                 }}
               >
                 {childCount}
-              </div>
+              </button>
             )
           })()}
       </div>

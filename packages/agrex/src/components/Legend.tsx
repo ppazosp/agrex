@@ -89,10 +89,13 @@ type IconComponent = ComponentType<{ size: number }>
 interface LegendProps {
   toolIcons?: Record<string, IconComponent>
   fileIcons?: Record<string, IconComponent>
+  /** When true, forces the legend into its collapsed (off-screen) state regardless of user toggle. */
+  forceCollapsed?: boolean
 }
 
-export default function Legend({ toolIcons, fileIcons }: LegendProps = {}) {
-  const [collapsed, setCollapsed] = useState(false)
+export default function Legend({ toolIcons, fileIcons, forceCollapsed = false }: LegendProps = {}) {
+  const [userCollapsed, setUserCollapsed] = useState(false)
+  const collapsed = userCollapsed || forceCollapsed
   const [compact, setCompact] = useState(false)
   const containerRef = useRef<HTMLElement | null>(null)
 
@@ -286,14 +289,16 @@ export default function Legend({ toolIcons, fileIcons }: LegendProps = {}) {
         </div>
       </aside>
       <button
-        onClick={() => setCollapsed((v) => !v)}
+        onClick={() => setUserCollapsed((v) => !v)}
+        aria-hidden={forceCollapsed}
         style={{
           position: 'absolute',
           zIndex: 30,
           top: '50%',
-          transform: 'translateY(-50%)',
           right: collapsed ? 0 : width + 16,
-          transition: 'right 250ms cubic-bezier(0.23, 1, 0.32, 1)',
+          transform: `translateY(-50%) ${forceCollapsed ? 'translateX(calc(100% + 4px))' : 'translateX(0)'}`,
+          transition:
+            'right 250ms cubic-bezier(0.23, 1, 0.32, 1), transform 250ms cubic-bezier(0.23, 1, 0.32, 1), opacity 200ms',
           width: 20,
           height: 40,
           borderRadius: '6px 0 0 6px',
@@ -306,7 +311,8 @@ export default function Legend({ toolIcons, fileIcons }: LegendProps = {}) {
           justifyContent: 'center',
           cursor: 'pointer',
           color: 'var(--agrex-fg)',
-          opacity: 0.4,
+          opacity: forceCollapsed ? 0 : 0.4,
+          pointerEvents: forceCollapsed ? 'none' : 'auto',
         }}
       >
         <svg

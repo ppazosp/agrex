@@ -48,6 +48,7 @@ interface GraphInternalProps {
 
   keyboardShortcuts: boolean
   animateEdges: boolean
+  onNodeSelect?: (node: AgrexNode | null) => void
   onNodeClick?: (node: AgrexNode) => void
   onEdgeClick?: (edge: AgrexEdge) => void
   onNewestNode?: (node: AgrexNode) => void
@@ -85,6 +86,7 @@ function toFlowNode(
   collapsedNodes: Set<string>,
   collapsedChildCounts: Map<string, number>,
   childrenAllDoneMap: Map<string, boolean>,
+  onCollapseToggle: (id: string) => void,
 ): Node {
   const isCustomType = !(n.type in BUILT_IN_NODE_TYPES) && !(n.type in (nodeRenderers ?? {}))
   let icon: React.ComponentType<{ size: number }> | undefined
@@ -106,6 +108,7 @@ function toFlowNode(
       collapsed,
       childCount,
       childrenAllDone,
+      onCollapseToggle: () => onCollapseToggle(n.id),
       // Full AgrexNode for custom renderers — see wrapNodeRenderer in nodeTypes
       __agrexNode: n,
     },
@@ -205,6 +208,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph(
     showControls,
     keyboardShortcuts,
     animateEdges,
+    onNodeSelect,
     onNodeClick,
     onEdgeClick,
     onNewestNode,
@@ -231,6 +235,15 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph(
     })
   }, [])
   const [collapsedNodes, setCollapsedNodes] = useState<Set<string>>(new Set())
+
+  const toggleCollapseForId = useCallback((id: string) => {
+    setCollapsedNodes((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
 
   // Tick counter to force elapsed-time re-renders for running nodes
   const [, setTick] = useState(0)
@@ -400,7 +413,17 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph(
         visibleNodes
           .filter((n) => posRef.current.has(n.id))
           .map((n) =>
-            toFlowNode(n, posRef.current.get(n.id)!, nr, ti, fi, collapsedNodes, childCounts, childrenAllDoneMap),
+            toFlowNode(
+              n,
+              posRef.current.get(n.id)!,
+              nr,
+              ti,
+              fi,
+              collapsedNodes,
+              childCounts,
+              childrenAllDoneMap,
+              toggleCollapseForId,
+            ),
           ),
       )
       setFlowEdges(
@@ -436,6 +459,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph(
                 collapsedNodes,
                 childCounts,
                 childrenAllDoneMap,
+                toggleCollapseForId,
               )
             const wasCollapsed = (fn.data as FlowNodeData)?.collapsed
             const prevAgrexNode = (fn.data as { __agrexNode?: AgrexNode })?.__agrexNode
@@ -451,12 +475,23 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph(
               collapsedNodes,
               childCounts,
               childrenAllDoneMap,
+              toggleCollapseForId,
             )
           })
           // Add new nodes
           for (const nd of newNodes) {
             result.push(
-              toFlowNode(nd, posRef.current.get(nd.id)!, nr, ti, fi, collapsedNodes, childCounts, childrenAllDoneMap),
+              toFlowNode(
+                nd,
+                posRef.current.get(nd.id)!,
+                nr,
+                ti,
+                fi,
+                collapsedNodes,
+                childCounts,
+                childrenAllDoneMap,
+                toggleCollapseForId,
+              ),
             )
           }
           return result
@@ -498,22 +533,13 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph(
     (_: React.MouseEvent, node: Node) => {
       const orig = agrexNodesRef.current.find((n) => n.id === node.id)
       if (!orig) return
-      // Toggle collapse for agent/sub_agent nodes
-      if (orig.type === 'agent' || orig.type === 'sub_agent') {
-        const hasChildren = agrexNodesRef.current.some((n) => n.parentId === orig.id)
-        if (hasChildren) {
-          setCollapsedNodes((prev) => {
-            const next = new Set(prev)
-            if (next.has(orig.id)) next.delete(orig.id)
-            else next.add(orig.id)
-            return next
-          })
-        }
-      }
+      onNodeSelect?.(orig)
       onNodeClick?.(orig)
     },
-    [onNodeClick],
+    [onNodeClick, onNodeSelect],
   )
+
+  const handlePaneClick = useCallback(() => onNodeSelect?.(null), [onNodeSelect])
 
   const handleEdgeClick = useCallback(
     (_: React.MouseEvent, edge: Edge) => {
@@ -611,6 +637,7 @@ const Graph = forwardRef<GraphRef, GraphInternalProps>(function Graph(
         onEdgesChange={onEdgesChange}
         onNodeClick={handleNodeClick}
         onEdgeClick={handleEdgeClick}
+        onPaneClick={handlePaneClick}
         onMoveStart={(event) => {
           if (event) setAutoFit(false)
         }}

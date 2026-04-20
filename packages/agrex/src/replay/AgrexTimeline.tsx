@@ -3,7 +3,7 @@ import { resolveTheme, themeToCSS } from '../theme/tokens'
 import type { AgrexMarker, AgrexTimelineProps, TimelineInsets, TimelinePlacement } from './types'
 
 const PANEL_WIDTH = 820
-const PANEL_HEIGHT = 76
+const PANEL_HEIGHT = 72
 const DEFAULT_PERSIST_KEY = 'agrex.timeline.collapsed'
 
 // Inline SVGs (lucide geometry, MIT). Keeps the dep footprint at zero icons.
@@ -132,7 +132,7 @@ function tabStyle(
     position: 'absolute',
     left: '50%',
     transform: 'translateX(-50%)',
-    [vertical]: collapsed ? 0 : anchorInset + PANEL_HEIGHT + 16,
+    [vertical]: collapsed ? anchorInset : anchorInset + PANEL_HEIGHT,
     width: 40,
     height: 20,
     borderRadius: placement === 'top' ? '0 0 6px 6px' : '6px 6px 0 0',

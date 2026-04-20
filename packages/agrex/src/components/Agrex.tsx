@@ -1,7 +1,7 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import Graph, { type GraphRef } from './Graph'
 import Legend from './Legend'
-import DetailPanel from './DetailPanel'
+import NodeTooltip from './NodeTooltip'
 import ToastStack from './Toast'
 import StatsBar from './StatsBar'
 import AgrexErrorBoundary from './ErrorBoundary'
@@ -73,8 +73,19 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex(
   const nodes = rawNodes
   const edges = useMemo(() => deriveEdges(rawNodes, rawEdges), [rawNodes, rawEdges])
 
-  const [selectedNode, setSelectedNode] = useState<AgrexNode | null>(null)
   const [toastNode, setToastNode] = useState<AgrexNode | null>(null)
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
+  const selectedNode = useMemo(
+    () => (selectedNodeId ? (nodes.find((n) => n.id === selectedNodeId) ?? null) : null),
+    [nodes, selectedNodeId],
+  )
+  // Keep the last rendered node around for one extra exit-transition frame so the
+  // NodeTooltip can animate out with its data still visible instead of snapping empty.
+  const [lastSelectedNode, setLastSelectedNode] = useState<AgrexNode | null>(null)
+  useEffect(() => {
+    if (selectedNode) setLastSelectedNode(selectedNode)
+  }, [selectedNode])
+  const detailOpen = showDetailPanel && !!selectedNode
   const graphRef = useRef<GraphRef>(null)
 
   useImperativeHandle(
@@ -88,13 +99,7 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex(
     [nodes, edges],
   )
 
-  const handleNodeClick = useCallback(
-    (node: AgrexNode) => {
-      if (showDetailPanel) setSelectedNode(node)
-      onNodeClick?.(node)
-    },
-    [onNodeClick, showDetailPanel],
-  )
+  const handleNodeClick = useCallback((node: AgrexNode) => onNodeClick?.(node), [onNodeClick])
 
   const handleNewestNode = useCallback(
     (node: AgrexNode) => {
@@ -134,13 +139,21 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex(
           showControls={showControls}
           keyboardShortcuts={keyboardShortcuts}
           animateEdges={prefersReducedMotion ? false : animateEdges}
+          onNodeSelect={(n) => setSelectedNodeId(n?.id ?? null)}
           onNodeClick={handleNodeClick}
           onEdgeClick={onEdgeClick}
           onNewestNode={handleNewestNode}
         />
-        {showLegend && <Legend toolIcons={toolIcons} fileIcons={fileIcons} />}
+        {showLegend && <Legend toolIcons={toolIcons} fileIcons={fileIcons} forceCollapsed={detailOpen} />}
         {showStats && <StatsBar nodes={nodes} />}
-        {showDetailPanel && <DetailPanel node={selectedNode} onClose={() => setSelectedNode(null)} />}
+        {showDetailPanel && lastSelectedNode && (
+          <NodeTooltip
+            node={lastSelectedNode}
+            open={detailOpen}
+            onClose={() => setSelectedNodeId(null)}
+            rightOffset={16}
+          />
+        )}
         {showToasts && <ToastStack node={toastNode} placement={toastPlacement} insets={toastInsets} />}
         {replay && showTimeline && (
           <AgrexTimeline

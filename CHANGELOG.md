@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0
+
+- **`<NodeTooltip>` — click-driven node inspector.** New right-docked panel that replaces the bottom-left `<DetailPanel>` on node click. Surfaces the dedicated fields consumers care about — status, elapsed time, tokens, cost, args, input, output, error — with args/input/output rendered as scrollable pretty-JSON blocks. Closes on × button, clicking another node (jumps), or clicking empty canvas. `<DetailPanel>` stays exported for consumers still using the old surface.
+- **Click-to-collapse moved to the child-count badge.** Clicking the node body used to toggle collapse on `agent`/`sub_agent` nodes; now the body click opens `<NodeTooltip>` and the circular count badge is the dedicated collapse target (with `cursor: pointer`, `aria-label`, and stop-propagation). Disambiguates inspect vs. collapse without a modifier key.
+- **`<Legend>` ↔ `<NodeTooltip>` cross-transition.** When the tooltip opens, the legend slides off-screen to the right and its collapse tab fades; when the tooltip closes, the legend slides back in. Both use matching `cubic-bezier(0.23, 1, 0.32, 1)` at 250ms. New `<Legend>` prop: `forceCollapsed?: boolean` — lets the parent drive the collapsed state from outside (independently of the internal user-toggle).
+- **Enriched mock scenarios.** `createMockPipeline` now ships realistic `tokens`, `cost`, `args`, `input`, and `output` metadata on every node across all three scenarios — so `<NodeTooltip>` renders meaningful content out of the box in demos and tests.
+- **Timeline collapse-tab sits flush.** `PANEL_HEIGHT` lowered from 76 to 72 (matches actual rendered height with stage chapters) so the tab docks against the panel's top edge instead of floating 16px above it.
+
 ## 0.3.3
 
 - **`<AgrexTimeline>` chrome polish.** Play button now renders flat like the other transport buttons instead of an inverted accent pill. Stage chapter segments are stitched (no gap) with pill-rounded outer edges only — the track reads as a single chapter bar rather than a row of separate pills. Speed selector and elapsed-time display drop the hard-coded mono font in favor of `var(--agrex-font)` so they inherit the consumer's typography.

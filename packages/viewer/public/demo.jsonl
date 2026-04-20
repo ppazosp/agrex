@@ -1,0 +1,140 @@
+{"type":"node_add","ts":1776520800000,"node":{"id":"root","type":"agent","label":"Research Assistant","status":"running","metadata":{"startedAt":1776520800000,"endedAt":1776520842000,"tokens":28400,"cost":0.0426,"input":"Write a 1-page brief on lithium extraction from geothermal brines."}}}
+{"type":"node_add","ts":1776520800200,"node":{"id":"search-agent","type":"sub_agent","label":"Search Agent","parentId":"root","status":"running","metadata":{"startedAt":1776520800200,"endedAt":1776520808600,"tokens":1820,"cost":0.0027}}}
+{"type":"edge_add","ts":1776520800200,"edge":{"id":"e-root-search-agent","source":"root","target":"search-agent","type":"spawn"}}
+{"type":"node_add","ts":1776520800400,"node":{"id":"t-query-plan","type":"tool","label":"plan_queries","parentId":"search-agent","status":"running","metadata":{"startedAt":1776520800400,"endedAt":1776520801600,"args":{"topic":"lithium extraction geothermal brines"},"output":["DLE geothermal brine 2025","Salton Sea lithium pilot","selective adsorption brine lithium"],"tokens":420,"cost":0.00063}}}
+{"type":"edge_add","ts":1776520800400,"edge":{"id":"e-search-agent-t-query-plan","source":"search-agent","target":"t-query-plan","type":"spawn"}}
+{"type":"node_update","ts":1776520801600,"id":"t-query-plan","status":"done"}
+{"type":"node_add","ts":1776520801800,"node":{"id":"t-search-1","type":"tool","label":"search_web","parentId":"search-agent","status":"running","metadata":{"startedAt":1776520801800,"endedAt":1776520802140,"args":{"q":"DLE geothermal brine 2025"},"output":{"results":9}}}}
+{"type":"edge_add","ts":1776520801800,"edge":{"id":"e-search-agent-t-search-1","source":"search-agent","target":"t-search-1","type":"spawn"}}
+{"type":"node_update","ts":1776520802140,"id":"t-search-1","status":"done"}
+{"type":"node_add","ts":1776520802200,"node":{"id":"t-search-2","type":"tool","label":"search_web","parentId":"search-agent","status":"running","metadata":{"startedAt":1776520802200,"endedAt":1776520802480,"args":{"q":"Salton Sea lithium pilot"},"output":{"results":11}}}}
+{"type":"edge_add","ts":1776520802200,"edge":{"id":"e-search-agent-t-search-2","source":"search-agent","target":"t-search-2","type":"spawn"}}
+{"type":"node_update","ts":1776520802480,"id":"t-search-2","status":"done"}
+{"type":"node_add","ts":1776520802550,"node":{"id":"t-search-3","type":"tool","label":"search_web","parentId":"search-agent","status":"running","metadata":{"startedAt":1776520802550,"endedAt":1776520802910,"args":{"q":"selective adsorption brine lithium"},"output":{"results":7}}}}
+{"type":"edge_add","ts":1776520802550,"edge":{"id":"e-search-agent-t-search-3","source":"search-agent","target":"t-search-3","type":"spawn"}}
+{"type":"node_update","ts":1776520802910,"id":"t-search-3","status":"done"}
+{"type":"node_add","ts":1776520803100,"node":{"id":"t-fetch-a","type":"tool","label":"fetch_url","parentId":"search-agent","status":"running","metadata":{"startedAt":1776520803100,"endedAt":1776520803920,"args":{"url":"https://doe.gov/releases/2025/geothermal-lithium-pilot"}}}}
+{"type":"edge_add","ts":1776520803100,"edge":{"id":"e-search-agent-t-fetch-a","source":"search-agent","target":"t-fetch-a","type":"spawn"}}
+{"type":"node_add","ts":1776520803400,"node":{"id":"t-fetch-b","type":"tool","label":"fetch_url","parentId":"search-agent","status":"running","metadata":{"startedAt":1776520803400,"endedAt":1776520804310,"args":{"url":"https://nature.com/articles/s41560-025-dle-brine"}}}}
+{"type":"edge_add","ts":1776520803400,"edge":{"id":"e-search-agent-t-fetch-b","source":"search-agent","target":"t-fetch-b","type":"spawn"}}
+{"type":"node_add","ts":1776520803700,"node":{"id":"t-fetch-c-try1","type":"tool","label":"fetch_url","parentId":"search-agent","status":"running","metadata":{"startedAt":1776520803700,"endedAt":1776520804180,"args":{"url":"https://ieee.org/xplore/10456789"},"error":"HTTP 429 — rate limited"}}}
+{"type":"edge_add","ts":1776520803700,"edge":{"id":"e-search-agent-t-fetch-c-try1","source":"search-agent","target":"t-fetch-c-try1","type":"spawn"}}
+{"type":"node_update","ts":1776520803920,"id":"t-fetch-a","status":"done"}
+{"type":"node_add","ts":1776520803920,"node":{"id":"f-src-a","type":"file","label":"doe_pilot.html","parentId":"t-fetch-a","status":"running","metadata":{"startedAt":1776520803920,"endedAt":1776520803930,"size":42100}}}
+{"type":"edge_add","ts":1776520803920,"edge":{"id":"e-t-fetch-a-f-src-a","source":"t-fetch-a","target":"f-src-a","type":"spawn"}}
+{"type":"node_update","ts":1776520803930,"id":"f-src-a","status":"done"}
+{"type":"node_update","ts":1776520804180,"id":"t-fetch-c-try1","status":"error"}
+{"type":"node_add","ts":1776520804200,"node":{"id":"t-fetch-d","type":"tool","label":"fetch_url","parentId":"search-agent","status":"running","metadata":{"startedAt":1776520804200,"endedAt":1776520805220,"args":{"url":"https://usgs.gov/publications/lithium-2025"}}}}
+{"type":"edge_add","ts":1776520804200,"edge":{"id":"e-search-agent-t-fetch-d","source":"search-agent","target":"t-fetch-d","type":"spawn"}}
+{"type":"node_update","ts":1776520804310,"id":"t-fetch-b","status":"done"}
+{"type":"node_add","ts":1776520804310,"node":{"id":"f-src-b","type":"file","label":"nature_dle.pdf","parentId":"t-fetch-b","status":"running","metadata":{"startedAt":1776520804310,"endedAt":1776520804320,"size":1842000}}}
+{"type":"edge_add","ts":1776520804310,"edge":{"id":"e-t-fetch-b-f-src-b","source":"t-fetch-b","target":"f-src-b","type":"spawn"}}
+{"type":"node_update","ts":1776520804320,"id":"f-src-b","status":"done"}
+{"type":"node_update","ts":1776520805220,"id":"t-fetch-d","status":"done"}
+{"type":"node_add","ts":1776520805220,"node":{"id":"f-src-d","type":"file","label":"usgs_lithium_2025.pdf","parentId":"t-fetch-d","status":"running","metadata":{"startedAt":1776520805220,"endedAt":1776520805230,"size":980000}}}
+{"type":"edge_add","ts":1776520805220,"edge":{"id":"e-t-fetch-d-f-src-d","source":"t-fetch-d","target":"f-src-d","type":"spawn"}}
+{"type":"node_update","ts":1776520805230,"id":"f-src-d","status":"done"}
+{"type":"node_add","ts":1776520805400,"node":{"id":"t-fetch-c-try2","type":"tool","label":"fetch_url","parentId":"search-agent","status":"running","metadata":{"startedAt":1776520805400,"endedAt":1776520806140,"args":{"url":"https://ieee.org/xplore/10456789","retry":1}}}}
+{"type":"edge_add","ts":1776520805400,"edge":{"id":"e-search-agent-t-fetch-c-try2","source":"search-agent","target":"t-fetch-c-try2","type":"spawn"}}
+{"type":"node_update","ts":1776520806140,"id":"t-fetch-c-try2","status":"done"}
+{"type":"node_add","ts":1776520806140,"node":{"id":"f-src-c","type":"file","label":"ieee_adsorption.pdf","parentId":"t-fetch-c-try2","status":"running","metadata":{"startedAt":1776520806140,"endedAt":1776520806150,"size":2290000}}}
+{"type":"edge_add","ts":1776520806140,"edge":{"id":"e-t-fetch-c-try2-f-src-c","source":"t-fetch-c-try2","target":"f-src-c","type":"spawn"}}
+{"type":"node_update","ts":1776520806150,"id":"f-src-c","status":"done"}
+{"type":"node_update","ts":1776520808600,"id":"search-agent","status":"done"}
+{"type":"node_add","ts":1776520809000,"node":{"id":"reader-agent","type":"sub_agent","label":"Reader Agent","parentId":"root","status":"running","metadata":{"startedAt":1776520809000,"endedAt":1776520828000,"tokens":12600,"cost":0.0189}}}
+{"type":"edge_add","ts":1776520809000,"edge":{"id":"e-root-reader-agent","source":"root","target":"reader-agent","type":"spawn"}}
+{"type":"node_add","ts":1776520809200,"node":{"id":"t-read-a","type":"tool","label":"read_file","parentId":"reader-agent","status":"running","metadata":{"startedAt":1776520809200,"endedAt":1776520809410,"args":{"path":"doe_pilot.html"}}}}
+{"type":"edge_add","ts":1776520809200,"edge":{"id":"e-reader-agent-t-read-a","source":"reader-agent","target":"t-read-a","type":"spawn"}}
+{"type":"edge_add","ts":1776520809200,"edge":{"id":"fe-search-read-a","source":"t-fetch-a","target":"t-read-a","type":"read"}}
+{"type":"node_update","ts":1776520809410,"id":"t-read-a","status":"done"}
+{"type":"node_add","ts":1776520809500,"node":{"id":"t-read-b","type":"tool","label":"parse_pdf","parentId":"reader-agent","status":"running","metadata":{"startedAt":1776520809500,"endedAt":1776520811140,"args":{"path":"nature_dle.pdf"}}}}
+{"type":"edge_add","ts":1776520809500,"edge":{"id":"e-reader-agent-t-read-b","source":"reader-agent","target":"t-read-b","type":"spawn"}}
+{"type":"edge_add","ts":1776520809500,"edge":{"id":"fe-search-read-b","source":"t-fetch-b","target":"t-read-b","type":"read"}}
+{"type":"node_update","ts":1776520811140,"id":"t-read-b","status":"done"}
+{"type":"node_add","ts":1776520811200,"node":{"id":"t-read-c","type":"tool","label":"parse_pdf","parentId":"reader-agent","status":"running","metadata":{"startedAt":1776520811200,"endedAt":1776520813080,"args":{"path":"ieee_adsorption.pdf"}}}}
+{"type":"edge_add","ts":1776520811200,"edge":{"id":"e-reader-agent-t-read-c","source":"reader-agent","target":"t-read-c","type":"spawn"}}
+{"type":"edge_add","ts":1776520811200,"edge":{"id":"fe-search-read-c","source":"t-fetch-c-try2","target":"t-read-c","type":"read"}}
+{"type":"node_update","ts":1776520813080,"id":"t-read-c","status":"done"}
+{"type":"node_add","ts":1776520813100,"node":{"id":"t-read-d","type":"tool","label":"parse_pdf","parentId":"reader-agent","status":"running","metadata":{"startedAt":1776520813100,"endedAt":1776520814310,"args":{"path":"usgs_lithium_2025.pdf"}}}}
+{"type":"edge_add","ts":1776520813100,"edge":{"id":"e-reader-agent-t-read-d","source":"reader-agent","target":"t-read-d","type":"spawn"}}
+{"type":"edge_add","ts":1776520813100,"edge":{"id":"fe-search-read-d","source":"t-fetch-d","target":"t-read-d","type":"read"}}
+{"type":"node_update","ts":1776520814310,"id":"t-read-d","status":"done"}
+{"type":"node_add","ts":1776520814400,"node":{"id":"t-extract-a","type":"tool","label":"extract_claims","parentId":"reader-agent","status":"running","metadata":{"startedAt":1776520814400,"endedAt":1776520816300,"output":{"claims":6},"tokens":1240,"cost":0.00186}}}
+{"type":"edge_add","ts":1776520814400,"edge":{"id":"e-reader-agent-t-extract-a","source":"reader-agent","target":"t-extract-a","type":"spawn"}}
+{"type":"node_update","ts":1776520816300,"id":"t-extract-a","status":"done"}
+{"type":"node_add","ts":1776520816400,"node":{"id":"t-extract-b","type":"tool","label":"extract_claims","parentId":"reader-agent","status":"running","metadata":{"startedAt":1776520816400,"endedAt":1776520818780,"output":{"claims":11},"tokens":2180,"cost":0.00327}}}
+{"type":"edge_add","ts":1776520816400,"edge":{"id":"e-reader-agent-t-extract-b","source":"reader-agent","target":"t-extract-b","type":"spawn"}}
+{"type":"node_update","ts":1776520818780,"id":"t-extract-b","status":"done"}
+{"type":"node_add","ts":1776520818900,"node":{"id":"t-extract-c","type":"tool","label":"extract_claims","parentId":"reader-agent","status":"running","metadata":{"startedAt":1776520818900,"endedAt":1776520821040,"output":{"claims":8},"tokens":1950,"cost":0.00293}}}
+{"type":"edge_add","ts":1776520818900,"edge":{"id":"e-reader-agent-t-extract-c","source":"reader-agent","target":"t-extract-c","type":"spawn"}}
+{"type":"node_update","ts":1776520821040,"id":"t-extract-c","status":"done"}
+{"type":"node_add","ts":1776520821100,"node":{"id":"t-extract-d","type":"tool","label":"extract_claims","parentId":"reader-agent","status":"running","metadata":{"startedAt":1776520821100,"endedAt":1776520822820,"output":{"claims":5},"tokens":1480,"cost":0.00222}}}
+{"type":"edge_add","ts":1776520821100,"edge":{"id":"e-reader-agent-t-extract-d","source":"reader-agent","target":"t-extract-d","type":"spawn"}}
+{"type":"node_update","ts":1776520822820,"id":"t-extract-d","status":"done"}
+{"type":"node_add","ts":1776520822900,"node":{"id":"t-summarize","type":"tool","label":"summarize","parentId":"reader-agent","status":"running","metadata":{"startedAt":1776520822900,"endedAt":1776520826300,"tokens":4120,"cost":0.00618,"output":"Direct lithium extraction (DLE) from geothermal brines targets the Salton Sea…"}}}
+{"type":"edge_add","ts":1776520822900,"edge":{"id":"e-reader-agent-t-summarize","source":"reader-agent","target":"t-summarize","type":"spawn"}}
+{"type":"edge_add","ts":1776520822900,"edge":{"id":"fe-extract-sum","source":"t-extract-a","target":"t-summarize","type":"read"}}
+{"type":"edge_add","ts":1776520822900,"edge":{"id":"fe-extract-sum-b","source":"t-extract-b","target":"t-summarize","type":"read"}}
+{"type":"edge_add","ts":1776520822900,"edge":{"id":"fe-extract-sum-c","source":"t-extract-c","target":"t-summarize","type":"read"}}
+{"type":"edge_add","ts":1776520822900,"edge":{"id":"fe-extract-sum-d","source":"t-extract-d","target":"t-summarize","type":"read"}}
+{"type":"node_update","ts":1776520826300,"id":"t-summarize","status":"done"}
+{"type":"node_add","ts":1776520826310,"node":{"id":"f-notes","type":"file","label":"notes.md","parentId":"t-summarize","status":"running","metadata":{"startedAt":1776520826310,"endedAt":1776520826320,"size":8420}}}
+{"type":"edge_add","ts":1776520826310,"edge":{"id":"e-t-summarize-f-notes","source":"t-summarize","target":"f-notes","type":"spawn"}}
+{"type":"edge_add","ts":1776520826310,"edge":{"id":"fe-sum-notes","source":"t-summarize","target":"f-notes","type":"write"}}
+{"type":"node_update","ts":1776520826320,"id":"f-notes","status":"done"}
+{"type":"node_add","ts":1776520826500,"node":{"id":"t-xref-1","type":"tool","label":"cross_reference","parentId":"reader-agent","status":"running","metadata":{"startedAt":1776520826500,"endedAt":1776520827140,"args":{"claim":"Salton Sea annual lithium potential","sources":["src-a","src-d"]}}}}
+{"type":"edge_add","ts":1776520826500,"edge":{"id":"e-reader-agent-t-xref-1","source":"reader-agent","target":"t-xref-1","type":"spawn"}}
+{"type":"node_update","ts":1776520827140,"id":"t-xref-1","status":"done"}
+{"type":"node_add","ts":1776520827200,"node":{"id":"t-xref-2","type":"tool","label":"cross_reference","parentId":"reader-agent","status":"running","metadata":{"startedAt":1776520827200,"endedAt":1776520827920,"args":{"claim":"DLE water intensity","sources":["src-b","src-c"]}}}}
+{"type":"edge_add","ts":1776520827200,"edge":{"id":"e-reader-agent-t-xref-2","source":"reader-agent","target":"t-xref-2","type":"spawn"}}
+{"type":"node_update","ts":1776520827920,"id":"t-xref-2","status":"done"}
+{"type":"node_add","ts":1776520827950,"node":{"id":"t-xref-3","type":"tool","label":"cross_reference","parentId":"reader-agent","status":"running","metadata":{"startedAt":1776520827950,"endedAt":1776520828530,"args":{"claim":"recovery efficiency > 90%","sources":["src-b","src-c"]},"error":"Sources disagree: 72% (src-b) vs 94% (src-c). Flagged for review."}}}
+{"type":"edge_add","ts":1776520827950,"edge":{"id":"e-reader-agent-t-xref-3","source":"reader-agent","target":"t-xref-3","type":"spawn"}}
+{"type":"node_update","ts":1776520828000,"id":"reader-agent","status":"done"}
+{"type":"node_update","ts":1776520828530,"id":"t-xref-3","status":"error"}
+{"type":"node_add","ts":1776520829000,"node":{"id":"writer-agent","type":"sub_agent","label":"Writer Agent","parentId":"root","status":"running","metadata":{"startedAt":1776520829000,"endedAt":1776520841500,"tokens":13980,"cost":0.021}}}
+{"type":"edge_add","ts":1776520829000,"edge":{"id":"e-root-writer-agent","source":"root","target":"writer-agent","type":"spawn"}}
+{"type":"node_add","ts":1776520829100,"node":{"id":"t-outline","type":"tool","label":"draft_outline","parentId":"writer-agent","status":"running","metadata":{"startedAt":1776520829100,"endedAt":1776520830220,"tokens":780,"cost":0.00117,"output":["Background","Current pilots","Tradeoffs","Open questions"]}}}
+{"type":"edge_add","ts":1776520829100,"edge":{"id":"e-writer-agent-t-outline","source":"writer-agent","target":"t-outline","type":"spawn"}}
+{"type":"edge_add","ts":1776520829100,"edge":{"id":"fe-notes-outline","source":"f-notes","target":"t-outline","type":"read"}}
+{"type":"node_update","ts":1776520830220,"id":"t-outline","status":"done"}
+{"type":"node_add","ts":1776520830400,"node":{"id":"t-verify-1","type":"tool","label":"verify_citation","parentId":"writer-agent","status":"running","metadata":{"startedAt":1776520830400,"endedAt":1776520830820,"args":{"ref":"Nature 2025 doi:10.1038/s41560-025-dle"}}}}
+{"type":"edge_add","ts":1776520830400,"edge":{"id":"e-writer-agent-t-verify-1","source":"writer-agent","target":"t-verify-1","type":"spawn"}}
+{"type":"node_update","ts":1776520830820,"id":"t-verify-1","status":"done"}
+{"type":"node_add","ts":1776520830900,"node":{"id":"t-verify-2","type":"tool","label":"verify_citation","parentId":"writer-agent","status":"running","metadata":{"startedAt":1776520830900,"endedAt":1776520831280,"args":{"ref":"USGS Mineral Commodity Summaries 2025"}}}}
+{"type":"edge_add","ts":1776520830900,"edge":{"id":"e-writer-agent-t-verify-2","source":"writer-agent","target":"t-verify-2","type":"spawn"}}
+{"type":"node_update","ts":1776520831280,"id":"t-verify-2","status":"done"}
+{"type":"node_add","ts":1776520831300,"node":{"id":"t-verify-3","type":"tool","label":"verify_citation","parentId":"writer-agent","status":"running","metadata":{"startedAt":1776520831300,"endedAt":1776520831720,"args":{"ref":"DOE Press Release 2025-03"}}}}
+{"type":"edge_add","ts":1776520831300,"edge":{"id":"e-writer-agent-t-verify-3","source":"writer-agent","target":"t-verify-3","type":"spawn"}}
+{"type":"node_update","ts":1776520831720,"id":"t-verify-3","status":"done"}
+{"type":"node_add","ts":1776520831900,"node":{"id":"t-write-bg","type":"tool","label":"write_section","parentId":"writer-agent","status":"running","metadata":{"startedAt":1776520831900,"endedAt":1776520834040,"args":{"section":"Background"},"tokens":1420,"cost":0.00213}}}
+{"type":"edge_add","ts":1776520831900,"edge":{"id":"e-writer-agent-t-write-bg","source":"writer-agent","target":"t-write-bg","type":"spawn"}}
+{"type":"node_update","ts":1776520834040,"id":"t-write-bg","status":"done"}
+{"type":"node_add","ts":1776520834100,"node":{"id":"t-write-pilots","type":"tool","label":"write_section","parentId":"writer-agent","status":"running","metadata":{"startedAt":1776520834100,"endedAt":1776520836410,"args":{"section":"Current pilots"},"tokens":1680,"cost":0.00252}}}
+{"type":"edge_add","ts":1776520834100,"edge":{"id":"e-writer-agent-t-write-pilots","source":"writer-agent","target":"t-write-pilots","type":"spawn"}}
+{"type":"node_update","ts":1776520836410,"id":"t-write-pilots","status":"done"}
+{"type":"node_add","ts":1776520836500,"node":{"id":"t-write-tradeoffs","type":"tool","label":"write_section","parentId":"writer-agent","status":"running","metadata":{"startedAt":1776520836500,"endedAt":1776520838980,"args":{"section":"Tradeoffs"},"tokens":1790,"cost":0.00269}}}
+{"type":"edge_add","ts":1776520836500,"edge":{"id":"e-writer-agent-t-write-tradeoffs","source":"writer-agent","target":"t-write-tradeoffs","type":"spawn"}}
+{"type":"node_update","ts":1776520838980,"id":"t-write-tradeoffs","status":"done"}
+{"type":"node_add","ts":1776520839050,"node":{"id":"t-write-open","type":"tool","label":"write_section","parentId":"writer-agent","status":"running","metadata":{"startedAt":1776520839050,"endedAt":1776520840870,"args":{"section":"Open questions"},"tokens":1240,"cost":0.00186}}}
+{"type":"edge_add","ts":1776520839050,"edge":{"id":"e-writer-agent-t-write-open","source":"writer-agent","target":"t-write-open","type":"spawn"}}
+{"type":"node_update","ts":1776520840870,"id":"t-write-open","status":"done"}
+{"type":"node_add","ts":1776520840900,"node":{"id":"f-draft","type":"file","label":"draft.md","parentId":"writer-agent","status":"running","metadata":{"startedAt":1776520840900,"endedAt":1776520840910,"size":11400}}}
+{"type":"edge_add","ts":1776520840900,"edge":{"id":"e-writer-agent-f-draft","source":"writer-agent","target":"f-draft","type":"spawn"}}
+{"type":"edge_add","ts":1776520840900,"edge":{"id":"fe-write-bg","source":"t-write-bg","target":"f-draft","type":"write"}}
+{"type":"edge_add","ts":1776520840900,"edge":{"id":"fe-write-pilots","source":"t-write-pilots","target":"f-draft","type":"write"}}
+{"type":"edge_add","ts":1776520840900,"edge":{"id":"fe-write-tradeoffs","source":"t-write-tradeoffs","target":"f-draft","type":"write"}}
+{"type":"edge_add","ts":1776520840900,"edge":{"id":"fe-write-open","source":"t-write-open","target":"f-draft","type":"write"}}
+{"type":"node_update","ts":1776520840910,"id":"f-draft","status":"done"}
+{"type":"node_add","ts":1776520840950,"node":{"id":"t-format","type":"tool","label":"format_markdown","parentId":"writer-agent","status":"running","metadata":{"startedAt":1776520840950,"endedAt":1776520841270,"args":{"path":"draft.md"}}}}
+{"type":"edge_add","ts":1776520840950,"edge":{"id":"e-writer-agent-t-format","source":"writer-agent","target":"t-format","type":"spawn"}}
+{"type":"node_update","ts":1776520841270,"id":"t-format","status":"done"}
+{"type":"node_add","ts":1776520841300,"node":{"id":"t-lint","type":"tool","label":"lint_citations","parentId":"writer-agent","status":"running","metadata":{"startedAt":1776520841300,"endedAt":1776520841480,"output":{"missing":0,"conflicts":1,"note":"recovery-efficiency conflict carried forward"}}}}
+{"type":"edge_add","ts":1776520841300,"edge":{"id":"e-writer-agent-t-lint","source":"writer-agent","target":"t-lint","type":"spawn"}}
+{"type":"node_update","ts":1776520841480,"id":"t-lint","status":"done"}
+{"type":"node_update","ts":1776520841500,"id":"writer-agent","status":"done"}
+{"type":"node_add","ts":1776520841500,"node":{"id":"f-final","type":"file","label":"brief.md","parentId":"writer-agent","status":"running","metadata":{"startedAt":1776520841500,"endedAt":1776520841510,"size":11420}}}
+{"type":"edge_add","ts":1776520841500,"edge":{"id":"e-writer-agent-f-final","source":"writer-agent","target":"f-final","type":"spawn"}}
+{"type":"edge_add","ts":1776520841500,"edge":{"id":"fe-format","source":"f-draft","target":"f-final","type":"write"}}
+{"type":"node_update","ts":1776520841510,"id":"f-final","status":"done"}
+{"type":"node_update","ts":1776520842000,"id":"root","status":"done"}

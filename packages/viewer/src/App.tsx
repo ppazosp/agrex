@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   Agrex,
   useAgrexReplay,
-  snapshotToEvents,
+  parseTrace,
   type AgrexEvent,
   type AgrexHandle,
   type AgrexMarker,
@@ -10,8 +10,12 @@ import {
 } from '@ppazosp/agrex'
 import '@ppazosp/agrex/styles.css'
 import Dropzone from './Dropzone'
-import { demoTrace } from './demoTrace'
 import { useRef } from 'react'
+
+// The demo trace ships as a real .jsonl file in /public so the landing
+// bundle stays small and users can download it as a genuine example of
+// the trace format (rather than a TS literal they can't reuse).
+const DEMO_TRACE_URL = '/demo.jsonl'
 
 // Marker kinds the viewer knows about:
 //   STAGE_KIND — chapters on the rail. Each one tints a segment of the
@@ -148,8 +152,10 @@ export default function App() {
     [replay],
   )
 
-  const loadDemo = useCallback(() => {
-    const events = snapshotToEvents(demoTrace.nodes, demoTrace.edges)
+  const loadDemo = useCallback(async () => {
+    const res = await fetch(DEMO_TRACE_URL)
+    if (!res.ok) throw new Error(`demo fetch failed: ${res.status}`)
+    const events = parseTrace(await res.text())
     loadEvents(events, 'demo: lithium research')
   }, [loadEvents])
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.1
+
+- **`<AgrexTimeline>` elapsed display ticks during inter-event gaps.** The playback loop only advances `cursor` when the next event fires, so during a multi-second inter-event gap (e.g. a 3s LLM call recorded in the trace) `cursor` was constant and the `MM:SS / MM:SS` counter froze for the whole gap. The timeline now captures the wall-clock moment of each cursor transition and interpolates elapsed time between events at 10 Hz while playing, clamped to the next event's ts so the display never reads ahead of the actual replay position.
+
 ## 0.6.0
 
 - **`createTracer()` — canonical way to record traces from your own code.** New factory at `@ppazosp/agrex/trace` (also re-exported from the root) that returns an imperative emitter for building viewer-compatible traces without hand-assembling event objects. Every emit is auto-timestamped via an injectable `clock`, and node helpers (`agent`, `subAgent`, `tool`, `file`, `node`) plus mutation helpers (`update`, `done`, `error`, `remove`) cover the core graph surface. Timeline helpers (`stage`, `marker`) and a raw `edge()` escape hatch round it out.

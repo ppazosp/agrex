@@ -383,16 +383,50 @@ export default function AgrexTimeline({
   }, [collapsed, onCollapsedChange, persistKey])
 
   const total = events.length
-  const elapsed = useMemo(() => {
-    if (total === 0) return 0
-    const first = Number(events[0].ts)
+
+  // Capture the wall-clock moment of each cursor transition so we can
+  // interpolate elapsed time between events. The playback loop only
+  // advances `cursor` when the next event fires, so during a multi-second
+  // inter-event gap `cursor` is constant — without interpolation, the
+  // elapsed display would freeze for the entire gap.
+  const cursorAtRef = useRef<{ wall: number; ts: number }>({ wall: 0, ts: 0 })
+  useLayoutEffect(() => {
+    if (total === 0) return
     const idx = Math.max(0, Math.min(cursor, total) - 1)
-    return Number(events[idx].ts) - first
+    cursorAtRef.current = { wall: performance.now(), ts: Number(events[idx].ts) }
   }, [cursor, total, events])
+
+  // Force a re-render 10×/s while playing so the interpolated elapsed
+  // display updates smoothly. Only runs during playback — the panel is
+  // otherwise render-cheap (small fixed layout) so this is fine.
+  const [, forceTick] = useState(0)
+  useEffect(() => {
+    if (!playing) return
+    const id = setInterval(() => forceTick((n) => n + 1), 100)
+    return () => clearInterval(id)
+  }, [playing])
+
   const duration = useMemo(() => {
     if (total < 2) return 0
     return Number(events[total - 1].ts) - Number(events[0].ts)
   }, [events, total])
+
+  // Not a useMemo: depends on `performance.now()`, which changes every
+  // render — the `forceTick` above is what drives those renders. The
+  // computation is trivial so recalculating each render is free.
+  const elapsed = (() => {
+    if (total === 0) return 0
+    const first = Number(events[0].ts)
+    const idx = Math.max(0, Math.min(cursor, total) - 1)
+    const base = Number(events[idx].ts) - first
+    if (!playing || cursor >= total) return base
+    const nextTs = Number(events[cursor].ts) - first
+    const wallDelta = (performance.now() - cursorAtRef.current.wall) * speed
+    // Clamp to the next event's ts so the display never reads ahead of
+    // actual replay position (otherwise a stalled timer on a slow tick
+    // could overshoot the next event's own ts).
+    return Math.min(nextTs, base + wallDelta)
+  })()
 
   const stageSegments = useMemo(
     () => (jumpMarkerKind ? buildStageSegments(markers, jumpMarkerKind, total) : []),

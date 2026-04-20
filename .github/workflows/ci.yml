@@ -45,7 +45,20 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @ppazosp/agrex build
-      - run: npm install -g npm@latest
-      - run: npm publish --provenance --access public
+      - id: check-version
+        working-directory: packages/agrex
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "@ppazosp/agrex@$VERSION" version >/dev/null 2>&1; then
+            echo "already-published=true" >> "$GITHUB_OUTPUT"
+            echo "@ppazosp/agrex@$VERSION is already on npm — skipping publish"
+          else
+            echo "already-published=false" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.check-version.outputs.already-published == 'false'
+        run: pnpm --filter @ppazosp/agrex build
+      - if: steps.check-version.outputs.already-published == 'false'
+        run: npm install -g npm@latest
+      - if: steps.check-version.outputs.already-published == 'false'
+        run: npm publish --provenance --access public
         working-directory: packages/agrex

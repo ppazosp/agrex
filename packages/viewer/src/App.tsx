@@ -197,6 +197,7 @@ function SourcePill({ sourceLabel, onReset }: { sourceLabel: string; onReset: ()
   const [hover, setHover] = useState(false)
   return (
     <div
+      className="source-pill"
       style={{
         position: 'absolute',
         left: 16,
@@ -206,7 +207,6 @@ function SourcePill({ sourceLabel, onReset }: { sourceLabel: string; onReset: ()
         flexDirection: 'column',
         alignItems: 'stretch',
         padding: 6,
-        gap: 2,
         borderRadius: 12,
         background: 'color-mix(in srgb, var(--agrex-bg, #050505) 82%, transparent)',
         backdropFilter: 'blur(16px)',
@@ -217,7 +217,7 @@ function SourcePill({ sourceLabel, onReset }: { sourceLabel: string; onReset: ()
         minWidth: 200,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px 10px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px' }}>
         <div
           aria-hidden
           style={{
@@ -231,50 +231,57 @@ function SourcePill({ sourceLabel, onReset }: { sourceLabel: string; onReset: ()
         />
         <span style={{ opacity: 0.85, lineHeight: 1, whiteSpace: 'nowrap' }}>{sourceLabel}</span>
       </div>
-      <div aria-hidden style={{ height: 1, background: 'var(--agrex-node-border, #1c1c1c)', margin: '0 2px' }} />
-      <button
-        type="button"
-        onClick={onReset}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-        aria-label="Load another trace"
-        title="Back to landing to load another trace"
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 8,
-          height: 28,
-          padding: '0 10px',
-          background: hover ? 'color-mix(in srgb, var(--agrex-status-done, #22c55e) 14%, transparent)' : 'transparent',
-          border: 'none',
-          borderRadius: 8,
-          cursor: 'pointer',
-          color: hover ? 'var(--agrex-status-done, #22c55e)' : 'var(--agrex-fg, #f5f5f5)',
-          opacity: hover ? 1 : 0.75,
-          transition: 'opacity 150ms, background 150ms, color 150ms',
-          fontSize: 12,
-          fontFamily: 'inherit',
-          lineHeight: 1,
-        }}
-      >
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden
-        >
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-          <polyline points="17 8 12 3 7 8" />
-          <line x1="12" y1="3" x2="12" y2="15" />
-        </svg>
-        load another
-      </button>
+      <div className="source-pill-reveal">
+        <div className="source-pill-reveal-inner">
+          <div aria-hidden style={{ height: 1, background: 'var(--agrex-node-border, #1c1c1c)', margin: '6px 2px' }} />
+          <button
+            type="button"
+            onClick={onReset}
+            onMouseEnter={() => setHover(true)}
+            onMouseLeave={() => setHover(false)}
+            aria-label="Load another trace"
+            title="Back to landing to load another trace"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '100%',
+              gap: 8,
+              height: 28,
+              padding: '0 10px',
+              background: hover
+                ? 'color-mix(in srgb, var(--agrex-status-done, #22c55e) 14%, transparent)'
+                : 'transparent',
+              border: 'none',
+              borderRadius: 8,
+              cursor: 'pointer',
+              color: hover ? 'var(--agrex-status-done, #22c55e)' : 'var(--agrex-fg, #f5f5f5)',
+              opacity: hover ? 1 : 0.85,
+              transition: 'opacity 150ms, background 150ms, color 150ms',
+              fontSize: 12,
+              fontFamily: 'inherit',
+              lineHeight: 1,
+            }}
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            load another
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

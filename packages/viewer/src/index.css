@@ -339,3 +339,53 @@ body,
     opacity: 1;
   }
 }
+
+/* ───── SourcePill hover reveal ────────────────────────────────────────
+   The "load another" row is hidden by default and reveals on hover (or
+   keyboard focus-within, for a11y). `grid-template-rows: 0fr → 1fr` is
+   the modern trick for animating auto-height containers cleanly — no
+   hardcoded max-height, handles future content changes. A parallel
+   opacity+translateY on the inner content keeps the motion smooth
+   instead of clipped. */
+
+.source-pill-reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 200ms cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 180ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.source-pill:hover .source-pill-reveal,
+.source-pill:focus-within .source-pill-reveal {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.source-pill-reveal-inner {
+  min-height: 0;
+  overflow: hidden;
+  transform: translateY(-4px);
+  transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.source-pill:hover .source-pill-reveal-inner,
+.source-pill:focus-within .source-pill-reveal-inner {
+  transform: translateY(0);
+}
+
+/* Hover outside the element runs faster exits than enters (UI Craft #7). */
+.source-pill:not(:hover):not(:focus-within) .source-pill-reveal {
+  transition-duration: 140ms, 120ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .source-pill-reveal,
+  .source-pill-reveal-inner {
+    transition: opacity 160ms linear !important;
+  }
+  .source-pill-reveal-inner {
+    transform: none !important;
+  }
+}

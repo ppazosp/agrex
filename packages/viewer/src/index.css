@@ -40,17 +40,45 @@ body,
 
 /* ───── Landing ──────────────────────────────────────────────────────── */
 
-/* Accent-tinted dot grid, matches portfolio. */
+/* Accent-tinted dot grid. Static — the motion lives in the blob layer. */
 .viewer-dot-grid {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 1;
   pointer-events: none;
-  background-image: radial-gradient(circle, color-mix(in srgb, var(--color-accent) 12%, transparent) 1px, transparent 1px);
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--color-accent) 10%, transparent) 1px, transparent 1px);
   background-size: 32px 32px;
   mask-image: radial-gradient(ellipse at center, black 40%, transparent 85%);
   -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 85%);
   transition: opacity 260ms ease;
+}
+
+/* Cursor-reactive radial highlight. CSS custom props are set from JS on
+   every mousemove (cheap — no re-render), so React owns the state only
+   logically. On drag-over the highlight swells and brightens. */
+.viewer-hoverlight {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.55;
+  background: radial-gradient(
+    var(--hoverlight-radius, 520px) at var(--hoverlight-x, 50%) var(--hoverlight-y, 50%),
+    color-mix(in srgb, var(--color-accent) 18%, transparent),
+    transparent 70%
+  );
+  transition:
+    opacity 320ms ease,
+    background 320ms ease;
+}
+
+[data-drag='true'] .viewer-hoverlight {
+  opacity: 1;
+  background: radial-gradient(
+    800px at var(--hoverlight-x, 50%) var(--hoverlight-y, 50%),
+    color-mix(in srgb, var(--color-accent) 28%, transparent),
+    transparent 72%
+  );
 }
 
 /* Mono label with a short accent rule in front — the portfolio's signature. */
@@ -233,9 +261,81 @@ body,
   animation: viewerShake 380ms cubic-bezier(0.36, 0.07, 0.19, 0.97);
 }
 
-/* Hide dot grid under reduced-motion users to cut jittery moiré. */
+/* ───── Staggered text enter ───────────────────────────────────────────
+   Entries fade+rise from translateY(14px) for regular text and 22px for
+   the hero (proportional — bigger type needs bigger displacement to read
+   as motion). Single `cubic-bezier(0.23, 1, 0.32, 1)` ease-out curve for
+   responsiveness. Delays assigned inline per element so the stagger
+   matches reading order: header → label → hero line 1 → hero line 2 →
+   subtitle → actions → footer. 80ms between hero lines keeps the two-line
+   reveal sequential but tight. */
+
+@keyframes viewerEnter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes viewerEnterHero {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.viewer-enter {
+  animation: viewerEnter 420ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+/* Deliberately no `will-change` here — when combined with the blob layer's
+   `mix-blend-mode: screen`, the composited sub-layer isolates the blend
+   and the hero ends up on top of flat-coloured rectangles. */
+.viewer-enter-hero {
+  animation: viewerEnterHero 540ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+/* Each word wraps in a block-level inline span so it can translate
+   independently of the rest of the line, then applies the same enter
+   animation with its own delay. Whitespace preserved by the space between
+   the <span>s in the JSX. */
+.viewer-hero-word {
+  display: inline-block;
+  animation: viewerEnterHero 540ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+/* Typography refinements from UI Craft */
+.viewer-hero {
+  text-wrap: balance;
+}
+
+/* Freeze all motion for reduced-motion users. Fade-in is kept (opacity is
+   safe per WCAG) but transform is pinned to zero and durations shorten. */
 @media (prefers-reduced-motion: reduce) {
   .viewer-dot-grid {
     opacity: 0.4 !important;
+  }
+  .viewer-enter,
+  .viewer-enter-hero,
+  .viewer-hero-word {
+    animation-duration: 220ms !important;
+    animation-name: viewerFadeOnly !important;
+  }
+}
+
+@keyframes viewerFadeOnly {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }

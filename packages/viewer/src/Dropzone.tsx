@@ -13,6 +13,7 @@ export default function Dropzone({ onLoad, onLoadDemo }: DropzoneProps) {
   const [error, setError] = useState<string | null>(null)
   const [shaking, setShaking] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
+  const rootRef = useRef<HTMLDivElement>(null)
 
   const flashError = useCallback((msg: string) => {
     setError(msg)
@@ -99,10 +100,26 @@ export default function Dropzone({ onLoad, onLoadDemo }: DropzoneProps) {
     return () => window.removeEventListener('paste', onPaste)
   }, [handleText])
 
+  // Cursor-reactive hover light. Writes CSS custom properties on the root
+  // container instead of lifting cursor into React state — avoids a render
+  // per mousemove while the `radial-gradient(... at var(--x) var(--y))`
+  // paints itself from the live values.
+  useEffect(() => {
+    const el = rootRef.current
+    if (!el) return
+    const onMove = (e: MouseEvent) => {
+      el.style.setProperty('--hoverlight-x', `${e.clientX}px`)
+      el.style.setProperty('--hoverlight-y', `${e.clientY}px`)
+    }
+    window.addEventListener('mousemove', onMove)
+    return () => window.removeEventListener('mousemove', onMove)
+  }, [])
+
   const openPicker = () => fileInput.current?.click()
 
   return (
     <div
+      ref={rootRef}
       data-drag={dragOver}
       className={shaking ? 'viewer-shake' : undefined}
       style={{
@@ -113,10 +130,11 @@ export default function Dropzone({ onLoad, onLoadDemo }: DropzoneProps) {
       }}
     >
       <div className="viewer-dot-grid" aria-hidden />
+      <div className="viewer-hoverlight" aria-hidden />
 
       {/* ── Header ───────────────────────────────────────────────────────── */}
       <header
-        className="viewer-chrome"
+        className="viewer-chrome viewer-enter"
         style={{
           position: 'absolute',
           top: 0,
@@ -127,6 +145,7 @@ export default function Dropzone({ onLoad, onLoadDemo }: DropzoneProps) {
           alignItems: 'center',
           justifyContent: 'space-between',
           zIndex: 3,
+          animationDelay: '40ms',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -153,18 +172,28 @@ export default function Dropzone({ onLoad, onLoadDemo }: DropzoneProps) {
           maxWidth: 1600,
         }}
       >
-        <div className="viewer-label" style={{ marginBottom: '1.4rem' }}>
+        <div className="viewer-label viewer-enter" style={{ marginBottom: '1.4rem', animationDelay: '140ms' }}>
           trace viewer · v0.5.1
         </div>
 
         <h1 className="viewer-hero">
-          <span style={{ display: 'block' }}>drop</span>
+          <span style={{ display: 'block' }}>
+            <span className="viewer-hero-word" style={{ animationDelay: '220ms' }}>
+              drop
+            </span>
+          </span>
           <span style={{ display: 'block' }} className="viewer-hero-accent">
-            a trace.
+            <span className="viewer-hero-word" style={{ animationDelay: '340ms' }}>
+              a
+            </span>{' '}
+            <span className="viewer-hero-word" style={{ animationDelay: '440ms' }}>
+              trace.
+            </span>
           </span>
         </h1>
 
         <p
+          className="viewer-enter"
           style={{
             marginTop: 'clamp(1.4rem, 2.2vw, 2.2rem)',
             marginBottom: 0,
@@ -172,6 +201,8 @@ export default function Dropzone({ onLoad, onLoadDemo }: DropzoneProps) {
             fontSize: 'clamp(15px, 1.2vw, 17px)',
             color: 'var(--color-muted)',
             lineHeight: 1.6,
+            textWrap: 'pretty',
+            animationDelay: '560ms',
           }}
         >
           drop a <code style={{ color: 'var(--color-fg)' }}>.json</code> or{' '}
@@ -180,10 +211,29 @@ export default function Dropzone({ onLoad, onLoadDemo }: DropzoneProps) {
           <button type="button" onClick={openPicker} className="viewer-inline-link">
             pick a file
           </button>
-          . scrub every step of the execution.
+          .
+          <br />
+          scrub every step of the execution —{' '}
+          <a
+            href="https://github.com/ppazosp/agrex/blob/main/docs/trace-format.md"
+            target="_blank"
+            rel="noreferrer"
+            className="viewer-inline-link"
+          >
+            see the trace format ↗
+          </a>
         </p>
 
-        <div style={{ marginTop: '2.4rem', display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div
+          className="viewer-enter"
+          style={{
+            marginTop: '2.4rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 14,
+            animationDelay: '680ms',
+          }}
+        >
           <button type="button" onClick={onLoadDemo} className="viewer-demo-btn">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
               <polygon points="6 3 20 12 6 21 6 3" />
@@ -204,7 +254,7 @@ export default function Dropzone({ onLoad, onLoadDemo }: DropzoneProps) {
 
       {/* ── Footer ───────────────────────────────────────────────────────── */}
       <footer
-        className="viewer-chrome"
+        className="viewer-chrome viewer-enter"
         style={{
           position: 'absolute',
           bottom: 0,
@@ -217,6 +267,7 @@ export default function Dropzone({ onLoad, onLoadDemo }: DropzoneProps) {
           fontSize: 10,
           opacity: 0.65,
           zIndex: 3,
+          animationDelay: '780ms',
         }}
       >
         <span>nothing leaves your browser</span>

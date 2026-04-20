@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0
+
+- **`createTracer()` — canonical way to record traces from your own code.** New factory at `@ppazosp/agrex/trace` (also re-exported from the root) that returns an imperative emitter for building viewer-compatible traces without hand-assembling event objects. Every emit is auto-timestamped via an injectable `clock`, and node helpers (`agent`, `subAgent`, `tool`, `file`, `node`) plus mutation helpers (`update`, `done`, `error`, `remove`) cover the core graph surface. Timeline helpers (`stage`, `marker`) and a raw `edge()` escape hatch round it out.
+- **`span(init, fn)` — async scope helper.** Wraps a sync or async function, emitting `node_add` on entry and a `done` / `error` `node_update` on settle. Returns the wrapped value; rejections re-throw after the error event is recorded (with the error serialized into `metadata.error`). Default node type is `tool`; override via `init.type`.
+- **Streaming mode.** Pass `{ out: WritableStream }` to stream each event as JSONL as it's emitted — good for agents that run for hours. Pair with `{ buffer: false }` to skip the in-memory log and keep memory flat; `close()` ends the stream, `flush()` calls `out.flush?.()` when present. `events()` / `toJSON()` / `toJSONL()` throw on non-buffered tracers so bugs surface loudly.
+- **Auto parent-edge elision.** Passing `{ parent: 'id' }` to any node helper sets `parentId` on the emitted node; the viewer's existing `deriveEdges` still auto-generates the `spawn` edge, so no redundant `edge_add` events are emitted. Same story for `reads` / `writes`.
+- **`onEvent` side channel.** Optional callback invoked on every emit — useful for live feeds (WebSocket, SSE) or dev tooling without touching the primary sink.
+
 ## 0.5.1
 
 - **`<ReplayStatsRow>` lays out as an even grid that spans the full panel.** Switched from a flex `space-between` row with auto-sized cells to `display: grid` with `grid-template-columns: repeat(4, 1fr) 1fr 1.25fr 1.3fr`. The four count columns (nodes / running / done / errors) now share identical width — they read as a mini-table instead of drifting under `space-between` as their digits changed — and the row spreads edge-to-edge across the timeline panel instead of bunching in the middle. `font-variant-numeric: tabular-nums` on the row keeps digit widths stable within each slot.

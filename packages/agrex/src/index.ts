@@ -8,8 +8,19 @@ export { useAgrex } from './hooks/useAgrex'
 
 // Trace utilities — exchange formats between snapshot and event stream.
 // Also available at the `/trace` subpath for tree-shaken consumers.
-export { snapshotToEvents, parseTrace, TraceParseError } from './trace'
-export type { TraceFormat } from './trace'
+export { snapshotToEvents, parseTrace, TraceParseError, createTracer } from './trace'
+export type {
+  TraceFormat,
+  Tracer,
+  TracerOptions,
+  TracerWritable,
+  NodeInit,
+  ToolInit,
+  UpdatePatch,
+  DonePatch,
+  ErrorPatch,
+  SpanInit,
+} from './trace'
 
 // Replay engine (new in 0.2.0) — events-driven time travel over the agrex store.
 export { useAgrexReplay } from './replay/useAgrexReplay'

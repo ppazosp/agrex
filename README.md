@@ -61,7 +61,20 @@ function App() {
 
 Edges are auto-generated from `parentId`, `reads`, and `writes`. No manual edge wiring needed.
 
-See [full documentation](packages/agrex/README.md) for props, theming, framework integrations (Vercel AI SDK, Anthropic SDK, OpenAI SDK, LangChain), layout engines, and more.
+### Record a trace from your agent
+
+```ts
+import { createTracer } from '@ppazosp/agrex/trace'
+
+const trace = createTracer()
+trace.agent('root', 'Researcher')
+const hits = await trace.span({ id: 's1', label: 'search', parent: 'root' }, () => search(q))
+trace.done('root', { output: summary })
+
+writeFileSync('run.jsonl', trace.toJSONL()) // drop on agrex.ppazosp.dev
+```
+
+See [full documentation](packages/agrex/README.md) for props, theming, framework integrations (Vercel AI SDK, Anthropic SDK, OpenAI SDK, LangChain), the tracer API, layout engines, and more.
 
 ## License
 

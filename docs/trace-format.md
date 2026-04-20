@@ -138,6 +138,82 @@ const { events } = ref.current!.toTrace()
 const { nodes, edges } = ref.current!.toJSON()
 ```
 
+## Producing traces from your own code — `createTracer`
+
+`createTracer()` is the canonical way to record a trace from arbitrary JS/TS — an agent loop, a pipeline, a test fixture. It timestamps events for you and emits the same shape the viewer already reads.
+
+```ts
+import { createTracer } from '@ppazosp/agrex/trace'
+
+const trace = createTracer()
+
+trace.agent('root', 'Researcher', { metadata: { input: query } })
+trace.stage('Search phase')
+trace.tool('s1', 'web_search', { parent: 'root', args: { q: query } })
+// … do the work …
+trace.done('s1', { output: hits })
+trace.done('root', { output: summary })
+
+// Drop the result on agrex.ppazosp.dev, or parse in-process:
+const fileContent = trace.toJSONL()
+```
+
+### Async scopes — `span()`
+
+`span()` wraps a function (sync or async) and auto-emits `node_add` on entry plus `done` / `error` on settle. The wrapped return value is returned to you; rejections re-throw after the error event is recorded.
+
+```ts
+const hits = await trace.span({ id: 's1', label: 'web_search', parent: 'root' }, async () => {
+  return await search(query)
+})
+```
+
+Default node type is `tool`. Pass `type: 'sub_agent'` etc. to override.
+
+### Streaming for long runs
+
+For agents that run for hours, pipe events to a file instead of buffering. The viewer reads JSONL directly.
+
+```ts
+import { createWriteStream } from 'node:fs'
+
+const trace = createTracer({
+  out: createWriteStream('run.jsonl'),
+  buffer: false, // skip in-memory retention
+})
+
+// ... emit events during the run ...
+
+trace.close() // flushes and ends the stream
+```
+
+### `flush()` for mid-run snapshots
+
+When the sink buffers writes (e.g. a custom stream with its own queue), `flush()` invokes `out.flush?.()` if present. On plain Node `WriteStream`s it's a no-op — writes already hit the OS buffer synchronously.
+
+### API summary
+
+| Method                                 | Emits                     |
+| -------------------------------------- | ------------------------- |
+| `agent(id, label, init?)`              | `node_add` (`type: agent`)      |
+| `subAgent(id, label, init?)`           | `node_add` (`type: sub_agent`)  |
+| `tool(id, label, init?)`               | `node_add` (`type: tool`). `init.args` folds into `metadata.args`. |
+| `file(id, label, init?)`               | `node_add` (`type: file`)       |
+| `node(partial)`                        | `node_add` — escape hatch       |
+| `update(id, patch)`                    | `node_update`                   |
+| `done(id, patch?)`                     | `node_update` (`status: done`). `patch.output` folds into `metadata.output`. |
+| `error(id, patch?)`                    | `node_update` (`status: error`). `Error` instances are serialized. |
+| `remove(id)`                           | `node_remove`                   |
+| `edge(edge)`                           | `edge_add`                      |
+| `stage(label, opts?)`                  | `stage`                         |
+| `marker(kind, opts?)`                  | `marker`                        |
+| `clear()`                              | `clear`                         |
+| `span(init, fn)`                       | `node_add` + `done`/`error`     |
+
+All `init` objects accept `parent`, `reads`, `writes`, `metadata`, and `status`. The viewer auto-renders a spawn edge when `parent` is set — no need to emit one explicitly.
+
+Output: `events()` / `toJSON()` / `toJSONL()` return buffered events (throw when `buffer: false`).
+
 ## Limits
 
 The hosted viewer caps pasted/dropped input at **25 MB**. Above that the `parseTrace()` loader aborts before allocating. Clone the viewer and raise the `MAX_BYTES` constant if you need more.

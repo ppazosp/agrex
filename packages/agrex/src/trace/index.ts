@@ -1,6 +1,19 @@
 import type { AgrexEdge, AgrexNode } from '../types'
 import type { AgrexEvent } from '../replay/types'
 
+export { createTracer } from './tracer'
+export type {
+  Tracer,
+  TracerOptions,
+  TracerWritable,
+  NodeInit,
+  ToolInit,
+  UpdatePatch,
+  DonePatch,
+  ErrorPatch,
+  SpanInit,
+} from './tracer'
+
 /**
  * Pure utilities for moving between snapshots, traces, and event streams.
  *

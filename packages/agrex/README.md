@@ -394,6 +394,47 @@ const data = ref.current?.toJSON()
 agrex.loadJSON(data)
 ```
 
+## Recording traces from your agent
+
+Instrument your agent code with `createTracer()` to produce a file the [hosted viewer](https://agrex.ppazosp.dev) (or a local `<Agrex replay>`) can play back. Events are timestamped for you.
+
+```ts
+import { createTracer } from '@ppazosp/agrex/trace'
+import { writeFileSync } from 'node:fs'
+
+const trace = createTracer()
+
+trace.agent('root', 'Researcher', { metadata: { input: query } })
+trace.stage('Search phase')
+
+const hits = await trace.span({ id: 's1', label: 'web_search', parent: 'root' }, () => search(query))
+
+trace.done('root', { output: summary })
+
+writeFileSync('run.jsonl', trace.toJSONL())
+```
+
+Drop `run.jsonl` on [agrex.ppazosp.dev](https://agrex.ppazosp.dev) to scrub through the run.
+
+### Streaming for long runs
+
+Pipe events to a file instead of buffering — good for agents that run for hours.
+
+```ts
+import { createWriteStream } from 'node:fs'
+
+const trace = createTracer({
+  out: createWriteStream('run.jsonl'),
+  buffer: false,
+})
+
+// … emit events as the agent runs …
+
+trace.close()
+```
+
+See [`docs/trace-format.md`](https://github.com/ppazosp/agrex/blob/main/docs/trace-format.md) for the full tracer API and event reference.
+
 ## Keyboard shortcuts
 
 | Key       | Action      |

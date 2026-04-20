@@ -139,11 +139,13 @@ export default function App() {
 
   const loadEvents = useCallback(
     async (events: AgrexEvent[], label: string) => {
-      // Rewind to 0 so the viewer opens on an empty canvas ready to play,
-      // not on the final state. `seek(0)` clamps to 0 regardless of the
-      // events-ref length, so it's safe to call immediately after `load`.
+      // Rewind to 0 and autoplay: the viewer is meant to *replay* — users
+      // expect to watch the trace unfold from the start, not click play
+      // themselves. `seek(0)` clamps to 0 regardless of the events-ref
+      // length, so it's safe to call immediately after `load`.
       await replay.load(events)
       replay.seek(0)
+      replay.play()
       setSourceLabel(label)
       // Push a history entry so the browser back button returns to the
       // landing instead of leaving the site. Only push if we're not

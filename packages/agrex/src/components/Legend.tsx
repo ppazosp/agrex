@@ -135,9 +135,13 @@ export default function Legend({ toolIcons, fileIcons, forceCollapsed = false }:
       >
         <div
           style={{
-            padding: compact ? '8px 12px' : '12px 16px',
+            padding: '10px 14px',
             borderBottom: '1px solid var(--agrex-node-border)',
             flexShrink: 0,
+            minHeight: 50,
+            boxSizing: 'border-box',
+            display: 'flex',
+            alignItems: 'center',
           }}
         >
           <span style={{ fontSize: compact ? 11 : 13, fontWeight: 600, color: 'var(--agrex-fg)' }}>Legend</span>

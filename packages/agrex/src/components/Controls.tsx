@@ -41,8 +41,8 @@ export default function Controls({ onZoomIn, onZoomOut, autoFit, onToggleAutoFit
           border: '1px solid var(--agrex-node-border)',
           display: 'flex',
           alignItems: 'center',
-          gap: 4,
-          padding: '6px 8px',
+          gap: 2,
+          padding: '2px 4px',
         }}
       >
         <button
@@ -117,7 +117,7 @@ export default function Controls({ onZoomIn, onZoomOut, autoFit, onToggleAutoFit
         onClick={() => setCollapsed((v) => !v)}
         style={{
           position: 'absolute',
-          top: collapsed ? 0 : 62,
+          top: collapsed ? 0 : 54,
           left: '50%',
           transform: 'translateX(-50%)',
           transition: 'top 250ms cubic-bezier(0.23, 1, 0.32, 1)',

@@ -1,5 +1,17 @@
 :root {
   color-scheme: dark;
+  --color-bg: #050505;
+  --color-fg: #f0f0f0;
+  --color-muted: #888888;
+  --color-border: #1c1c1c;
+  --color-surface: #0c0c0c;
+  /* Agrex brand green — the stroke colour on the logo circle. */
+  --color-accent: #22c55e;
+  --color-accent-dim: #16a34a;
+
+  --font-display: 'Syne', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
 }
 
 * {
@@ -13,14 +25,193 @@ body,
   padding: 0;
   height: 100%;
   overflow: hidden;
-  background: #0a0a0a;
-  color: #f5f5f5;
-  font-family:
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    sans-serif;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.55;
+}
+
+::selection {
+  background-color: color-mix(in srgb, var(--color-accent) 30%, transparent);
+  color: var(--color-fg);
+}
+
+/* ───── Landing ──────────────────────────────────────────────────────── */
+
+/* Accent-tinted dot grid, matches portfolio. */
+.viewer-dot-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--color-accent) 12%, transparent) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(ellipse at center, black 40%, transparent 85%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 85%);
+  transition: opacity 260ms ease;
+}
+
+/* Mono label with a short accent rule in front — the portfolio's signature. */
+.viewer-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.viewer-label::before {
+  content: '';
+  width: 28px;
+  height: 1px;
+  background: var(--color-accent);
+  flex-shrink: 0;
+}
+
+.viewer-hero {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.85;
+  font-size: clamp(3.4rem, 12.5vw, 10.5rem);
+  margin: 0;
+}
+
+.viewer-hero-accent {
+  color: var(--color-accent);
+}
+
+.viewer-kbd {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 4px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  color: var(--color-fg);
+  line-height: 1.3;
+  margin: 0 2px;
+  vertical-align: 1px;
+}
+
+.viewer-inline-link {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
+  transition: text-decoration-color 160ms;
+}
+
+.viewer-inline-link:hover {
+  text-decoration-color: currentColor;
+}
+
+/* Matches agrex's Controls/Timeline button flavour: rounded-8, blurred
+   translucent surface, subtle border, no caps, body font, green-tint wash
+   on hover (same `color-mix` at 12% the timeline uses for active states). */
+.viewer-demo-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.9rem;
+  background: color-mix(in srgb, var(--color-surface) 80%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+  transition:
+    border-color 180ms,
+    background-color 180ms,
+    color 180ms,
+    box-shadow 220ms;
+}
+
+.viewer-demo-btn:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 60%, var(--color-border));
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-surface));
+  color: var(--color-fg);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--color-accent) 18%, transparent);
+}
+
+.viewer-demo-btn svg {
+  color: var(--color-accent);
+  transition: transform 180ms;
+}
+
+.viewer-demo-btn:hover svg {
+  transform: translateX(2px);
+}
+
+/* Active drag state: outer ring + dot-grid boost */
+.viewer-drag-ring {
+  position: absolute;
+  inset: 14px;
+  z-index: 4;
+  border: 1px solid transparent;
+  pointer-events: none;
+  transition:
+    border-color 180ms,
+    box-shadow 180ms;
+}
+
+[data-drag='true'] .viewer-drag-ring {
+  border-color: var(--color-accent);
+  box-shadow: inset 0 0 200px color-mix(in srgb, var(--color-accent) 12%, transparent);
+}
+
+[data-drag='true'] .viewer-dot-grid {
+  opacity: 1.6;
+}
+
+/* Header + footer micro-chrome */
+.viewer-chrome {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.viewer-chrome a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 160ms;
+}
+
+.viewer-chrome a:hover {
+  color: var(--color-fg);
+}
+
+/* Error toast */
+.viewer-error {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: #ff7171;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid color-mix(in srgb, #ff7171 35%, transparent);
+  background: color-mix(in srgb, #ff7171 6%, transparent);
+  max-width: 560px;
 }
 
 @keyframes viewerShake {
@@ -42,11 +233,9 @@ body,
   animation: viewerShake 380ms cubic-bezier(0.36, 0.07, 0.19, 0.97);
 }
 
-@keyframes viewerFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
+/* Hide dot grid under reduced-motion users to cut jittery moiré. */
+@media (prefers-reduced-motion: reduce) {
+  .viewer-dot-grid {
+    opacity: 0.4 !important;
   }
 }

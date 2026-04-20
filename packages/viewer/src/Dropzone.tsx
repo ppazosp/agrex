@@ -23,23 +23,20 @@ export default function Dropzone({ onLoad, onLoadDemo }: DropzoneProps) {
   const handleText = useCallback(
     (text: string, sourceLabel: string) => {
       if (text.length > MAX_BYTES) {
-        flashError(`File is ${(text.length / 1024 / 1024).toFixed(1)} MB — limit is 25 MB.`)
+        flashError(`${(text.length / 1024 / 1024).toFixed(1)} MB — limit is 25 MB.`)
         return
       }
       try {
         const events = parseTrace(text)
         if (events.length === 0) {
-          flashError('Parsed successfully but the trace is empty.')
+          flashError('Parsed, but the trace is empty.')
           return
         }
         setError(null)
         onLoad(events, sourceLabel)
       } catch (e) {
-        if (e instanceof TraceParseError) {
-          flashError(e.message)
-        } else {
-          flashError((e as Error).message)
-        }
+        if (e instanceof TraceParseError) flashError(e.message)
+        else flashError((e as Error).message)
       }
     },
     [flashError, onLoad],
@@ -48,14 +45,48 @@ export default function Dropzone({ onLoad, onLoadDemo }: DropzoneProps) {
   const handleFile = useCallback(
     async (file: File) => {
       if (file.size > MAX_BYTES) {
-        flashError(`File is ${(file.size / 1024 / 1024).toFixed(1)} MB — limit is 25 MB.`)
+        flashError(`${(file.size / 1024 / 1024).toFixed(1)} MB — limit is 25 MB.`)
         return
       }
-      const text = await file.text()
-      handleText(text, file.name)
+      handleText(await file.text(), file.name)
     },
     [flashError, handleText],
   )
+
+  // Drag anywhere on the viewport. Counter avoids flicker when the cursor
+  // crosses child elements (each fires its own dragleave).
+  useEffect(() => {
+    let counter = 0
+    const onDragEnter = (e: DragEvent) => {
+      if (!e.dataTransfer?.types.includes('Files')) return
+      counter += 1
+      setDragOver(true)
+    }
+    const onDragLeave = () => {
+      counter = Math.max(0, counter - 1)
+      if (counter === 0) setDragOver(false)
+    }
+    const onDragOver = (e: DragEvent) => {
+      if (e.dataTransfer?.types.includes('Files')) e.preventDefault()
+    }
+    const onDrop = (e: DragEvent) => {
+      e.preventDefault()
+      counter = 0
+      setDragOver(false)
+      const file = e.dataTransfer?.files[0]
+      if (file) handleFile(file)
+    }
+    window.addEventListener('dragenter', onDragEnter)
+    window.addEventListener('dragleave', onDragLeave)
+    window.addEventListener('dragover', onDragOver)
+    window.addEventListener('drop', onDrop)
+    return () => {
+      window.removeEventListener('dragenter', onDragEnter)
+      window.removeEventListener('dragleave', onDragLeave)
+      window.removeEventListener('dragover', onDragOver)
+      window.removeEventListener('drop', onDrop)
+    }
+  }, [handleFile])
 
   useEffect(() => {
     const onPaste = (e: ClipboardEvent) => {
@@ -68,125 +99,145 @@ export default function Dropzone({ onLoad, onLoadDemo }: DropzoneProps) {
     return () => window.removeEventListener('paste', onPaste)
   }, [handleText])
 
+  const openPicker = () => fileInput.current?.click()
+
   return (
     <div
+      data-drag={dragOver}
+      className={shaking ? 'viewer-shake' : undefined}
       style={{
         position: 'fixed',
         inset: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 24,
+        overflow: 'hidden',
+        cursor: dragOver ? 'copy' : 'default',
       }}
     >
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={() => fileInput.current?.click()}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') fileInput.current?.click()
-        }}
-        onDragOver={(e) => {
-          e.preventDefault()
-          setDragOver(true)
-        }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => {
-          e.preventDefault()
-          setDragOver(false)
-          const file = e.dataTransfer.files[0]
-          if (file) handleFile(file)
-        }}
-        className={shaking ? 'viewer-shake' : undefined}
-        style={{
-          width: 'min(720px, 100%)',
-          height: 360,
-          border: `2px dashed ${dragOver ? '#7c8cff' : '#333'}`,
-          borderRadius: 14,
-          background: dragOver ? 'rgba(124,140,255,0.06)' : 'rgba(255,255,255,0.02)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 14,
-          cursor: 'pointer',
-          transition: 'border-color 160ms, background 160ms',
-          outline: 'none',
-        }}
-      >
-        <div style={{ fontSize: 26, fontWeight: 600, letterSpacing: -0.4 }}>Drop a trace</div>
-        <div style={{ fontSize: 14, opacity: 0.65, textAlign: 'center', maxWidth: 480, lineHeight: 1.45 }}>
-          Drag and drop a <code style={{ opacity: 0.9 }}>.json</code> or <code style={{ opacity: 0.9 }}>.jsonl</code>{' '}
-          file, click to pick one, or paste a trace anywhere on this page.
-        </div>
-        <div style={{ fontSize: 12, opacity: 0.4 }}>
-          accepts <code>{'{events}'}</code>, <code>{'{nodes, edges}'}</code>, or newline-delimited events · 25 MB max
-        </div>
-        <input
-          ref={fileInput}
-          type="file"
-          accept=".json,.jsonl,application/json,application/x-ndjson"
-          style={{ display: 'none' }}
-          onChange={(e) => {
-            const file = e.target.files?.[0]
-            if (file) handleFile(file)
-            e.target.value = ''
-          }}
-        />
-      </div>
+      <div className="viewer-dot-grid" aria-hidden />
 
-      {error ? (
-        <div
-          style={{
-            marginTop: 14,
-            color: '#ff8a8a',
-            fontSize: 13,
-            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-            maxWidth: 720,
-            textAlign: 'center',
-          }}
-        >
-          {error}
-        </div>
-      ) : (
-        <div style={{ marginTop: 14, fontSize: 13, opacity: 0.5 }}>
-          no trace handy?{' '}
-          <button
-            type="button"
-            onClick={onLoadDemo}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#9fb0ff',
-              cursor: 'pointer',
-              fontSize: 13,
-              padding: 0,
-              textDecoration: 'underline',
-            }}
-          >
-            try the demo
-          </button>
-        </div>
-      )}
-
-      <div
+      {/* ── Header ───────────────────────────────────────────────────────── */}
+      <header
+        className="viewer-chrome"
         style={{
-          position: 'fixed',
-          bottom: 16,
+          position: 'absolute',
+          top: 0,
           left: 0,
           right: 0,
-          textAlign: 'center',
-          fontSize: 11,
-          opacity: 0.35,
-          letterSpacing: 0.2,
+          padding: '24px 32px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          zIndex: 3,
         }}
       >
-        agrex viewer — nothing leaves your browser ·{' '}
-        <a href="https://github.com/ppazosp/agrex" style={{ color: 'inherit' }} target="_blank" rel="noreferrer">
-          github
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <img src="/favicon.svg" alt="" aria-hidden style={{ width: 24, height: 24, borderRadius: 5 }} />
+          <span style={{ color: 'var(--color-fg)' }}>agrex</span>
+          <span style={{ opacity: 0.4 }}>/</span>
+          <span>viewer</span>
+        </div>
+        <a href="https://github.com/ppazosp/agrex" target="_blank" rel="noreferrer">
+          github ↗
         </a>
-      </div>
+      </header>
+
+      {/* ── Hero ─────────────────────────────────────────────────────────── */}
+      <main
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          padding: '0 clamp(24px, 8vw, 120px)',
+          zIndex: 2,
+          maxWidth: 1600,
+        }}
+      >
+        <div className="viewer-label" style={{ marginBottom: '1.4rem' }}>
+          trace viewer · v0.5.1
+        </div>
+
+        <h1 className="viewer-hero">
+          <span style={{ display: 'block' }}>drop</span>
+          <span style={{ display: 'block' }} className="viewer-hero-accent">
+            a trace.
+          </span>
+        </h1>
+
+        <p
+          style={{
+            marginTop: 'clamp(1.4rem, 2.2vw, 2.2rem)',
+            marginBottom: 0,
+            maxWidth: 620,
+            fontSize: 'clamp(15px, 1.2vw, 17px)',
+            color: 'var(--color-muted)',
+            lineHeight: 1.6,
+          }}
+        >
+          drop a <code style={{ color: 'var(--color-fg)' }}>.json</code> or{' '}
+          <code style={{ color: 'var(--color-fg)' }}>.jsonl</code> file anywhere, paste with{' '}
+          <kbd className="viewer-kbd">⌘V</kbd>, or{' '}
+          <button type="button" onClick={openPicker} className="viewer-inline-link">
+            pick a file
+          </button>
+          . scrub every step of the execution.
+        </p>
+
+        <div style={{ marginTop: '2.4rem', display: 'flex', alignItems: 'center', gap: 14 }}>
+          <button type="button" onClick={onLoadDemo} className="viewer-demo-btn">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <polygon points="6 3 20 12 6 21 6 3" />
+            </svg>
+            play the demo
+          </button>
+          <span className="viewer-chrome" style={{ fontSize: 10, opacity: 0.55 }}>
+            ← or drop your own
+          </span>
+        </div>
+
+        {error && (
+          <div role="alert" className="viewer-error viewer-shake" style={{ marginTop: '1.6rem' }}>
+            {error}
+          </div>
+        )}
+      </main>
+
+      {/* ── Footer ───────────────────────────────────────────────────────── */}
+      <footer
+        className="viewer-chrome"
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          padding: '20px 32px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          fontSize: 10,
+          opacity: 0.65,
+          zIndex: 3,
+        }}
+      >
+        <span>nothing leaves your browser</span>
+        <span>
+          accepts {'{events}'} · {'{nodes, edges}'} · jsonl · 25 mb max
+        </span>
+      </footer>
+
+      <div className="viewer-drag-ring" aria-hidden />
+
+      <input
+        ref={fileInput}
+        type="file"
+        accept=".json,.jsonl,application/json,application/x-ndjson"
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          if (file) handleFile(file)
+          e.target.value = ''
+        }}
+      />
     </div>
   )
 }

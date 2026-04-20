@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.3
+
+- **`<AgrexTimeline>` chrome polish.** Play button now renders flat like the other transport buttons instead of an inverted accent pill. Stage chapter segments are stitched (no gap) with pill-rounded outer edges only — the track reads as a single chapter bar rather than a row of separate pills. Speed selector and elapsed-time display drop the hard-coded mono font in favor of `var(--agrex-font)` so they inherit the consumer's typography.
+
 ## 0.3.2
 
 - **`<AgrexTimeline>` renders correctly as a sibling of `<Agrex>`.** The `--agrex-*` CSS variables are scoped to the Agrex root's subtree, so mounting the timeline outside that subtree (the standalone-export usage the 0.2.0 changelog explicitly advertised) lost its background, border, and colors. Two fixes: every `var()` now carries a dark-theme fallback, so a standalone timeline looks right out of the box; and a new `theme?: Theme` prop lets consumers apply an explicit theme (same shape as `<Agrex>`'s theme), which sets the CSS vars on the timeline's own root.

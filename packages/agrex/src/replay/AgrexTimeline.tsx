@@ -165,13 +165,6 @@ const buttonStyle: CSSProperties = {
   padding: 0,
 }
 
-const primaryButtonStyle: CSSProperties = {
-  ...buttonStyle,
-  background: 'var(--agrex-fg, #fff)',
-  color: 'var(--agrex-bg, #0a0a0a)',
-  opacity: 1,
-}
-
 interface StageSegment {
   cursor: number
   end: number
@@ -287,10 +280,13 @@ export default function AgrexTimeline({
     <>
       <div style={containerStyle(placement, safeInsets, collapsed, themeVars)} className={className}>
         {stageSegments.length > 0 && (
-          <div style={{ display: 'flex', gap: 2, marginBottom: 8, height: 14 }}>
+          <div style={{ display: 'flex', gap: 0, marginBottom: 8, height: 14 }}>
             {stageSegments.map((seg, i) => {
               const widthPct = total > 0 ? ((seg.end - seg.cursor) / total) * 100 : 0
               const isActive = i === activeStage
+              const isFirst = i === 0
+              const isLast = i === stageSegments.length - 1
+              const r = 999
               return (
                 <button
                   key={`seg-${i}`}
@@ -306,7 +302,10 @@ export default function AgrexTimeline({
                       ? (seg.color ?? 'color-mix(in srgb, var(--agrex-fg) 25%, transparent)')
                       : 'color-mix(in srgb, var(--agrex-fg) 8%, transparent)',
                     border: 'none',
-                    borderRadius: 3,
+                    borderTopLeftRadius: isFirst ? r : 0,
+                    borderBottomLeftRadius: isFirst ? r : 0,
+                    borderTopRightRadius: isLast ? r : 0,
+                    borderBottomRightRadius: isLast ? r : 0,
                     color: 'var(--agrex-fg)',
                     opacity: isActive ? 1 : 0.55,
                     fontSize: 9,
@@ -347,7 +346,7 @@ export default function AgrexTimeline({
           </button>
           <button
             type="button"
-            style={primaryButtonStyle}
+            style={buttonStyle}
             onClick={playing ? pause : play}
             aria-label={playing ? 'Pause' : 'Play'}
           >
@@ -462,7 +461,7 @@ export default function AgrexTimeline({
                     cursor: 'pointer',
                     background: speed === s ? 'var(--agrex-node-border)' : 'transparent',
                     color: speed === s ? 'var(--agrex-fg)' : 'color-mix(in srgb, var(--agrex-fg) 60%, transparent)',
-                    fontFamily: 'var(--agrex-font-mono)',
+                    fontFamily: 'var(--agrex-font, inherit)',
                   }}
                 >
                   {s}×
@@ -474,7 +473,7 @@ export default function AgrexTimeline({
           <span
             style={{
               fontSize: 11,
-              fontFamily: 'var(--agrex-font-mono)',
+              fontFamily: 'var(--agrex-font, inherit)',
               color: 'color-mix(in srgb, var(--agrex-fg) 60%, transparent)',
               whiteSpace: 'nowrap',
             }}

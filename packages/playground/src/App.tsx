@@ -1,48 +1,90 @@
-import { useState, useCallback, useRef } from 'react'
-import { Agrex, useAgrex, type AgrexHandle, type Theme } from '@ppazosp/agrex'
-import { createMockPipeline, replay, createMockNode, type ReplayController } from '@ppazosp/agrex/mocks'
+import { useCallback, useMemo, useRef, useState } from 'react'
+import { Agrex, useAgrexReplay, type AgrexEvent, type AgrexMarker, type AgrexHandle, type Theme } from '@ppazosp/agrex'
+import { createMockPipeline, createMockNode } from '@ppazosp/agrex/mocks'
 import '@ppazosp/agrex/styles.css'
 
 type ScenarioName = 'research-agent' | 'multi-agent' | 'deep-chain'
 
+const STAGE_KIND = 'stage'
+
+function scenarioToEvents(name: ScenarioName): AgrexEvent[] {
+  const { nodes, edges } = createMockPipeline(name)
+  const events: AgrexEvent[] = []
+  let ts = Date.now()
+
+  events.push({ type: STAGE_KIND, ts, label: 'Spawn' })
+  for (const edge of edges) {
+    events.push({ type: 'edge_add', ts, edge })
+    ts += 10
+  }
+  for (const n of nodes) {
+    ts += 150
+    events.push({ type: 'node_add', ts, node: { ...n, status: 'running' } })
+  }
+
+  events.push({ type: STAGE_KIND, ts, label: 'Resolve' })
+  for (const n of nodes) {
+    ts += 200
+    events.push({
+      type: 'node_update',
+      ts,
+      id: n.id,
+      status: 'done',
+      metadata: { ...(n.metadata ?? {}), endedAt: ts },
+    })
+  }
+  return events
+}
+
+const extractMarkers = (events: AgrexEvent[]): AgrexMarker[] => {
+  const out: AgrexMarker[] = []
+  events.forEach((e, i) => {
+    if (e.type === STAGE_KIND) {
+      out.push({ cursor: i, kind: STAGE_KIND, label: (e.label as string | undefined) ?? e.type })
+    }
+  })
+  return out
+}
+
 export default function App() {
-  const agrex = useAgrex()
+  const replay = useAgrexReplay({ markerExtractor: extractMarkers })
   const ref = useRef<AgrexHandle>(null)
+
   const [theme, setTheme] = useState<Theme>('dark')
   const [showControls, setShowControls] = useState(true)
   const [showLegend, setShowLegend] = useState(true)
   const [showToasts, setShowToasts] = useState(true)
   const [showDetailPanel, setShowDetailPanel] = useState(true)
-
   const [showStats, setShowStats] = useState(false)
   const [animateEdges, setAnimateEdges] = useState(true)
-  const [controller, setController] = useState<ReplayController | null>(null)
+  const [showTimeline, setShowTimeline] = useState(true)
 
   const loadScenario = useCallback(
     (name: ScenarioName) => {
-      controller?.cancel()
-      const scenario = createMockPipeline(name)
-      const ctrl = replay(agrex, scenario, { speed: 1 })
-      setController(ctrl)
+      replay.load(scenarioToEvents(name))
     },
-    [agrex, controller],
+    [replay],
   )
 
-  const loadStatic = useCallback(
-    (name: ScenarioName) => {
-      controller?.cancel()
-      agrex.clear()
-      const { nodes, edges } = createMockPipeline(name)
-      agrex.addNodes(nodes)
-      agrex.addEdges(edges)
+  const staticLoad = useCallback(
+    async (name: ScenarioName) => {
+      const events = scenarioToEvents(name)
+      await replay.load(events)
+      replay.seek(events.length)
     },
-    [agrex, controller],
+    [replay],
   )
+
+  const ensureLive = useCallback(() => {
+    if (replay.mode === 'idle' || replay.mode === 'replay') replay.setMode('live')
+  }, [replay])
 
   const addRandomNode = useCallback(() => {
+    ensureLive()
     const types = ['agent', 'tool', 'file', 'sub_agent']
     const type = types[Math.floor(Math.random() * types.length)]
-    const parentNode = agrex.nodes.length > 0 ? agrex.nodes[Math.floor(Math.random() * agrex.nodes.length)] : null
+    const existingNodes = replay.instance.nodes
+    const parentNode = existingNodes.length > 0 ? existingNodes[Math.floor(Math.random() * existingNodes.length)] : null
 
     const node = createMockNode({
       type,
@@ -51,24 +93,28 @@ export default function App() {
       status: 'running',
       metadata: { startedAt: Date.now() },
     })
-    agrex.addNode(node)
+    const addedAt = Date.now()
+    replay.appendLive({ type: 'node_add', ts: addedAt, node })
 
-    setTimeout(
-      () =>
-        agrex.updateNode(node.id, {
-          status: 'done',
-          metadata: {
-            startedAt: node.metadata!.startedAt,
-            endedAt: Date.now(),
-            tokens: Math.floor(Math.random() * 5000),
-          },
-        }),
-      1500,
-    )
-  }, [agrex])
+    setTimeout(() => {
+      replay.appendLive({
+        type: 'node_update',
+        ts: Date.now(),
+        id: node.id,
+        status: 'done',
+        metadata: {
+          startedAt: node.metadata!.startedAt,
+          endedAt: Date.now(),
+          tokens: Math.floor(Math.random() * 5000),
+        },
+      })
+    }, 1500)
+  }, [ensureLive, replay])
 
   const addErrorNode = useCallback(() => {
-    const parentNode = agrex.nodes.length > 0 ? agrex.nodes[Math.floor(Math.random() * agrex.nodes.length)] : null
+    ensureLive()
+    const existingNodes = replay.instance.nodes
+    const parentNode = existingNodes.length > 0 ? existingNodes[Math.floor(Math.random() * existingNodes.length)] : null
 
     const node = createMockNode({
       type: 'tool',
@@ -77,8 +123,10 @@ export default function App() {
       status: 'error',
       metadata: { error: 'Connection timeout after 30s' },
     })
-    agrex.addNode(node)
-  }, [agrex])
+    replay.appendLive({ type: 'node_add', ts: Date.now(), node })
+  }, [ensureLive, replay])
+
+  const timelineProps = useMemo(() => ({ jumpMarkerKind: STAGE_KIND, showCollapseTab: true }), [])
 
   const btnStyle: React.CSSProperties = {
     padding: '6px 12px',
@@ -124,7 +172,7 @@ export default function App() {
 
         <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.1)', margin: '0 4px' }} />
 
-        <button style={btnStyle} onClick={() => loadStatic('multi-agent')}>
+        <button style={btnStyle} onClick={() => staticLoad('multi-agent')}>
           Static Load
         </button>
         <button style={btnStyle} onClick={addRandomNode}>
@@ -133,13 +181,7 @@ export default function App() {
         <button style={{ ...btnStyle, borderColor: 'rgba(239,68,68,0.3)' }} onClick={addErrorNode}>
           + Error
         </button>
-        <button
-          style={{ ...btnStyle, borderColor: 'rgba(239,68,68,0.3)' }}
-          onClick={() => {
-            controller?.cancel()
-            agrex.clear()
-          }}
-        >
+        <button style={{ ...btnStyle, borderColor: 'rgba(239,68,68,0.3)' }} onClick={() => replay.reset()}>
           Clear
         </button>
 
@@ -169,12 +211,14 @@ export default function App() {
         <button style={toggleStyle(showDetailPanel)} onClick={() => setShowDetailPanel((v) => !v)}>
           Detail
         </button>
-
         <button style={toggleStyle(showStats)} onClick={() => setShowStats((v) => !v)}>
           Stats
         </button>
         <button style={toggleStyle(animateEdges)} onClick={() => setAnimateEdges((v) => !v)}>
           Animate
+        </button>
+        <button style={toggleStyle(showTimeline)} onClick={() => setShowTimeline((v) => !v)}>
+          Timeline
         </button>
 
         <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.1)', margin: '0 4px' }} />
@@ -187,10 +231,10 @@ export default function App() {
         </button>
       </div>
 
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1, position: 'relative' }}>
         <Agrex
           ref={ref}
-          instance={agrex}
+          replay={replay}
           theme={theme}
           showControls={showControls}
           showLegend={showLegend}
@@ -198,6 +242,8 @@ export default function App() {
           showDetailPanel={showDetailPanel}
           showStats={showStats}
           animateEdges={animateEdges}
+          showTimeline={showTimeline}
+          timelineProps={timelineProps}
         />
       </div>
     </div>

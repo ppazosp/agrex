@@ -131,8 +131,11 @@ export default function App() {
 
   const loadEvents = useCallback(
     async (events: AgrexEvent[], label: string) => {
+      // `replay.load` already sets cursor to `events.length` — an extra
+      // `replay.seek(events.length)` here races against the events ref
+      // (clamp reads the stale length on the first drop) and resets cursor
+      // to 0. Trust `load`.
       await replay.load(events)
-      replay.seek(events.length) // land at the end, let the user scrub back
       setSourceLabel(label)
       // Push a history entry so the browser back button returns to the
       // landing instead of leaving the site. Only push if we're not

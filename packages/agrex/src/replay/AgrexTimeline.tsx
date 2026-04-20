@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { resolveTheme, themeToCSS } from '../theme/tokens'
 import type { AgrexMarker, AgrexTimelineProps, TimelineInsets, TimelinePlacement } from './types'
 
-const PANEL_WIDTH = 820
-const PANEL_HEIGHT = 72
+const PANEL_WIDTH = 640
+const PANEL_HEIGHT = 50
 const DEFAULT_PERSIST_KEY = 'agrex.timeline.collapsed'
 
 // Inline SVGs (lucide geometry, MIT). Keeps the dep footprint at zero icons.
@@ -132,7 +132,7 @@ function tabStyle(
     position: 'absolute',
     left: '50%',
     transform: 'translateX(-50%)',
-    [vertical]: collapsed ? anchorInset : anchorInset + PANEL_HEIGHT,
+    [vertical]: collapsed ? 0 : anchorInset + PANEL_HEIGHT,
     width: 40,
     height: 20,
     borderRadius: placement === 'top' ? '0 0 6px 6px' : '6px 6px 0 0',
@@ -279,125 +279,153 @@ export default function AgrexTimeline({
   return (
     <>
       <div style={containerStyle(placement, safeInsets, collapsed, themeVars)} className={className}>
-        {stageSegments.length > 0 && (
-          <div style={{ display: 'flex', gap: 0, marginBottom: 8, height: 14 }}>
-            {stageSegments.map((seg, i) => {
-              const widthPct = total > 0 ? ((seg.end - seg.cursor) / total) * 100 : 0
-              const isActive = i === activeStage
-              const isFirst = i === 0
-              const isLast = i === stageSegments.length - 1
-              const r = 999
-              return (
-                <button
-                  key={`seg-${i}`}
-                  type="button"
-                  onClick={() => seek(seg.cursor)}
-                  title={seg.label}
-                  style={{
-                    flex: `${widthPct} 1 0`,
-                    minWidth: 0,
-                    height: '100%',
-                    padding: '0 8px',
-                    background: isActive
-                      ? (seg.color ?? 'color-mix(in srgb, var(--agrex-fg) 25%, transparent)')
-                      : 'color-mix(in srgb, var(--agrex-fg) 8%, transparent)',
-                    border: 'none',
-                    borderTopLeftRadius: isFirst ? r : 0,
-                    borderBottomLeftRadius: isFirst ? r : 0,
-                    borderTopRightRadius: isLast ? r : 0,
-                    borderBottomRightRadius: isLast ? r : 0,
-                    color: 'var(--agrex-fg)',
-                    opacity: isActive ? 1 : 0.55,
-                    fontSize: 9,
-                    letterSpacing: 1,
-                    textTransform: 'uppercase',
-                    fontFamily: 'var(--agrex-font)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    overflow: 'hidden',
-                    whiteSpace: 'nowrap',
-                    textOverflow: 'ellipsis',
-                    transition: 'opacity 150ms, background 150ms',
-                  }}
-                >
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{seg.label}</span>
-                </button>
-              )
-            })}
-          </div>
-        )}
-
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {showMarkerJump && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {showMarkerJump && (
+              <button
+                type="button"
+                style={buttonStyle}
+                onClick={() => prevMarker(jumpMarkerKind)}
+                aria-label="Previous marker"
+                title="Previous marker"
+              >
+                <Icon.SkipBack />
+              </button>
+            )}
+            <button type="button" style={buttonStyle} onClick={stepBack} aria-label="Step back" title="Step back">
+              <Icon.StepBack />
+            </button>
             <button
               type="button"
               style={buttonStyle}
-              onClick={() => prevMarker(jumpMarkerKind)}
-              aria-label="Previous marker"
-              title="Previous marker"
+              onClick={playing ? pause : play}
+              aria-label={playing ? 'Pause' : 'Play'}
             >
-              <Icon.SkipBack />
+              {playing ? <Icon.Pause /> : <Icon.Play />}
             </button>
-          )}
-          <button type="button" style={buttonStyle} onClick={stepBack} aria-label="Step back" title="Step back">
-            <Icon.StepBack />
-          </button>
-          <button
-            type="button"
-            style={buttonStyle}
-            onClick={playing ? pause : play}
-            aria-label={playing ? 'Pause' : 'Play'}
-          >
-            {playing ? <Icon.Pause /> : <Icon.Play />}
-          </button>
-          <button
-            type="button"
-            style={buttonStyle}
-            onClick={stepForward}
-            aria-label="Step forward"
-            title="Step forward"
-          >
-            <Icon.StepForward />
-          </button>
-          {showMarkerJump && (
             <button
               type="button"
               style={buttonStyle}
-              onClick={() => nextMarker(jumpMarkerKind)}
-              aria-label="Next marker"
-              title="Next marker"
+              onClick={stepForward}
+              aria-label="Step forward"
+              title="Step forward"
             >
-              <Icon.SkipForward />
+              <Icon.StepForward />
             </button>
-          )}
+            {showMarkerJump && (
+              <button
+                type="button"
+                style={buttonStyle}
+                onClick={() => nextMarker(jumpMarkerKind)}
+                aria-label="Next marker"
+                title="Next marker"
+              >
+                <Icon.SkipForward />
+              </button>
+            )}
+          </div>
 
           {/* Scrub track */}
           <div style={{ position: 'relative', flex: 1, height: 18, margin: '0 4px' }}>
-            <div
-              style={{
-                position: 'absolute',
-                left: 0,
-                right: 0,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                height: 2,
-                background: 'var(--agrex-node-border)',
-              }}
-            />
-            <div
-              style={{
-                position: 'absolute',
-                left: 0,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                height: 2,
-                width: total ? `${(cursor / total) * 100}%` : '0%',
-                background: 'var(--agrex-fg)',
-                opacity: 0.6,
-              }}
-            />
+            {stageSegments.length > 0 ? (
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  height: 4,
+                  display: 'flex',
+                  gap: 0,
+                  overflow: 'hidden',
+                  borderRadius: 999,
+                }}
+              >
+                {stageSegments.map((seg, i) => {
+                  const widthPct = total > 0 ? ((seg.end - seg.cursor) / total) * 100 : 0
+                  const isActive = i === activeStage
+                  const isPast = cursor >= seg.end
+                  const base = seg.color ?? 'var(--agrex-fg)'
+                  const bg = isActive
+                    ? `color-mix(in srgb, ${base} 55%, transparent)`
+                    : isPast
+                      ? `color-mix(in srgb, ${base} 35%, transparent)`
+                      : `color-mix(in srgb, ${base} 12%, transparent)`
+                  return (
+                    <div
+                      key={`seg-${i}`}
+                      style={{
+                        flex: `${widthPct} 1 0`,
+                        minWidth: 0,
+                        height: '100%',
+                        background: bg,
+                        transition: 'background 150ms',
+                      }}
+                    />
+                  )
+                })}
+              </div>
+            ) : (
+              <>
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    right: 0,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    height: 2,
+                    background: 'var(--agrex-node-border)',
+                  }}
+                />
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    height: 2,
+                    width: total ? `${(cursor / total) * 100}%` : '0%',
+                    background: 'var(--agrex-fg)',
+                    opacity: 0.6,
+                  }}
+                />
+              </>
+            )}
+            {stageSegments.map((seg, i) => {
+              const left = total ? (seg.cursor / total) * 100 : 0
+              const color = seg.color ?? 'var(--agrex-fg)'
+              return (
+                <button
+                  key={`stg-ic-${i}`}
+                  type="button"
+                  onClick={() => seek(seg.cursor)}
+                  title={seg.label}
+                  aria-label={`Jump to ${seg.label}`}
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: `${left}%`,
+                    transform: 'translate(-50%, -50%)',
+                    width: 3,
+                    height: 14,
+                    borderRadius: 2,
+                    background: color,
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                    zIndex: 2,
+                    transition: 'transform 150ms cubic-bezier(0.23, 1, 0.32, 1), height 150ms',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translate(-50%, -50%) scaleY(1.35)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translate(-50%, -50%) scaleY(1)'
+                  }}
+                />
+              )
+            })}
             {nonStageMarkers.map((m, i) => (
               <div
                 key={`m-${i}`}

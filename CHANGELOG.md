@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.1
+
+- **Stages live on the scrub track.** The separate chapter strip above the scrub bar is gone; stage markers are now vertical pill sentinels on the track itself, and the track rail is segmented and tinted per-stage (past / active / future distinct). Native `title` tooltip shows the stage name, hover expands the sentinel with a subtle scale, click seeks to the stage start. `jumpMarkerKind` still drives everything — only the rendering changed.
+- **Compacter control bar.** `PANEL_WIDTH` dropped from 820 → 640 so the timeline no longer overlaps right-edge panels (`<Legend>`'s collapse tab, future overlays). Transport buttons (skip / step / play) are grouped in their own tight `gap: 2` flex row so they sit close together instead of floating evenly across the bar.
+- **`PANEL_HEIGHT` lowered to 50.** Matches the now-shorter single-row panel (chapter strip gone).
+- **Collapse tab flush to the viewport edge when the timeline is collapsed.** Instead of floating 16px above the bottom, the tab sticks to the edge (`bottom: 0`) so it reads as a drawer handle.
+
 ## 0.4.0
 
 - **`<NodeTooltip>` — click-driven node inspector.** New right-docked panel that replaces the bottom-left `<DetailPanel>` on node click. Surfaces the dedicated fields consumers care about — status, elapsed time, tokens, cost, args, input, output, error — with args/input/output rendered as scrollable pretty-JSON blocks. Closes on × button, clicking another node (jumps), or clicking empty canvas. `<DetailPanel>` stays exported for consumers still using the old surface.

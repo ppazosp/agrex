@@ -3,5 +3,5 @@
   "compilerOptions": {
     "noEmit": true
   },
-  "include": ["packages/agrex/src/**/*"]
+  "include": ["packages/agrex/src/**/*", "packages/viewer/src/**/*"]
 }

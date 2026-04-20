@@ -16,6 +16,10 @@
 </p>
 
 <p align="center">
+  <a href="https://agrex.ppazosp.dev"><b>→ agrex.ppazosp.dev</b></a> — drop a JSON/JSONL trace, scrub through the agent execution. No setup, no backend.
+</p>
+
+<p align="center">
   <img src="https://raw.githubusercontent.com/ppazosp/agrex/main/.github/example.png" alt="agrex in action" width="700">
 </p>
 

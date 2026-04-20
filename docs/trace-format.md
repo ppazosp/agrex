@@ -30,6 +30,41 @@ Every event has **`type`** (string) and **`ts`** (ms since epoch, or any monoton
 
 Unknown event types are ignored by the viewer but preserved in the stream — consumers can register custom reducers via `useAgrexReplay({ reducers })`.
 
+### Timeline markers
+
+Two non-mutating event types the [viewer](https://agrex.ppazosp.dev) recognises for timeline chapters + point markers. They don't touch the graph; they're rendered on the scrub track.
+
+| `type`   | Fields                                          | Renders as                                                   |
+| -------- | ----------------------------------------------- | ------------------------------------------------------------ |
+| `stage`  | `label`, optional `color`                       | **Chapter segment** + sentinel pill. Skip-prev / skip-next jump between stages. |
+| `marker` | `kind`, optional `label`, optional `color`      | **Point marker** on the track. Does not segment the rail. |
+
+`stage` example:
+
+```json
+{ "type": "stage", "ts": 1700000000500, "label": "Search phase", "color": "#7c8cff" }
+{ "type": "stage", "ts": 1700000018000, "label": "Synthesis" }
+```
+
+- `color` is optional. When omitted the viewer hashes `label` to a curated palette (indigo / pink / cyan / violet / rose / blue / lavender / teal) — consistent across reloads, avoids agrex's status colours so stages never clash with `running` / `done` / `error`.
+- The active stage gets a subtle inner glow.
+
+`marker` example — custom point markers for things like retries, checkpoints, user annotations:
+
+```json
+{ "type": "marker", "ts": 1700000005400, "kind": "retry", "label": "retry 1", "color": "#a855f7" }
+{ "type": "marker", "ts": 1700000012300, "kind": "checkpoint", "label": "saved v1" }
+```
+
+`kind` is a free-form string — pick anything. The marker renders as a 6×12 vertical bar in its `color`. Hovering shows `label`.
+
+### Auto-extraction (when stages / markers aren't supplied)
+
+The viewer fills in sensible defaults if your trace doesn't include explicit stage or marker events:
+
+- **Stages fall back to agent spawns.** Every `node_add` of a `type: 'agent'` or `type: 'sub_agent'` becomes a stage, coloured deterministically from the agent's label. If *any* `stage` event is present, the fallback disables so you stay in control.
+- **Errors always emit.** Any node entering `status: 'error'` (via `node_add` or `node_update`) renders as a red point marker, regardless of what stages/markers you've declared.
+
 ### `AgrexNode` shape
 
 ```ts

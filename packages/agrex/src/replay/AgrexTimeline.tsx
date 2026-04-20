@@ -497,7 +497,11 @@ export default function AgrexTimeline({
                         minWidth: 0,
                         height: '100%',
                         background: bg,
-                        transition: 'background 150ms',
+                        // Active segment gets a subtle inner glow so it
+                        // still reads as "current" when each stage has
+                        // its own colour.
+                        boxShadow: isActive ? `inset 0 0 8px 1px ${base}` : 'none',
+                        transition: 'background 180ms, box-shadow 180ms',
                       }}
                     />
                   )
@@ -565,21 +569,35 @@ export default function AgrexTimeline({
               )
             })}
             {nonStageMarkers.map((m, i) => (
-              <div
+              <button
                 key={`m-${i}`}
+                type="button"
                 title={m.label ?? m.kind}
+                aria-label={m.label ?? m.kind}
                 onClick={() => seek(m.cursor)}
                 style={{
                   position: 'absolute',
                   top: '50%',
-                  transform: 'translateY(-50%)',
-                  left: `calc(${total ? (m.cursor / total) * 100 : 0}% - 3px)`,
-                  width: 6,
-                  height: 12,
+                  left: `${total ? (m.cursor / total) * 100 : 0}%`,
+                  transform: 'translate(-50%, -50%)',
+                  width: 3,
+                  height: 14,
                   borderRadius: 2,
                   background: m.color ?? 'var(--agrex-fg)',
-                  opacity: 0.8,
+                  border: 'none',
+                  opacity: 0.85,
                   cursor: 'pointer',
+                  padding: 0,
+                  zIndex: 2,
+                  transition: 'transform 150ms cubic-bezier(0.23, 1, 0.32, 1), opacity 150ms',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translate(-50%, -50%) scaleY(1.35)'
+                  e.currentTarget.style.opacity = '1'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translate(-50%, -50%) scaleY(1)'
+                  e.currentTarget.style.opacity = '0.85'
                 }}
               />
             ))}

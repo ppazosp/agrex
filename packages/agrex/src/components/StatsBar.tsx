@@ -37,7 +37,7 @@ export default function StatsBar({ nodes, bottomOffset = 16 }: StatsBarProps) {
         alignItems: 'center',
         gap: 14,
         fontSize: 11,
-        fontFamily: 'var(--agrex-font-mono)',
+        fontFamily: 'var(--agrex-font, inherit)',
         color: 'var(--agrex-fg)',
       }}
     >
@@ -46,7 +46,7 @@ export default function StatsBar({ nodes, bottomOffset = 16 }: StatsBarProps) {
       {done > 0 && <Stat label="done" value={done} color="var(--agrex-status-done)" />}
       {errors > 0 && <Stat label="errors" value={errors} color="var(--agrex-status-error)" />}
       {totalTokens > 0 && <Stat label="tokens" value={formatNum(totalTokens)} />}
-      {totalCost > 0 && <Stat label="cost" value={`$${totalCost.toFixed(4)}`} />}
+      {totalCost > 0 && <Stat label="cost" value={`$${totalCost.toFixed(2)}`} />}
     </div>
   )
 }

@@ -123,7 +123,8 @@ const statLabelStyle: React.CSSProperties = {
 
 const statValueStyle: React.CSSProperties = {
   fontSize: 13,
-  fontFamily: 'var(--agrex-font-mono, monospace)',
+  fontFamily: 'var(--agrex-font, inherit)',
+  fontVariantNumeric: 'tabular-nums',
   opacity: 0.9,
 }
 
@@ -240,9 +241,6 @@ export default function NodeTooltip({ node, onClose, rightOffset = 16, open = tr
 
         {errorValue != null && (
           <div style={errorBoxStyle}>
-            <div style={{ ...sectionLabelStyle, color: 'var(--agrex-status-error)', opacity: 0.8, marginBottom: 2 }}>
-              Error
-            </div>
             <div style={{ fontSize: 12, fontFamily: 'var(--agrex-font-mono, monospace)', opacity: 0.9 }}>
               {prettify(errorValue)}
             </div>

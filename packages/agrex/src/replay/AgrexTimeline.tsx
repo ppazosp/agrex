@@ -46,19 +46,43 @@ function ReplayStatsRow({ nodes }: { nodes: AgrexNode[] }) {
   const labelStyle: CSSProperties = { opacity: 0.5 }
   const valueStyle: CSSProperties = { fontWeight: 600, fontFamily: 'var(--agrex-font, inherit)' }
   const dot = (color: string): CSSProperties => ({ width: 6, height: 6, borderRadius: '50%', background: color })
+  // Cells are grid tracks, not flex siblings, so the four count columns
+  // (nodes / running / done / errors) share an identical 1fr width and stay
+  // visually aligned as a mini-table — and the row spans the full panel
+  // instead of bunching in the middle. time/tokens/cost get slightly wider
+  // fr slots to fit their formatted values ("59:59", "999.9k", "$99.9999").
   const Cell = ({ children }: { children: React.ReactNode }) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>{children}</div>
-  )
-  return (
     <div
       style={{
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between',
+        // Centre content inside its track so each slot reads as balanced
+        // around its value — the padding on either side of the label+value
+        // pair is the same, so inter-cell rhythm looks even even though
+        // individual content widths differ ("errors 0" vs "tokens 999.9k").
+        justifyContent: 'center',
+        gap: 4,
+        whiteSpace: 'nowrap',
+        minWidth: 0,
+      }}
+    >
+      {children}
+    </div>
+  )
+  return (
+    <div
+      style={{
+        display: 'grid',
+        // Four equal count tracks + three slightly wider tracks for the
+        // richer metrics (time / tokens / cost) so their values breathe.
+        // `minmax(0, Nfr)` lets cells shrink on narrow panels without
+        // overflow.
+        gridTemplateColumns: 'repeat(4, minmax(0, 1fr)) repeat(3, minmax(0, 1.2fr))',
+        alignItems: 'center',
         marginBottom: 8,
         fontSize: 11,
         color: 'var(--agrex-fg, #fff)',
-        gap: 8,
+        fontVariantNumeric: 'tabular-nums',
       }}
     >
       <Cell>
@@ -90,7 +114,7 @@ function ReplayStatsRow({ nodes }: { nodes: AgrexNode[] }) {
       </Cell>
       <Cell>
         <span style={labelStyle}>cost</span>
-        <span style={valueStyle}>${cost.toFixed(4)}</span>
+        <span style={valueStyle}>${cost.toFixed(2)}</span>
       </Cell>
     </div>
   )

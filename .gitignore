@@ -5,3 +5,15 @@ dist/
 .DS_Store
 docs/superpowers/
 CLAUDE.md
+
+# Vitest coverage output — regenerated locally, huge HTML tree
+coverage/
+
+# Playwright MCP automation artefacts (accessibility snapshots, console logs)
+.playwright-mcp/
+
+# Loose PNG screenshots at the repo root (authored images belong in .github/)
+/*.png
+
+# Vercel local build cache
+.vercel/

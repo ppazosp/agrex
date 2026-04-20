@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1
+
+- **`<ReplayStatsRow>` lays out as an even grid that spans the full panel.** Switched from a flex `space-between` row with auto-sized cells to `display: grid` with `grid-template-columns: repeat(4, 1fr) 1fr 1.25fr 1.3fr`. The four count columns (nodes / running / done / errors) now share identical width — they read as a mini-table instead of drifting under `space-between` as their digits changed — and the row spreads edge-to-edge across the timeline panel instead of bunching in the middle. `font-variant-numeric: tabular-nums` on the row keeps digit widths stable within each slot.
+- **Cost precision reduced to 2 decimals** (`$0.07` instead of `$0.0703`). Matches the resolution operators actually care about and frees a few pixels in the cost column.
+- **`<StatsBar>` drops the monospace font** — swapped to `var(--agrex-font, inherit)` to match the timeline's stats row. The two surfaces now read as the same component in two placements instead of one mono and one sans.
+
 ## 0.5.0
 
 - **Trace I/O utilities at `@ppazosp/agrex/trace`.** New tree-shakeable subpath with two pure functions:

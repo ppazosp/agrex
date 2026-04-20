@@ -17,9 +17,15 @@ function scenarioToEvents(name: ScenarioName): AgrexEvent[] {
     events.push({ type: 'edge_add', ts, edge })
     ts += 10
   }
+  const addedAt = new Map<string, number>()
   for (const n of nodes) {
     ts += 150
-    events.push({ type: 'node_add', ts, node: { ...n, status: 'running' } })
+    addedAt.set(n.id, ts)
+    events.push({
+      type: 'node_add',
+      ts,
+      node: { ...n, status: 'running', metadata: { ...(n.metadata ?? {}), startedAt: ts } },
+    })
   }
 
   events.push({ type: STAGE_KIND, ts, label: 'Resolve' })
@@ -30,7 +36,7 @@ function scenarioToEvents(name: ScenarioName): AgrexEvent[] {
       ts,
       id: n.id,
       status: 'done',
-      metadata: { ...(n.metadata ?? {}), endedAt: ts },
+      metadata: { ...(n.metadata ?? {}), startedAt: addedAt.get(n.id), endedAt: ts },
     })
   }
   return events
@@ -55,7 +61,7 @@ export default function App() {
   const [showLegend, setShowLegend] = useState(true)
   const [showToasts, setShowToasts] = useState(true)
   const [showDetailPanel, setShowDetailPanel] = useState(true)
-  const [showStats, setShowStats] = useState(false)
+  const [showStats, setShowStats] = useState(true)
   const [animateEdges, setAnimateEdges] = useState(true)
   const [showTimeline, setShowTimeline] = useState(true)
 

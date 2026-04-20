@@ -1,10 +1,100 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { resolveTheme, themeToCSS } from '../theme/tokens'
+import type { AgrexNode } from '../types'
 import type { AgrexMarker, AgrexTimelineProps, TimelineInsets, TimelinePlacement } from './types'
 
 const PANEL_WIDTH = 640
 const PANEL_HEIGHT = 50
+const PANEL_HEIGHT_WITH_STATS = 74
 const DEFAULT_PERSIST_KEY = 'agrex.timeline.collapsed'
+
+function formatStatNumber(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`
+  return String(n)
+}
+
+function formatMs(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000))
+  const m = Math.floor(total / 60)
+  const s = total % 60
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
+function ReplayStatsRow({ nodes }: { nodes: AgrexNode[] }) {
+  const total = nodes.length
+  let running = 0
+  let done = 0
+  let errors = 0
+  let tokens = 0
+  let cost = 0
+  let minStart = Number.POSITIVE_INFINITY
+  let maxEnd = 0
+  for (const n of nodes) {
+    if (n.status === 'running') running++
+    else if (n.status === 'done') done++
+    else if (n.status === 'error') errors++
+    if (typeof n.metadata?.tokens === 'number') tokens += n.metadata.tokens
+    if (typeof n.metadata?.cost === 'number') cost += n.metadata.cost
+    const s = typeof n.metadata?.startedAt === 'number' ? n.metadata.startedAt : undefined
+    const e = typeof n.metadata?.endedAt === 'number' ? n.metadata.endedAt : undefined
+    if (s !== undefined) minStart = Math.min(minStart, s)
+    if (e !== undefined) maxEnd = Math.max(maxEnd, e)
+  }
+  const wallTime = minStart !== Number.POSITIVE_INFINITY && maxEnd > minStart ? maxEnd - minStart : 0
+
+  const labelStyle: CSSProperties = { opacity: 0.5 }
+  const valueStyle: CSSProperties = { fontWeight: 600, fontFamily: 'var(--agrex-font, inherit)' }
+  const dot = (color: string): CSSProperties => ({ width: 6, height: 6, borderRadius: '50%', background: color })
+  const Cell = ({ children }: { children: React.ReactNode }) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>{children}</div>
+  )
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 8,
+        fontSize: 11,
+        color: 'var(--agrex-fg, #fff)',
+        gap: 8,
+      }}
+    >
+      <Cell>
+        <span style={labelStyle}>nodes</span>
+        <span style={valueStyle}>{total}</span>
+      </Cell>
+      <Cell>
+        <div style={dot('var(--agrex-status-running, #f59e0b)')} />
+        <span style={labelStyle}>running</span>
+        <span style={valueStyle}>{running}</span>
+      </Cell>
+      <Cell>
+        <div style={dot('var(--agrex-status-done, #4ade80)')} />
+        <span style={labelStyle}>done</span>
+        <span style={valueStyle}>{done}</span>
+      </Cell>
+      <Cell>
+        <div style={dot('var(--agrex-status-error, #ef4444)')} />
+        <span style={labelStyle}>errors</span>
+        <span style={valueStyle}>{errors}</span>
+      </Cell>
+      <Cell>
+        <span style={labelStyle}>time</span>
+        <span style={valueStyle}>{formatMs(wallTime)}</span>
+      </Cell>
+      <Cell>
+        <span style={labelStyle}>tokens</span>
+        <span style={valueStyle}>{formatStatNumber(tokens)}</span>
+      </Cell>
+      <Cell>
+        <span style={labelStyle}>cost</span>
+        <span style={valueStyle}>${cost.toFixed(4)}</span>
+      </Cell>
+    </div>
+  )
+}
 
 // Inline SVGs (lucide geometry, MIT). Keeps the dep footprint at zero icons.
 const iconProps = {
@@ -94,6 +184,7 @@ function containerStyle(
   insets: TimelineInsets,
   collapsed: boolean,
   themeVars: CSSProperties,
+  panelHeight: number,
 ): CSSProperties {
   const vertical: keyof TimelineInsets = placement === 'top' ? 'top' : 'bottom'
   const inset = insets[vertical] ?? 16
@@ -107,8 +198,8 @@ function containerStyle(
     maxWidth: 'calc(100% - 32px)',
     transform: collapsed
       ? placement === 'top'
-        ? `translate(-50%, calc(-100% - ${PANEL_HEIGHT}px))`
-        : `translate(-50%, calc(100% + ${PANEL_HEIGHT}px))`
+        ? `translate(-50%, calc(-100% - ${panelHeight}px))`
+        : `translate(-50%, calc(100% + ${panelHeight}px))`
       : 'translate(-50%, 0)',
     transition: 'transform 250ms cubic-bezier(0.23, 1, 0.32, 1)',
     zIndex: 30,
@@ -123,6 +214,7 @@ function tabStyle(
   insets: TimelineInsets,
   collapsed: boolean,
   themeVars: CSSProperties,
+  panelHeight: number,
 ): CSSProperties {
   const vertical: keyof TimelineInsets = placement === 'top' ? 'top' : 'bottom'
   const anchorInset = insets[vertical] ?? 16
@@ -132,7 +224,7 @@ function tabStyle(
     position: 'absolute',
     left: '50%',
     transform: 'translateX(-50%)',
-    [vertical]: collapsed ? 0 : anchorInset + PANEL_HEIGHT,
+    [vertical]: collapsed ? 0 : anchorInset + panelHeight,
     width: 40,
     height: 20,
     borderRadius: placement === 'top' ? '0 0 6px 6px' : '6px 6px 0 0',
@@ -197,12 +289,29 @@ export default function AgrexTimeline({
   speeds = [1, 2, 4],
   showSpeedControl = true,
   showCollapseTab = true,
+  showStats = false,
   persistKey = DEFAULT_PERSIST_KEY,
   placement = 'bottom',
   insets,
   className,
   theme,
 }: AgrexTimelineProps) {
+  const fallbackHeight = showStats ? PANEL_HEIGHT_WITH_STATS : PANEL_HEIGHT
+  const panelRef = useRef<HTMLDivElement | null>(null)
+  const [measuredHeight, setMeasuredHeight] = useState<number | null>(null)
+  useLayoutEffect(() => {
+    const el = panelRef.current
+    if (!el) return
+    const update = () => setMeasuredHeight(el.getBoundingClientRect().height)
+    update()
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [showStats])
+  // Tab follows the real rendered height so it sits flush with the panel edge.
+  // Collapse transform uses the fallback so the slide-off distance is stable.
+  const panelHeight = measuredHeight ?? fallbackHeight
   // When `theme` is passed, apply its CSS custom properties directly on the
   // panel root — necessary when AgrexTimeline is mounted as a *sibling* of
   // <Agrex> (not a descendant), because the `--agrex-*` vars are scoped to
@@ -278,7 +387,12 @@ export default function AgrexTimeline({
 
   return (
     <>
-      <div style={containerStyle(placement, safeInsets, collapsed, themeVars)} className={className}>
+      <div
+        ref={panelRef}
+        style={containerStyle(placement, safeInsets, collapsed, themeVars, panelHeight)}
+        className={className}
+      >
+        {showStats && <ReplayStatsRow nodes={replay.instance.nodes} />}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             {showMarkerJump && (
@@ -531,7 +645,7 @@ export default function AgrexTimeline({
         <button
           type="button"
           onClick={() => setCollapsed((v) => !v)}
-          style={tabStyle(placement, safeInsets, collapsed, themeVars)}
+          style={tabStyle(placement, safeInsets, collapsed, themeVars, panelHeight)}
           aria-label={collapsed ? 'Expand timeline' : 'Collapse timeline'}
         >
           <svg

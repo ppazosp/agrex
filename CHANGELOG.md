@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.2
+
+- **Stats panel folded into the timeline.** New `<AgrexTimeline showStats>` prop renders a stats row (nodes, running, done, errors, time, tokens, cost) _inside_ the timeline panel, above the transport row. Values are computed from `replay.instance.nodes`, so they update as the cursor moves (scrub back and counts/tokens/time shrink; live forward and they grow). Row uses `justify-content: space-between` so the cells stretch across the full panel width.
+- **`showStats` defaults to true** on `<Agrex>` now that stats has a clean home in the timeline.
+- **Time stat in `m:ss`.** `time` shows wall-clock from earliest `startedAt` to latest `endedAt` across rendered nodes. Playground `scenarioToEvents` now emits `startedAt` on `node_add` so demos have real time data.
+- **`<AgrexTimeline>` measures its own height** via `ResizeObserver` and uses the measured value to position the collapse tab. Previously the tab relied on a `PANEL_HEIGHT` constant that drifted from the actual rendered height (e.g. 74.5px vs 76), leaving a 0.5-7.5px gap. Now the tab sits pixel-flush with the panel's top edge regardless of stats/content changes. Collapse transform still uses the constant (only needs to be ≥ actual height for clean slide-off).
+- **`<StatsBar>`** accepts `bottomOffset` so consumers (or the auto-wiring inside `<Agrex>`) can lift it above a visible timeline. Only rendered when no timeline is present; the timeline's inline stats take over otherwise.
+
 ## 0.4.1
 
 - **Stages live on the scrub track.** The separate chapter strip above the scrub bar is gone; stage markers are now vertical pill sentinels on the track itself, and the track rail is segmented and tinted per-stage (past / active / future distinct). Native `title` tooltip shows the stage name, hover expands the sentinel with a subtle scale, click seeks to the stage start. `jumpMarkerKind` still drives everything — only the rendering changed.

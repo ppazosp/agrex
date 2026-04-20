@@ -2,9 +2,11 @@ import type { AgrexNode } from '../types'
 
 interface StatsBarProps {
   nodes: AgrexNode[]
+  /** Distance from the bottom edge in px. Lets the consumer lift the bar above the timeline when it's expanded. Default: 16. */
+  bottomOffset?: number
 }
 
-export default function StatsBar({ nodes }: StatsBarProps) {
+export default function StatsBar({ nodes, bottomOffset = 16 }: StatsBarProps) {
   const total = nodes.length
   const running = nodes.filter((n) => n.status === 'running').length
   const done = nodes.filter((n) => n.status === 'done').length
@@ -21,9 +23,10 @@ export default function StatsBar({ nodes }: StatsBarProps) {
     <div
       style={{
         position: 'absolute',
-        bottom: 16,
+        bottom: bottomOffset,
         left: '50%',
         transform: 'translateX(-50%)',
+        transition: 'bottom 250ms cubic-bezier(0.23, 1, 0.32, 1)',
         zIndex: 30,
         background: 'color-mix(in srgb, var(--agrex-bg) 85%, transparent)',
         backdropFilter: 'blur(16px)',

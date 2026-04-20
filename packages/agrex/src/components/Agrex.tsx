@@ -46,7 +46,7 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex(
     toastPlacement = 'top-left',
     toastInsets,
     showDetailPanel = true,
-    showStats = false,
+    showStats = true,
     fitOnUpdate = true,
     keyboardShortcuts = true,
     animateEdges = true,
@@ -86,6 +86,13 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex(
     if (selectedNode) setLastSelectedNode(selectedNode)
   }, [selectedNode])
   const detailOpen = showDetailPanel && !!selectedNode
+  const [timelineCollapsed, setTimelineCollapsed] = useState(false)
+  const timelineVisible =
+    !!replay && showTimeline && replay.mode !== 'idle' && (timelineProps?.placement ?? timelinePlacement) === 'bottom'
+  // Not used when showStats is piped through the timeline (inline stats), but
+  // kept for the legacy `<StatsBar>` fallback path: push the bar above any
+  // timeline chrome so they don't stack.
+  const statsBottomOffset = !timelineVisible ? 16 : timelineCollapsed ? 28 : 16 + 74 + 20 + 8
   const graphRef = useRef<GraphRef>(null)
 
   useImperativeHandle(
@@ -145,7 +152,7 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex(
           onNewestNode={handleNewestNode}
         />
         {showLegend && <Legend toolIcons={toolIcons} fileIcons={fileIcons} forceCollapsed={detailOpen} />}
-        {showStats && <StatsBar nodes={nodes} />}
+        {showStats && !timelineVisible && <StatsBar nodes={nodes} bottomOffset={statsBottomOffset} />}
         {showDetailPanel && lastSelectedNode && (
           <NodeTooltip
             node={lastSelectedNode}
@@ -161,6 +168,11 @@ const Agrex = forwardRef<AgrexHandle, AgrexProps>(function Agrex(
             replay={replay}
             placement={timelineProps?.placement ?? timelinePlacement}
             insets={timelineProps?.insets ?? timelineInsets}
+            showStats={timelineProps?.showStats ?? showStats}
+            onCollapsedChange={(c) => {
+              setTimelineCollapsed(c)
+              timelineProps?.onCollapsedChange?.(c)
+            }}
           />
         )}
       </div>

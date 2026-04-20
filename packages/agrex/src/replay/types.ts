@@ -123,6 +123,8 @@ export interface AgrexTimelineProps {
   speeds?: number[]
   showSpeedControl?: boolean
   showCollapseTab?: boolean
+  /** Render a compact stats row (nodes, status counts, tokens, cost) above the transport row. Stats track the replay cursor. */
+  showStats?: boolean
   /** localStorage key for persisting the collapsed state. Default `'agrex.timeline.collapsed'`. */
   persistKey?: string
   placement?: TimelinePlacement

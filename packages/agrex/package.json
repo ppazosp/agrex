@@ -1,6 +1,6 @@
 {
   "name": "@ppazosp/agrex",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Real-time graph visualizer for AI agent execution flows",
   "keywords": [
     "agent",

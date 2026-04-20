@@ -6,7 +6,7 @@
     "dev": "pnpm --filter playground dev",
     "build": "pnpm --filter @ppazosp/agrex build",
     "test": "pnpm --filter @ppazosp/agrex test",
-    "lint": "tsc --noEmit",
+    "lint": "pnpm build && tsc --noEmit",
     "lint:eslint": "eslint packages/agrex/src/",
     "format": "prettier --write \"packages/*/src/**/*.{ts,tsx}\" \"packages/*/*.{json,ts,md}\" \"*.{js,json,md}\"",
     "format:check": "prettier --check \"packages/*/src/**/*.{ts,tsx}\" \"packages/*/*.{json,ts,md}\" \"*.{js,json,md}\""

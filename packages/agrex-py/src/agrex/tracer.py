@@ -1,12 +1,14 @@
 """Imperative trace recorder. Mirrors @ppazosp/agrex/trace's createTracer.
 
-Public surface (this task):
+Public surface so far:
 - create_tracer(clock=None) -> Tracer
 - Tracer.agent / sub_agent / tool / file / node
+- Tracer.update / done / error / remove
+- Tracer.edge / stage / marker / clear
 - Tracer.events()
 
-Streaming sink, mutations, edge/stage/marker/clear, threading lock,
-and span context manager land in later tasks.
+Streaming sink, threading lock, on_event side channel, and the span
+context manager land in later tasks.
 """
 
 from __future__ import annotations
@@ -225,6 +227,43 @@ class Tracer:
 
     def remove(self, id: str) -> None:
         self._emit({"type": "node_remove", "ts": self._clock(), "id": id})
+
+    def edge(
+        self,
+        *,
+        id: str,
+        source: str,
+        target: str,
+        type: str | None = None,
+        label: str | None = None,
+    ) -> None:
+        from .types import AgrexEdge
+
+        edge = AgrexEdge(id=id, source=source, target=target, type=type, label=label)
+        self._emit(
+            {
+                "type": "edge_add",
+                "ts": self._clock(),
+                "edge": edge.model_dump(mode="json", exclude_none=True, by_alias=True),
+            }
+        )
+
+    def stage(self, label: str, *, color: str | None = None) -> None:
+        ev: dict[str, Any] = {"type": "stage", "ts": self._clock(), "label": label}
+        if color is not None:
+            ev["color"] = color
+        self._emit(ev)
+
+    def marker(self, kind: str, *, label: str | None = None, color: str | None = None) -> None:
+        ev: dict[str, Any] = {"type": "marker", "ts": self._clock(), "kind": kind}
+        if label is not None:
+            ev["label"] = label
+        if color is not None:
+            ev["color"] = color
+        self._emit(ev)
+
+    def clear(self) -> None:
+        self._emit({"type": "clear", "ts": self._clock()})
 
     def events(self) -> list[dict[str, Any]]:
         return list(self._log)

@@ -208,3 +208,40 @@ def test_remove_emits_node_remove():
     tracer = create_tracer(clock=lambda: next(clock))
     tracer.remove("a")
     assert tracer.events()[0] == {"type": "node_remove", "ts": 2000, "id": "a"}
+
+
+def test_edge_emits_with_full_payload():
+    clock = step_clock(3000)
+    tracer = create_tracer(clock=lambda: next(clock))
+    tracer.edge(id="e1", source="a", target="b", type="read")
+    ev = tracer.events()[0]
+    assert ev["type"] == "edge_add"
+    assert ev["ts"] == 3000
+    assert ev["edge"] == {"id": "e1", "source": "a", "target": "b", "type": "read"}
+
+
+def test_stage_emits_with_optional_color():
+    clock = step_clock(4000)
+    tracer = create_tracer(clock=lambda: next(clock))
+    tracer.stage("Search phase", color="#7c8cff")
+    tracer.stage("Synthesis")
+    a, b = tracer.events()
+    assert a == {"type": "stage", "ts": 4000, "label": "Search phase", "color": "#7c8cff"}
+    assert b == {"type": "stage", "ts": 4001, "label": "Synthesis"}
+
+
+def test_marker_emits_with_optional_label_and_color():
+    clock = step_clock(5000)
+    tracer = create_tracer(clock=lambda: next(clock))
+    tracer.marker("retry", label="retry 1", color="#a855f7")
+    tracer.marker("checkpoint")
+    a, b = tracer.events()
+    assert a == {"type": "marker", "ts": 5000, "kind": "retry", "label": "retry 1", "color": "#a855f7"}
+    assert b == {"type": "marker", "ts": 5001, "kind": "checkpoint"}
+
+
+def test_clear_emits_clear_event():
+    clock = step_clock(6000)
+    tracer = create_tracer(clock=lambda: next(clock))
+    tracer.clear()
+    assert tracer.events()[0] == {"type": "clear", "ts": 6000}

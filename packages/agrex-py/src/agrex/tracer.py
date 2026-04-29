@@ -7,12 +7,17 @@ Public surface so far:
 - Tracer.edge / stage / marker / clear
 - Tracer.events / to_json / to_jsonl / flush / close
 
-Threading lock and the span context manager land in later tasks.
+Concurrent emit() from multiple threads is safe — buffer append + sink
+write are wrapped in a `threading.Lock`. The `on_event` callback runs
+outside the lock so user code never serializes across all emits.
+
+The span context manager lands in a later task.
 """
 
 from __future__ import annotations
 
 import json
+import threading
 import time
 from collections.abc import Callable
 from typing import Any, Protocol
@@ -48,6 +53,7 @@ class Tracer:
         self._on_event = on_event
         self._log: list[dict[str, Any]] = []
         self._closed = False
+        self._lock = threading.Lock()
 
     def _require_buffer(self, method: str) -> None:
         if not self._buffer:
@@ -56,10 +62,11 @@ class Tracer:
     def _emit(self, event: dict[str, Any]) -> None:
         if self._closed:
             raise RuntimeError("Tracer is closed")
-        if self._buffer:
-            self._log.append(event)
-        if self._out is not None:
-            self._out.write(json.dumps(event) + "\n")
+        with self._lock:
+            if self._buffer:
+                self._log.append(event)
+            if self._out is not None:
+                self._out.write(json.dumps(event) + "\n")
         if self._on_event is not None:
             self._on_event(event)
 

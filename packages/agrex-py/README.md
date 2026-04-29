@@ -59,22 +59,22 @@ with open("run.jsonl", "w") as f:
 
 ## API summary
 
-| Method | Emits |
-|---|---|
-| `agent(id, label, **kw)` | `node_add` (`type: agent`) |
-| `sub_agent(id, label, **kw)` | `node_add` (`type: sub_agent`) |
-| `tool(id, label, args=None, **kw)` | `node_add` (`type: tool`). `args` folds into `metadata.args`. |
-| `file(id, label, **kw)` | `node_add` (`type: file`) |
-| `node(partial)` | `node_add` — escape hatch, no validation |
-| `update(id, status=, label=, metadata=)` | `node_update` |
-| `done(id, output=None, metadata=None)` | `node_update` (`status: done`). `output` folds into `metadata.output`. |
-| `error(id, error=None, metadata=None)` | `node_update` (`status: error`). Exceptions are serialized into `metadata.error`. |
-| `remove(id)` | `node_remove` |
-| `edge(id=, source=, target=, type=, label=)` | `edge_add` |
-| `stage(label, color=None)` | `stage` |
-| `marker(kind, label=None, color=None)` | `marker` |
-| `clear()` | `clear` |
-| `span(id=, label=, type='tool', **kw)` | sync/async context manager — `node_add` + `done`/`error` |
+| Method                                       | Emits                                                                             |
+| -------------------------------------------- | --------------------------------------------------------------------------------- |
+| `agent(id, label, **kw)`                     | `node_add` (`type: agent`)                                                        |
+| `sub_agent(id, label, **kw)`                 | `node_add` (`type: sub_agent`)                                                    |
+| `tool(id, label, args=None, **kw)`           | `node_add` (`type: tool`). `args` folds into `metadata.args`.                     |
+| `file(id, label, **kw)`                      | `node_add` (`type: file`)                                                         |
+| `node(partial)`                              | `node_add` — escape hatch, no validation                                          |
+| `update(id, status=, label=, metadata=)`     | `node_update`                                                                     |
+| `done(id, output=None, metadata=None)`       | `node_update` (`status: done`). `output` folds into `metadata.output`.            |
+| `error(id, error=None, metadata=None)`       | `node_update` (`status: error`). Exceptions are serialized into `metadata.error`. |
+| `remove(id)`                                 | `node_remove`                                                                     |
+| `edge(id=, source=, target=, type=, label=)` | `edge_add`                                                                        |
+| `stage(label, color=None)`                   | `stage`                                                                           |
+| `marker(kind, label=None, color=None)`       | `marker`                                                                          |
+| `clear()`                                    | `clear`                                                                           |
+| `span(id=, label=, type='tool', **kw)`       | sync/async context manager — `node_add` + `done`/`error`                          |
 
 All node helpers accept `parent`, `reads`, `writes`, `metadata`, and `status` as keyword-only arguments.
 

@@ -38,18 +38,20 @@ describe('cross-language fixture', () => {
     // Strip the machine-dependent error.stack so the fixture is byte-stable
     // across runs / machines. The Python test only asserts on error.name and
     // error.message, so dropping `stack` doesn't reduce coverage.
-    const stableJsonl = trace.toJSONL()
-      .split('\n')
-      .filter(line => line.length > 0)
-      .map(line => {
-        const event = JSON.parse(line)
-        const meta = (event as { metadata?: { error?: { stack?: unknown } } }).metadata
-        if (meta?.error?.stack !== undefined) {
-          delete meta.error.stack
-        }
-        return JSON.stringify(event)
-      })
-      .join('\n') + '\n'
+    const stableJsonl =
+      trace
+        .toJSONL()
+        .split('\n')
+        .filter((line) => line.length > 0)
+        .map((line) => {
+          const event = JSON.parse(line)
+          const meta = (event as { metadata?: { error?: { stack?: unknown } } }).metadata
+          if (meta?.error?.stack !== undefined) {
+            delete meta.error.stack
+          }
+          return JSON.stringify(event)
+        })
+        .join('\n') + '\n'
 
     // __dirname resolves to the source __tests__ directory under vitest. Walk up
     // three levels: __tests__ → src → agrex → packages, then into agrex-py.
@@ -63,11 +65,13 @@ describe('cross-language fixture', () => {
     expect(parsed[parsed.length - 1].type).toBe('node_update')
 
     // Spot-check the error event preserves serialized error.
-    const errorEvent = parsed.find(e => (e as { status?: string }).status === 'error')
+    const errorEvent = parsed.find((e) => (e as { status?: string }).status === 'error')
     expect(errorEvent).toBeDefined()
-    const errMeta = (errorEvent as unknown as {
-      metadata: { error: { name: string; message: string } }
-    }).metadata
+    const errMeta = (
+      errorEvent as unknown as {
+        metadata: { error: { name: string; message: string } }
+      }
+    ).metadata
     expect(errMeta.error.name).toBe('Error')
     expect(errMeta.error.message).toBe('synthesis failed')
   })

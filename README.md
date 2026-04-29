@@ -31,6 +31,23 @@
 npm install @ppazosp/agrex @xyflow/react
 ```
 
+**Python:** instrument Python agents with the companion package — same trace format, same viewer.
+
+```bash
+uv add agrex     # or: pip install agrex
+```
+
+```python
+from agrex import create_tracer
+
+trace = create_tracer()
+trace.agent("root", "Researcher")
+with trace.span(id="s1", label="search", parent="root"):
+    ...
+```
+
+Full Python docs at [`packages/agrex-py/README.md`](packages/agrex-py/README.md).
+
 ## Quick Start
 
 ```tsx

@@ -1,0 +1,10 @@
+{"type":"node_add","ts":1700000000000,"node":{"id":"root","label":"Researcher","type":"agent","status":"running","metadata":{"input":"foo"}}}
+{"type":"stage","ts":1700000000001,"label":"Search phase","color":"#7c8cff"}
+{"type":"node_add","ts":1700000000002,"node":{"id":"s1","label":"web_search","type":"tool","status":"running","parentId":"root","metadata":{"args":{"q":"foo"}}}}
+{"type":"node_update","ts":1700000000003,"id":"s1","metadata":{"tokens":12}}
+{"type":"node_update","ts":1700000000004,"id":"s1","status":"done","metadata":{"output":["hit1","hit2"]}}
+{"type":"marker","ts":1700000000005,"kind":"checkpoint","label":"phase 1 done"}
+{"type":"node_add","ts":1700000000006,"node":{"id":"sub","label":"Synthesizer","type":"sub_agent","status":"running","parentId":"root"}}
+{"type":"node_update","ts":1700000000007,"id":"sub","status":"error","metadata":{"retries":1,"error":{"name":"Error","message":"synthesis failed"}}}
+{"type":"edge_add","ts":1700000000008,"edge":{"id":"e1","source":"root","target":"sub","type":"spawn"}}
+{"type":"node_update","ts":1700000000009,"id":"root","status":"done"}

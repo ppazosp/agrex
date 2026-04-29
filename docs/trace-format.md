@@ -158,6 +158,26 @@ trace.done('root', { output: summary })
 const fileContent = trace.toJSONL()
 ```
 
+### From Python
+
+The Python sibling package — also called `agrex` — exposes the same shape with Pythonic kwargs:
+
+```python
+from agrex import create_tracer
+
+trace = create_tracer()
+trace.agent("root", "Researcher", metadata={"input": query})
+trace.stage("Search phase")
+with trace.span(id="s1", label="web_search", parent="root"):
+    hits = search(query)
+trace.done("root", output=summary)
+
+with open("run.jsonl", "w") as f:
+    f.write(trace.to_jsonl())
+```
+
+Install with `uv add agrex` or `pip install agrex`. Requires Python 3.10+. See the [Python README](https://github.com/ppazosp/agrex/tree/main/packages/agrex-py) for the full API.
+
 ### Async scopes — `span()`
 
 `span()` wraps a function (sync or async) and auto-emits `node_add` on entry plus `done` / `error` on settle. The wrapped return value is returned to you; rejections re-throw after the error event is recorded.

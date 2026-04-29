@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.0
+
+- **`agrex` on PyPI — Python tracer with full API parity.** New companion package at `packages/agrex-py/` ships `create_tracer`, `parse_trace`, and `snapshot_to_events` for Python codebases. Same trace format as the TypeScript package; both sides round-trip through a shared cross-language fixture verified in CI. Pythonic API surface: keyword-only kwargs, `with`/`async with` for `span` instead of callback-passing, Pydantic v2 models internally for type safety. `threading.Lock` around `emit` makes concurrent emission from `ThreadPoolExecutor` safe out of the box. Lockstep with `@ppazosp/agrex` — both packages release at 0.7.0 together.
+
 ## 0.6.2
 
 - **Fix interpolation off-by-one — the elapsed display now ticks all the way through inter-event gaps.** The 0.6.1 fix read `events[cursor - 1].ts` as the interpolation base, but the playback loop at cursor K actually waits `events[K+1].ts − events[K].ts` before advancing, so the current wait position is `events[K].ts`. On any non-trivial trace (e.g. the demo's 2.4s gap between the search and read phases) the interpolation window collapsed to ~10ms and the timer stalled at the last-applied event's ts for the whole gap. Bumped `idx` from `cursor − 1` to `cursor` (clamped to `total − 1`) and widened `nextTs` to `events[cursor + 1].ts`; the display now matches wall-clock playback second by second.

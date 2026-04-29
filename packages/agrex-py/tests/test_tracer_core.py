@@ -1,3 +1,6 @@
+import pytest
+from pydantic import ValidationError
+
 from agrex.types import AgrexEdge, AgrexEvent, AgrexNode
 
 
@@ -35,10 +38,15 @@ def test_event_preserves_unknown_fields():
 
 
 def test_event_requires_type_and_ts():
-    import pytest
-    from pydantic import ValidationError
-
     with pytest.raises(ValidationError):
         AgrexEvent.model_validate({"ts": 100})
     with pytest.raises(ValidationError):
         AgrexEvent.model_validate({"type": "x"})
+
+
+def test_event_rejects_bool_ts():
+    """bool ⊂ int in Python — guard against TS-incompatible booleans for ts."""
+    with pytest.raises(ValidationError):
+        AgrexEvent.model_validate({"type": "x", "ts": True})
+    with pytest.raises(ValidationError):
+        AgrexEvent.model_validate({"type": "x", "ts": False})

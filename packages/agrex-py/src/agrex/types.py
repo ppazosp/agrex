@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 NodeStatus = Literal["idle", "running", "done", "error"]
 
@@ -56,3 +56,14 @@ class AgrexEvent(BaseModel):
 
     type: str
     ts: int | float = Field(..., description="Milliseconds since epoch or any monotonic clock")
+
+    @field_validator("ts", mode="before")
+    @classmethod
+    def _reject_bool_ts(cls, v: object) -> object:
+        # bool is a subclass of int in Python, so without this guard
+        # `True` / `False` round-trip through `int | float`. TS's
+        # `validateEvents` rejects non-numbers (`typeof e.ts !== 'number'`),
+        # so we mirror that to keep the format identical across languages.
+        if isinstance(v, bool):
+            raise ValueError("ts must be a number, not bool")
+        return v

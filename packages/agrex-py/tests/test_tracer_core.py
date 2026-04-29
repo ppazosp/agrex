@@ -167,3 +167,44 @@ def test_parent_does_not_synthesize_spawn_edge():
     events = tracer.events()
     assert all(e["type"] != "edge_add" for e in events)
     assert events[1]["node"]["parentId"] == "a"
+
+
+def test_update_emits_node_update_with_optional_patches():
+    clock = step_clock(500)
+    tracer = create_tracer(clock=lambda: next(clock))
+    tracer.tool("b", "search")
+    tracer.update("b", label="search_web")
+    events = tracer.events()
+    # Second event is the update; only the label patch should appear.
+    assert events[1] == {"type": "node_update", "ts": 501, "id": "b", "label": "search_web"}
+
+
+def test_done_folds_output_into_metadata():
+    clock = step_clock(500)
+    tracer = create_tracer(clock=lambda: next(clock))
+    tracer.tool("b", "search")
+    tracer.done("b", output="ok", metadata={"tokens": 10})
+    ev = tracer.events()[1]
+    assert ev["type"] == "node_update"
+    assert ev["id"] == "b"
+    assert ev["status"] == "done"
+    assert ev["metadata"] == {"tokens": 10, "output": "ok"}
+
+
+def test_error_serializes_exception_into_metadata():
+    clock = step_clock()
+    tracer = create_tracer(clock=lambda: next(clock))
+    tracer.error("c", error=ValueError("bang"), metadata={"retries": 2})
+    ev = tracer.events()[0]
+    assert ev["type"] == "node_update"
+    assert ev["status"] == "error"
+    assert ev["metadata"]["retries"] == 2
+    assert ev["metadata"]["error"]["name"] == "ValueError"
+    assert ev["metadata"]["error"]["message"] == "bang"
+
+
+def test_remove_emits_node_remove():
+    clock = step_clock(2000)
+    tracer = create_tracer(clock=lambda: next(clock))
+    tracer.remove("a")
+    assert tracer.events()[0] == {"type": "node_remove", "ts": 2000, "id": "a"}

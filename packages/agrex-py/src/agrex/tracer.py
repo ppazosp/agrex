@@ -164,6 +164,68 @@ class Tracer:
         # Escape hatch: trust the caller's shape, no Pydantic validation.
         self._emit({"type": "node_add", "ts": self._clock(), "node": dict(partial)})
 
+    def update(
+        self,
+        id: str,
+        *,
+        status: NodeStatus | None = None,
+        label: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        ev: dict[str, Any] = {"type": "node_update", "ts": self._clock(), "id": id}
+        if status is not None:
+            ev["status"] = status
+        if label is not None:
+            ev["label"] = label
+        if metadata is not None:
+            ev["metadata"] = metadata
+        self._emit(ev)
+
+    def done(
+        self,
+        id: str,
+        *,
+        output: Any = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        merged: dict[str, Any] = {**(metadata or {})}
+        if output is not None:
+            merged["output"] = output
+        ev: dict[str, Any] = {
+            "type": "node_update",
+            "ts": self._clock(),
+            "id": id,
+            "status": "done",
+        }
+        if merged:
+            ev["metadata"] = merged
+        self._emit(ev)
+
+    def error(
+        self,
+        id: str,
+        *,
+        error: Any = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        from ._serialize import serialize_error
+
+        merged: dict[str, Any] = {**(metadata or {})}
+        if error is not None:
+            merged["error"] = serialize_error(error)
+        ev: dict[str, Any] = {
+            "type": "node_update",
+            "ts": self._clock(),
+            "id": id,
+            "status": "error",
+        }
+        if merged:
+            ev["metadata"] = merged
+        self._emit(ev)
+
+    def remove(self, id: str) -> None:
+        self._emit({"type": "node_remove", "ts": self._clock(), "id": id})
+
     def events(self) -> list[dict[str, Any]]:
         return list(self._log)
 

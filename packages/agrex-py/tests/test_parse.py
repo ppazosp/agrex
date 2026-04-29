@@ -2,6 +2,7 @@
 in Task 11; full snapshot tests land in Task 12."""
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -112,3 +113,36 @@ def test_jsonl_single_line_falls_through_to_json():
     # and then fail because it has no 'events' or 'nodes' key.
     with pytest.raises(TraceParseError, match="must contain"):
         parse_trace(json.dumps({"type": "node_add", "ts": 1}))
+
+
+def test_cross_language_fixture_round_trips():
+    """The TS test suite writes a fixture; Python parses it. Catches schema drift."""
+    fixture = Path(__file__).parent / "fixtures" / "cross_lang.jsonl"
+    assert fixture.exists(), "Run TS suite first to regenerate the fixture"
+
+    events = parse_trace(fixture.read_text())
+    assert len(events) == 10
+
+    # Spot-check structural correctness — event types in order.
+    types = [e["type"] for e in events]
+    assert types[0] == "node_add"
+    assert types[-1] == "node_update"
+    assert "stage" in types
+    assert "marker" in types
+    assert "edge_add" in types
+
+    # Error event preserves serialized error.
+    error_events = [e for e in events if e.get("status") == "error"]
+    assert len(error_events) == 1
+    err = error_events[0]["metadata"]["error"]
+    assert err["name"] == "Error"
+    assert err["message"] == "synthesis failed"
+
+    # Tool args sugar folded correctly.
+    tool_events = [e for e in events if e.get("node", {}).get("type") == "tool"]
+    assert len(tool_events) == 1
+    assert tool_events[0]["node"]["metadata"]["args"] == {"q": "foo"}
+
+    # parentId aliasing landed correctly on cross-language wire format.
+    sub_event = next(e for e in events if e.get("node", {}).get("id") == "sub")
+    assert sub_event["node"]["parentId"] == "root"

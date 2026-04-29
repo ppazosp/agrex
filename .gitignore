@@ -18,3 +18,12 @@ coverage/
 
 # Vercel local build cache
 .vercel/
+
+# Python build / runtime artifacts (agrex-py package)
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/

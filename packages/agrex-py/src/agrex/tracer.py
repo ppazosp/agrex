@@ -1,21 +1,22 @@
 """Imperative trace recorder. Mirrors @ppazosp/agrex/trace's createTracer.
 
 Public surface so far:
-- create_tracer(clock=None) -> Tracer
+- create_tracer(*, clock=None, out=None, buffer=True) -> Tracer
 - Tracer.agent / sub_agent / tool / file / node
 - Tracer.update / done / error / remove
 - Tracer.edge / stage / marker / clear
-- Tracer.events()
+- Tracer.events / to_json / to_jsonl / flush / close
 
-Streaming sink, threading lock, on_event side channel, and the span
-context manager land in later tasks.
+Threading lock, on_event side channel, and the span context manager
+land in later tasks.
 """
 
 from __future__ import annotations
 
+import json
 import time
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Protocol
 
 from .types import AgrexNode, NodeStatus
 
@@ -26,13 +27,38 @@ def _default_clock() -> int:
     return int(time.time() * 1000)
 
 
+class TracerWritable(Protocol):
+    """Duck-typed sink. Anything with a `.write(str)` method works.
+    Optional `close()` and `flush()` are honored when present."""
+
+    def write(self, chunk: str) -> Any: ...
+
+
 class Tracer:
-    def __init__(self, *, clock: ClockFn | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        clock: ClockFn | None = None,
+        out: TracerWritable | None = None,
+        buffer: bool = True,
+    ) -> None:
         self._clock: ClockFn = clock or _default_clock
+        self._out = out
+        self._buffer = buffer
         self._log: list[dict[str, Any]] = []
+        self._closed = False
+
+    def _require_buffer(self, method: str) -> None:
+        if not self._buffer:
+            raise RuntimeError(f"{method}() requires buffer mode. Omit `buffer=False` to enable it.")
 
     def _emit(self, event: dict[str, Any]) -> None:
-        self._log.append(event)
+        if self._closed:
+            raise RuntimeError("Tracer is closed")
+        if self._buffer:
+            self._log.append(event)
+        if self._out is not None:
+            self._out.write(json.dumps(event) + "\n")
 
     def _build_node(
         self,
@@ -266,8 +292,35 @@ class Tracer:
         self._emit({"type": "clear", "ts": self._clock()})
 
     def events(self) -> list[dict[str, Any]]:
+        self._require_buffer("events")
         return list(self._log)
 
+    def to_json(self) -> dict[str, Any]:
+        self._require_buffer("to_json")
+        return {"events": list(self._log)}
 
-def create_tracer(*, clock: ClockFn | None = None) -> Tracer:
-    return Tracer(clock=clock)
+    def to_jsonl(self) -> str:
+        self._require_buffer("to_jsonl")
+        if not self._log:
+            return ""
+        return "\n".join(json.dumps(e) for e in self._log) + "\n"
+
+    def flush(self) -> None:
+        flush = getattr(self._out, "flush", None)
+        if callable(flush):
+            flush()
+
+    def close(self) -> None:
+        self._closed = True
+        close = getattr(self._out, "close", None)
+        if callable(close):
+            close()
+
+
+def create_tracer(
+    *,
+    clock: ClockFn | None = None,
+    out: TracerWritable | None = None,
+    buffer: bool = True,
+) -> Tracer:
+    return Tracer(clock=clock, out=out, buffer=buffer)

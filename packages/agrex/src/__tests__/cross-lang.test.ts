@@ -35,13 +35,29 @@ describe('cross-language fixture', () => {
     trace.edge({ id: 'e1', source: 'root', target: 'sub', type: 'spawn' })
     trace.done('root')
 
-    const jsonl = trace.toJSONL()
-    // Path resolves from packages/agrex/dist (where vitest runs). Walk up to repo root.
+    // Strip the machine-dependent error.stack so the fixture is byte-stable
+    // across runs / machines. The Python test only asserts on error.name and
+    // error.message, so dropping `stack` doesn't reduce coverage.
+    const stableJsonl = trace.toJSONL()
+      .split('\n')
+      .filter(line => line.length > 0)
+      .map(line => {
+        const event = JSON.parse(line)
+        const meta = (event as { metadata?: { error?: { stack?: unknown } } }).metadata
+        if (meta?.error?.stack !== undefined) {
+          delete meta.error.stack
+        }
+        return JSON.stringify(event)
+      })
+      .join('\n') + '\n'
+
+    // __dirname resolves to the source __tests__ directory under vitest. Walk up
+    // three levels: __tests__ → src → agrex → packages, then into agrex-py.
     const fixturePath = resolve(__dirname, '../../../agrex-py/tests/fixtures/cross_lang.jsonl')
     mkdirSync(dirname(fixturePath), { recursive: true })
-    writeFileSync(fixturePath, jsonl)
+    writeFileSync(fixturePath, stableJsonl)
 
-    const parsed = parseTrace(jsonl)
+    const parsed = parseTrace(stableJsonl)
     expect(parsed).toHaveLength(10)
     expect(parsed[0].type).toBe('node_add')
     expect(parsed[parsed.length - 1].type).toBe('node_update')

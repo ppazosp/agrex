@@ -17,7 +17,7 @@ from typing import Any
 
 from .types import AgrexNode, NodeStatus
 
-ClockFn = Callable[[], "int | float"]
+ClockFn = Callable[[], int | float]
 
 
 def _default_clock() -> int:

@@ -138,8 +138,16 @@ def test_sub_agent_and_file_node_types():
 def test_node_escape_hatch_emits_arbitrary_shape():
     clock = step_clock()
     tracer = create_tracer(clock=lambda: next(clock))
-    tracer.node({"id": "x", "type": "custom", "label": "X", "status": "done"})
-    assert tracer.events()[0]["node"]["type"] == "custom"
+    payload = {"id": "x", "type": "custom", "label": "X", "status": "done"}
+    tracer.node(payload)
+
+    # Mutating the caller's payload after emit must not affect the recorded event —
+    # locks the dict(partial) shallow-copy contract in tracer.py.
+    payload["type"] = "mutated"
+
+    emitted = tracer.events()[0]["node"]
+    assert emitted["type"] == "custom"
+    assert emitted == {"id": "x", "type": "custom", "label": "X", "status": "done"}
 
 
 def test_reads_writes_pass_through():

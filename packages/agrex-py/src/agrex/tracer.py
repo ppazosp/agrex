@@ -1,17 +1,16 @@
 """Imperative trace recorder. Mirrors @ppazosp/agrex/trace's createTracer.
 
-Public surface so far:
+Public surface:
 - create_tracer(*, clock=None, out=None, buffer=True, on_event=None) -> Tracer
 - Tracer.agent / sub_agent / tool / file / node
 - Tracer.update / done / error / remove
 - Tracer.edge / stage / marker / clear
+- Tracer.span (context manager — sync `with` and async `async with`)
 - Tracer.events / to_json / to_jsonl / flush / close
 
 Concurrent emit() from multiple threads is safe — buffer append + sink
 write are wrapped in a `threading.Lock`. The `on_event` callback runs
 outside the lock so user code never serializes across all emits.
-
-The span context manager lands in a later task.
 """
 
 from __future__ import annotations
@@ -36,6 +35,77 @@ class TracerWritable(Protocol):
     Optional `close()` and `flush()` are honored when present."""
 
     def write(self, chunk: str) -> Any: ...
+
+
+class _Span:
+    """Context manager returned by `Tracer.span(...)`. Supports both
+    `with` and `async with` so the same call site works in sync and
+    async code paths. Emits `node_add` on enter and `done`/`error`
+    on exit (re-raising the exception in the error case)."""
+
+    def __init__(
+        self,
+        tracer: Tracer,
+        *,
+        id: str,
+        label: str,
+        type: str = "tool",
+        parent: str | None = None,
+        reads: list[str] | None = None,
+        writes: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        self._tracer = tracer
+        self._id = id
+        self._label = label
+        self._type = type
+        self._parent = parent
+        self._reads = reads
+        self._writes = writes
+        self._metadata = metadata
+
+    def _enter(self) -> _Span:
+        node = self._tracer._build_node(
+            self._id,
+            self._label,
+            self._type,
+            parent=self._parent,
+            reads=self._reads,
+            writes=self._writes,
+            status="running",
+            metadata=self._metadata,
+        )
+        self._tracer._node_add(node)
+        return self
+
+    def _exit(self, exc: BaseException | None) -> None:
+        if exc is None:
+            self._tracer.done(self._id)
+        else:
+            self._tracer.error(self._id, error=exc)
+
+    def __enter__(self) -> _Span:
+        return self._enter()
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: object,
+    ) -> None:
+        self._exit(exc)
+        # Returning None propagates the exception, which is what we want.
+
+    async def __aenter__(self) -> _Span:
+        return self._enter()
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: object,
+    ) -> None:
+        self._exit(exc)
 
 
 class Tracer:
@@ -300,6 +370,28 @@ class Tracer:
 
     def clear(self) -> None:
         self._emit({"type": "clear", "ts": self._clock()})
+
+    def span(
+        self,
+        *,
+        id: str,
+        label: str,
+        type: str = "tool",
+        parent: str | None = None,
+        reads: list[str] | None = None,
+        writes: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> _Span:
+        return _Span(
+            self,
+            id=id,
+            label=label,
+            type=type,
+            parent=parent,
+            reads=reads,
+            writes=writes,
+            metadata=metadata,
+        )
 
     def events(self) -> list[dict[str, Any]]:
         self._require_buffer("events")

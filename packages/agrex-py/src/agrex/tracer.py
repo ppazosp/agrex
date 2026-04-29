@@ -1,14 +1,13 @@
 """Imperative trace recorder. Mirrors @ppazosp/agrex/trace's createTracer.
 
 Public surface so far:
-- create_tracer(*, clock=None, out=None, buffer=True) -> Tracer
+- create_tracer(*, clock=None, out=None, buffer=True, on_event=None) -> Tracer
 - Tracer.agent / sub_agent / tool / file / node
 - Tracer.update / done / error / remove
 - Tracer.edge / stage / marker / clear
 - Tracer.events / to_json / to_jsonl / flush / close
 
-Threading lock, on_event side channel, and the span context manager
-land in later tasks.
+Threading lock and the span context manager land in later tasks.
 """
 
 from __future__ import annotations
@@ -41,10 +40,12 @@ class Tracer:
         clock: ClockFn | None = None,
         out: TracerWritable | None = None,
         buffer: bool = True,
+        on_event: Callable[[dict[str, Any]], None] | None = None,
     ) -> None:
         self._clock: ClockFn = clock or _default_clock
         self._out = out
         self._buffer = buffer
+        self._on_event = on_event
         self._log: list[dict[str, Any]] = []
         self._closed = False
 
@@ -59,6 +60,8 @@ class Tracer:
             self._log.append(event)
         if self._out is not None:
             self._out.write(json.dumps(event) + "\n")
+        if self._on_event is not None:
+            self._on_event(event)
 
     def _build_node(
         self,
@@ -322,5 +325,6 @@ def create_tracer(
     clock: ClockFn | None = None,
     out: TracerWritable | None = None,
     buffer: bool = True,
+    on_event: Callable[[dict[str, Any]], None] | None = None,
 ) -> Tracer:
-    return Tracer(clock=clock, out=out, buffer=buffer)
+    return Tracer(clock=clock, out=out, buffer=buffer, on_event=on_event)

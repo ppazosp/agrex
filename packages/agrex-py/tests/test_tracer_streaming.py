@@ -126,3 +126,40 @@ def test_to_json_returns_events_dict():
     payload = tracer.to_json()
     assert list(payload.keys()) == ["events"]
     assert len(payload["events"]) == 1
+
+
+def test_on_event_invoked_for_every_emit():
+    received: list[dict] = []
+    tracer = create_tracer(on_event=received.append)
+    tracer.agent("a", "A")
+    tracer.done("a")
+    assert len(received) == 2
+    assert received[0]["type"] == "node_add"
+    assert received[1]["type"] == "node_update"
+    assert received[1]["status"] == "done"
+
+
+def test_on_event_runs_alongside_buffer_and_sink():
+    """All three side channels fire per emit."""
+    received: list[dict] = []
+    sink = io.StringIO()
+    tracer = create_tracer(out=sink, on_event=received.append)
+    tracer.agent("a", "A")
+
+    # Buffer captured it.
+    assert len(tracer.events()) == 1
+    # Sink captured it.
+    sink.seek(0)
+    assert sink.read().count("\n") == 1
+    # on_event captured it.
+    assert len(received) == 1
+
+
+def test_on_event_not_called_when_emit_raises_for_closed_tracer():
+    """Closed tracer aborts before any side-channel writes."""
+    received: list[dict] = []
+    tracer = create_tracer(on_event=received.append)
+    tracer.close()
+    with pytest.raises(RuntimeError, match="closed"):
+        tracer.agent("a", "A")
+    assert received == []
